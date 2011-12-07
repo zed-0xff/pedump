@@ -18,7 +18,7 @@ Jeweler::Tasks.new do |gem|
   gem.homepage = "http://github.com/zed-0xff/pedump"
   gem.license = "MIT"
   gem.summary = %Q{dump win32 PE executable files with a pure ruby}
-  gem.description = %Q{dump headers, sections, extract resources}
+  gem.description = %Q{dump headers, sections, extract resources of win32 PE exe,dll,etc}
   gem.email = "zed.0xff@gmail.com"
   gem.authors = ["Andrey \"Zed\" Zaikin"]
   gem.executables = %w'pedump'
