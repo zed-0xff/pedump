@@ -17,10 +17,12 @@ Jeweler::Tasks.new do |gem|
   gem.name = "pedump"
   gem.homepage = "http://github.com/zed-0xff/pedump"
   gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
+  gem.summary = %Q{dump win32 PE executable files with a pure ruby}
+  gem.description = %Q{dump headers, sections, extract resources}
   gem.email = "zed.0xff@gmail.com"
-  gem.authors = ["Andrey "Zed" Zaikin"]
+  gem.authors = ["Andrey \"Zed\" Zaikin"]
+  gem.executables = %w'pedump'
+  gem.files.include "lib/**/*.rb"
   # dependencies defined in Gemfile
 end
 Jeweler::RubygemsDotOrgTasks.new
@@ -38,12 +40,12 @@ end
 
 task :default => :spec
 
-require 'rake/rdoctask'
-Rake::RDocTask.new do |rdoc|
-  version = File.exist?('VERSION') ? File.read('VERSION') : ""
-
-  rdoc.rdoc_dir = 'rdoc'
-  rdoc.title = "pedump #{version}"
-  rdoc.rdoc_files.include('README*')
-  rdoc.rdoc_files.include('lib/**/*.rb')
-end
+#require 'rake/rdoctask'
+#Rake::RDocTask.new do |rdoc|
+#  version = File.exist?('VERSION') ? File.read('VERSION') : ""
+#
+#  rdoc.rdoc_dir = 'rdoc'
+#  rdoc.title = "pedump #{version}"
+#  rdoc.rdoc_files.include('README*')
+#  rdoc.rdoc_files.include('lib/**/*.rb')
+#end
