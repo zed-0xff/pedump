@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2011-12-02"
+  s.date = "2011-12-07"
   s.description = "dump headers, sections, extract resources"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["pedump"]
@@ -21,12 +21,15 @@ Gem::Specification.new do |s|
     ".document",
     ".rspec",
     "Gemfile",
+    "Gemfile.lock",
     "LICENSE.txt",
     "README.rdoc",
     "Rakefile",
     "VERSION",
+    "bin/pedump",
     "lib/pedump.rb",
     "lib/pedump/cli.rb",
+    "pedump.gemspec",
     "spec/pedump_spec.rb",
     "spec/spec_helper.rb"
   ]
