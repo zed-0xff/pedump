@@ -581,7 +581,11 @@ class PEdump
     def restore_bitmap src_fname
       File.open(src_fname, "rb") do |f|
         parse f
-        bitmap_hdr + f.read(@palette_size + @imgdata_size)
+        if data.first == "PNG"
+          "\x89PNG" +f.read(self.size-4)
+        else
+          bitmap_hdr + f.read(@palette_size + @imgdata_size)
+        end
       end
     end
 
@@ -620,7 +624,12 @@ class PEdump
       case type
       when 'BITMAP','ICON'
         f.seek file_offset
-        data << BITMAPINFOHEADER.read(f)
+        if f.read(4) == "\x89PNG"
+          data << 'PNG'
+        else
+          f.seek file_offset
+          data << BITMAPINFOHEADER.read(f)
+        end
       when 'CURSOR'
         f.seek file_offset
         data << CURSOR_HOTSPOT.read(f)
