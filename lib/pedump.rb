@@ -27,12 +27,37 @@ class String
   end
 end
 
-class PEdump
-  attr_accessor :fname, :logger
-  attr_reader :mz, :dos_stub, :rich_hdr, :pe, :resources, :resource_directory
+class File
+  def checked_seek newpos
+    @file_range ||= (0..size)
+    @file_range.include?(newpos) && (seek(newpos) || true)
+  end
+end
 
-  alias :rich_header :rich_hdr
-  alias :rich :rich_hdr
+class PEdump
+  attr_accessor :fname, :logger, :force
+
+  def initialize fname, params = {}
+    @fname = fname
+    @force = params[:force]
+    @logger = @@logger = params[:logger] || PEdump::Logger.new(STDERR)
+  end
+
+  class Logger < ::Logger
+    def initialize *args
+      super
+      @formatter = proc do |severity,_,_,msg|
+        # quick and dirty way to remove duplicate messages
+        if @prevmsg == msg && severity != 'DEBUG' && severity != 'INFO'
+          ''
+        else
+          @prevmsg = msg
+          "#{msg}\n"
+        end
+      end
+      @level = Logger::WARN
+    end
+  end
 
   class << self
     def logger;    @@logger;   end
@@ -63,14 +88,19 @@ class PEdump
         end
         def x.read file, size = nil
           size ||= const_get 'SIZE'
-          new(*file.read(size).to_s.unpack(const_get('FORMAT')))
+          data = file.read(size).to_s
+          if data.size < size && PEdump.logger
+            PEdump.logger.error "[!] #{self.to_s} want #{size} bytes, got #{data.size}"
+          end
+          new(*data.unpack(const_get('FORMAT')))
         end
       end
     end
   end
 
+
   # http://www.delorie.com/djgpp/doc/exe/
-  MZ = create_struct( "a2v13",
+  MZ = create_struct( "a2v13Qv2V6",
     :signature,
     :bytes_in_last_block,
     :blocks_in_file,
@@ -84,7 +114,16 @@ class PEdump
     :ip,
     :cs,
     :reloc_table_offset,
-    :overlay_number
+    :overlay_number,
+    :reserved0,           #  8 reserved bytes
+    :oem_id,
+    :oem_info,
+    :reserved2,           # 20 reserved bytes
+    :reserved3,
+    :reserved4,
+    :reserved5,
+    :reserved6,
+    :lfanew
   )
 
   PE = Struct.new(
@@ -152,7 +191,7 @@ class PEdump
     def self.read file, size = SIZE
       usual_size = 224
       PEdump.logger.warn "[?] unusual size of IMAGE_OPTIONAL_HEADER = #{size} (must be #{usual_size})" if size != usual_size
-      new(*file.read([size,SIZE].min).unpack(FORMAT)).tap do |ioh|
+      new(*file.read([size,SIZE].min).to_s.unpack(FORMAT)).tap do |ioh|
         ioh.DataDirectory = []
 
         # check if "...this address is outside the memory mapped file and is zeroed by the OS"
@@ -237,8 +276,7 @@ class PEdump
   class RichHdr < String
     attr_accessor :offset, :key # xor key
 
-    Entry = Struct.new(:version,:id,:times)
-    class Entry
+    class Entry < Struct.new(:version,:id,:times)
       def inspect
         "<id=#{id}, version=#{version}, times=#{times}>"
       end
@@ -249,7 +287,10 @@ class PEdump
       start_idx = stub.index(key.xor('DanS'))
       end_idx   = stub.index('Rich')+8
       if stub[end_idx..-1].tr("\x00",'') != ''
-        raise "[!] non-zero dos stub after rich_hdr: #{stub[end_idx..-1].inspect}"
+        t = stub[end_idx..-1]
+        t = "#{t[0,0x100]}..." if t.size > 0x100
+        PEdump.logger.error "[!] non-zero dos stub after rich_hdr: #{t.inspect}"
+        return nil
       end
       RichHdr.new(stub[start_idx, end_idx-start_idx]).tap do |x|
         x.key = key
@@ -272,18 +313,6 @@ class PEdump
     attr_accessor :offset
   end
 
-  def initialize fname, params = {}
-    @fname = fname
-    @logger = params[:logger] ||
-      begin
-        Logger.new(STDERR).tap do |l|
-          l.formatter = proc{ |_,_,_,msg| "#{msg}\n" }
-          l.level = Logger::WARN
-        end
-      end
-    @@logger = @logger
-  end
-
   def logger= l
     @logger = @@logger = l
   end
@@ -292,57 +321,114 @@ class PEdump
     new(fname).dump
   end
 
-  def dump
-    File.open(@fname) do |f|
-      mz_hdr = f.read 0x40
-      @mz = MZ.new(*mz_hdr.unpack(MZ::FORMAT))
-      if @mz.signature != 'MZ' && @mz.signature != 'ZM'
-        logger.warn "[?] no MZ header (want: 'MZ' or 'ZM', got: #{@mz.signature.inspect}"
+  def mz f=nil
+    @mz ||= MZ.read(f).tap do |mz|
+      if mz.signature != 'MZ' && mz.signature != 'ZM'
+        logger.warn "[?] no MZ signature (want: 'MZ' or 'ZM', got: #{mz.signature.inspect}"
       end
-      @pe_offset = mz_hdr.unpack("@60V").first
-      logger.info "[.] PE offset = 0x%x" % @pe_offset
-
-      if @pe_offset > 0x1000
-        logger.error "[!] PE offset is too big!"
-      else
-        dos_stub_offset = @mz.header_paragraphs * 0x10
-        dos_stub_size   = @pe_offset - dos_stub_offset
-        if dos_stub_size > 0
-          f.seek dos_stub_offset
-          @dos_stub = DOSStub.new f.read(dos_stub_size)
-          @dos_stub.offset = dos_stub_offset
-          if @dos_stub['Rich']
-            @rich_hdr = RichHdr.from_dos_stub(@dos_stub)
-            @dos_stub[@dos_stub.index(@rich_hdr)..-1] = ''
-          end
-        else
-          logger.info "[.] uncommon DOS stub size = #{dos_stub_size}"
-        end
-      end
-
-      f.seek @pe_offset
-      @pe = PE.new(*f.read(4).unpack("a4"))
-      logger.warn  "[?] no PE header (want: 'PE\\x00\\x00', got: #{@pe.signature.inspect})" if @pe.signature != "PE\x00\x00"
-      logger.error "[!] 'NE' format is not supported!" if @pe.signature == "NE\x00\x00"
-      @pe.image_file_header = IMAGE_FILE_HEADER.read(f)
-      if @pe.ifh.SizeOfOptionalHeader > 0
-        if @pe.ifh.Machine == 0x8664
-          @pe.image_optional_header = IMAGE_OPTIONAL_HEADER64.read(f, @pe.ifh.SizeOfOptionalHeader)
-        else
-          @pe.image_optional_header = IMAGE_OPTIONAL_HEADER.read(f, @pe.ifh.SizeOfOptionalHeader)
-        end
-      end
-      @pe.section_table = @pe.ifh.NumberOfSections.times.map do
-        IMAGE_SECTION_HEADER.read(f)
-      end
-
-      @resource_directory = _read_resource_directory_tree(f)
     end
+  end
+
+  def dos_stub f=nil
+    @dos_stub ||=
+      begin
+        mz = mz(f)
+        dos_stub_offset = mz.header_paragraphs.to_i * 0x10
+        dos_stub_size   = mz.lfanew.to_i - dos_stub_offset
+        if dos_stub_offset <= 0
+          logger.warn "[?] invalid DOS stub offset #{dos_stub_offset}"
+          nil
+        elsif dos_stub_offset > f.size
+          logger.warn "[?] DOS stub offset beyond EOF: #{dos_stub_offset}"
+          nil
+        elsif dos_stub_size < 0
+          logger.warn "[?] invalid DOS stub size #{dos_stub_size}"
+          nil
+        elsif dos_stub_size == 0
+          # no DOS stub, it's ok
+          nil
+        else
+          if dos_stub_size > 0x1000
+            logger.warn "[?] DOS stub size too big (#{dos_stub_size}), limiting to 0x1000"
+            dos_stub_size = 0x1000
+          end
+          f.seek dos_stub_offset
+          DOSStub.new(f.read(dos_stub_size)).tap do |dos_stub|
+            dos_stub.offset = dos_stub_offset
+            if dos_stub['Rich']
+              if @rich_hdr = RichHdr.from_dos_stub(dos_stub)
+                dos_stub[dos_stub.index(@rich_hdr)..-1] = ''
+              end
+            end
+          end
+        end
+      end
+  end
+
+  def rich_hdr f=nil
+    dos_stub(f) && @rich_hdr
+  end
+  alias :rich_header :rich_hdr
+  alias :rich        :rich_hdr
+
+  def pe f=nil
+    @pe ||=
+      begin
+        pe_offset = mz(f).try(:lfanew)
+        if pe_offset.nil?
+          logger.fatal "[!] NULL PE offset (e_lfanew). cannot continue."
+          nil
+        elsif pe_offset > f.size
+          logger.fatal "[!] PE offset beyond EOF. cannot continue."
+          nil
+        else
+          f.seek pe_offset
+          pe_sig = f.read 4
+          logger.error "[!] 'NE' format is not supported!" if pe_sig == "NE\x00\x00"
+          logger.warn  "[?] no PE signature (want: 'PE\\x00\\x00', got: #{pe_sig.inspect})" if pe_sig != "PE\x00\x00"
+          PE.new(pe_sig).tap do |pe|
+            pe.image_file_header = IMAGE_FILE_HEADER.read(f)
+            if pe.ifh.SizeOfOptionalHeader > 0
+              if pe.ifh.Machine == 0x8664
+                pe.image_optional_header = IMAGE_OPTIONAL_HEADER64.read(f, pe.ifh.SizeOfOptionalHeader)
+              else
+                pe.image_optional_header = IMAGE_OPTIONAL_HEADER.read(f, pe.ifh.SizeOfOptionalHeader)
+              end
+            end
+
+            if (nToRead=pe.ifh.NumberOfSections) > 32
+              if @force
+                logger.warn "[!] too many sections (#{pe.ifh.NumberOfSections}). forced. reading all"
+              else
+                logger.warn "[!] too many sections (#{pe.ifh.NumberOfSections}). not forced, reading first 32"
+                nToRead = 32
+              end
+            end
+            pe.section_table = nToRead.times.map do
+              IMAGE_SECTION_HEADER.read(f)
+            end
+          end
+        end
+      end
+  end
+
+  def resource_directory f=nil
+    @resource_directory ||= _read_resource_directory_tree(f)
+  end
+
+  # OPTIONAL: assigns @mz, @rich_hdr, @pe, etc
+  def dump f=nil
+    f ? pe(f) : File.open(@fname){ |f| pe(f) }
     self
   end
 
-  def data_directory;  @pe.ioh && @pe.ioh.DataDirectory;  end
-  def sections;        @pe.section_table;      end
+  def data_directory f=nil
+    pe(f) && pe.ioh && pe.ioh.DataDirectory
+  end
+
+  def sections f=nil
+    pe(f) && pe.section_table
+  end
   alias :section_table :sections
 
   IMAGE_RESOURCE_DIRECTORY = create_struct 'V2v4',
@@ -353,31 +439,62 @@ class PEdump
     class << self
       attr_accessor :base
       alias :read_without_children :read
-      def read f
+      def read f, root=true
+        if root
+          @@loopchk1 = Hash.new(0)
+          @@loopchk2 = Hash.new(0)
+          @@loopchk3 = Hash.new(0)
+        elsif (@@loopchk1[f.tell] += 1) > 1
+          PEdump.logger.error "[!] #{self}: loop1 detected at file pos #{f.tell}" if @@loopchk1[f.tell] < 2
+          return nil
+        end
         read_without_children(f).tap do |r|
-          r.entries = (r.NumberOfNamedEntries + r.NumberOfIdEntries).times.map do
-            IMAGE_RESOURCE_DIRECTORY_ENTRY.read(f)
-          end.each do |entry|
+          nToRead = r.NumberOfNamedEntries.to_i + r.NumberOfIdEntries.to_i
+          r.entries = []
+          nToRead.times do |i|
+            if f.eof?
+              PEdump.logger.error "[!] #{self}: #{nToRead} entries in directory, but got EOF on #{i}-th."
+              break
+            end
+            if (@@loopchk2[f.tell] += 1) > 1
+              PEdump.logger.error "[!] #{self}: loop2 detected at file pos #{f.tell}" if @@loopchk2[f.tell] < 2
+              next
+            end
+            r.entries << IMAGE_RESOURCE_DIRECTORY_ENTRY.read(f)
+          end
+          #r.entries.uniq!
+          r.entries.each do |entry|
             entry.name =
-              if entry.Name & 0x8000_0000 > 0
+              if entry.Name.to_i & 0x8000_0000 > 0
                 # Name is an address of unicode string
                 f.seek base + entry.Name & 0x7fff_ffff
-                nChars = f.read(2).unpack("v").first
-                f.read(nChars*2).force_encoding('UTF-16LE').encode!('UTF-8')
+                nChars = f.read(2).to_s.unpack("v").first.to_i
+                begin
+                  f.read(nChars*2).force_encoding('UTF-16LE').encode!('UTF-8')
+                rescue
+                  PEdump.logger.error "[!] #{self} failed to read entry name: #{$!}"
+                  "???"
+                end
               else
                 # Name is a numeric id
                 "##{entry.Name}"
               end
-            f.seek base + entry.OffsetToData & 0x7fff_ffff
-            entry.data =
-              if entry.OffsetToData & 0x8000_0000 > 0
-                # child is a directory
-                IMAGE_RESOURCE_DIRECTORY.read(f)
-              else
-                # child is a resource
-                IMAGE_RESOURCE_DATA_ENTRY.read(f)
+            if entry.OffsetToData && f.checked_seek(base + entry.OffsetToData & 0x7fff_ffff)
+              if (@@loopchk3[f.tell] += 1) > 1
+                PEdump.logger.error "[!] #{self}: loop3 detected at file pos #{f.tell}" if @@loopchk3[f.tell] < 2
+                next
               end
+              entry.data =
+                if entry.OffsetToData & 0x8000_0000 > 0
+                  # child is a directory
+                  IMAGE_RESOURCE_DIRECTORY.read(f,false)
+                else
+                  # child is a resource
+                  IMAGE_RESOURCE_DATA_ENTRY.read(f)
+                end
+            end
           end
+          @@loopchk1 = @@loopchk2 = @@loopchk3 = nil if root # save some memory
         end
       end
     end
@@ -400,7 +517,7 @@ class PEdump
   end
 
   def _read_resource_directory_tree f
-    return nil unless @pe.ioh
+    return nil unless pe(f).try(:ioh)
     res_dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::RESOURCE]
     return [] if !res_dir || (res_dir.va == 0 && res_dir.size == 0)
     res_va = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::RESOURCE].va
@@ -451,14 +568,14 @@ class PEdump
       end
     end
 
-    def bitmap_and_mask src_fname
+    def bitmap_mask src_fname
       File.open(src_fname, "rb") do |f|
         parse f
         bmp_info_hdr = bitmap_hdr
         bitmap_size = BITMAPINFOHEADER::SIZE + @palette_size + @imgdata_size
         return nil if bitmap_size >= self.size
 
-        and_mask_size = self.size - bitmap_size
+        mask_size = self.size - bitmap_size
         f.seek file_offset + bitmap_size
 
         bmp_info_hdr = BITMAPINFOHEADER.new(*bmp_info_hdr[14..-1].unpack(BITMAPINFOHEADER::FORMAT))
@@ -470,10 +587,10 @@ class PEdump
         @palette_size = palette.size
 
         "BM" + [
-          BITMAPINFOHEADER::SIZE + 14 + @palette_size + and_mask_size,
+          BITMAPINFOHEADER::SIZE + 14 + @palette_size + mask_size,
           0,
           BITMAPINFOHEADER::SIZE + 14 + @palette_size
-        ].pack("V3") + bmp_info_hdr.pack + palette + f.read(and_mask_size)
+        ].pack("V3") + bmp_info_hdr.pack + palette + f.read(mask_size)
       end
     end
 
@@ -516,9 +633,9 @@ class PEdump
 
   STRING = Struct.new(:id, :lang, :value)
 
-  def strings
+  def strings f=nil
     r = []
-    Array(resources).find_all{ |x| x.type == 'STRING'}.each do |res|
+    Array(resources(f)).find_all{ |x| x.type == 'STRING'}.each do |res|
       res.data.each_with_index do |string,idx|
         r << STRING.new( ((res.id-1)<<4) + idx, res.lang, string ) unless string.empty?
       end
@@ -573,7 +690,12 @@ class PEdump
     %w'MESSAGETABLE GROUP_CURSOR' + [nil] + %w'GROUP_ICON' + [nil] +
     %w'VERSION DLGINCLUDE' + [nil] + %w'PLUGPLAY VXD ANICURSOR ANIICON HTML MANIFEST'
 
-  def resources dir = @resource_directory
+  def resources f=nil
+    @resources ||= _scan_resources(f)
+  end
+
+  def _scan_resources f=nil, dir=nil
+    dir ||= resource_directory(f)
     return nil unless dir
     dir.entries.map do |entry|
       case entry.data
@@ -586,14 +708,12 @@ class PEdump
               else
                 entry.name
               end
-            File.open(@fname,"rb") do |f|
-              resources(entry.data).each do |res|
-                res.type = entry_type
-                res.parse f
-              end
+            _scan_resources(f,entry.data).each do |res|
+              res.type = entry_type
+              res.parse f
             end
           else
-            resources(entry.data).each do |res|
+            _scan_resources(f,entry.data).each do |res|
               res.name = res.name == "##{res.lang}" ? entry.name : "#{entry.name} / #{res.name}"
               res.id ||= entry.Name if entry.Name.is_a?(Numeric) && entry.Name < 0x8000_0000
             end
@@ -610,9 +730,10 @@ class PEdump
             entry.data.Reserved
           )
         else
-          raise "[!] invalid resource entry: #{entry.data.inspect}"
+          logger.error "[!] invalid resource entry: #{entry.data.inspect}"
+          nil
       end
-    end.flatten
+    end.flatten.compact
   end
 end
 
@@ -633,10 +754,10 @@ if $0 == __FILE__
               fname = r.name.tr("/# ",'_')+".bmp"
               puts "[.] #{fname}"
               File.open(fname,"wb"){ |fo| fo << r.restore_bitmap(fi) }
-              if and_mask = r.bitmap_and_mask(fi)
-                fname.sub! '.bmp', '.and_mask.bmp'
+              if mask = r.bitmap_mask(fi)
+                fname.sub! '.bmp', '.mask.bmp'
                 puts "[.] #{fname}"
-                File.open(fname,"wb"){ |fo| fo << r.bitmap_and_mask(fi) }
+                File.open(fname,"wb"){ |fo| fo << r.bitmap_mask(fi) }
               end
             end
         end

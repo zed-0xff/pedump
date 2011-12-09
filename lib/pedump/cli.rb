@@ -29,6 +29,9 @@ class PEdump::CLI
         @options[:verbose] ||= 0
         @options[:verbose] += 1
       end
+      opts.on "-F", "--force", "Try to dump by all means (can cause exceptions & heavy wounds)" do |v|
+        @options[:force] = true
+      end
       opts.on "-f", "--format FORMAT", [:binary, :c, :dump, :hex, :inspect, :table],
         "Output format: bin,c,dump,hex,inspect,table (default)" do |v|
         @options[:format] = v
@@ -59,16 +62,18 @@ class PEdump::CLI
         puts "# -----------------------------------------------"
         puts "# #{fname}"
         puts "# -----------------------------------------------"
-        puts
       end
-      @pedump = PEdump.new fname
-      if @options[:verbose]
-        @pedump.logger.level = @options[:verbose] > 1 ? Logger::INFO : Logger::DEBUG
-      end
-      @pedump = @pedump.dump
 
-      @actions.each do |action|
-        dump_action action
+      File.open(fname,'rb') do |f|
+        @pedump = PEdump.new(fname, :force => @options[:force]).tap do |x|
+          if @options[:verbose]
+            x.logger.level = @options[:verbose] > 1 ? Logger::INFO : Logger::DEBUG
+          end
+        end
+
+        @actions.each do |action|
+          dump_action action,f
+        end
       end
     end
   rescue Errno::EPIPE
@@ -79,11 +84,11 @@ class PEdump::CLI
   def action_title action
     s = action.to_s.upcase.tr('_',' ')
     s += " Header" if [:mz, :pe, :rich].include?(action)
-    "=== %s ===\n\n" % s
+    "\n=== %s ===\n\n" % s
   end
 
-  def dump_action action
-    data = @pedump.send(action)
+  def dump_action action, f
+    data = @pedump.send(action, f)
     return if !data || (data.respond_to?(:empty?) && data.empty?)
 
     puts action_title(action)
@@ -108,8 +113,6 @@ class PEdump::CLI
         end
     end
     dump data, dump_opts
-  ensure
-    puts
   end
 
   def dump data, opts = {}
@@ -165,7 +168,7 @@ class PEdump::CLI
           else
             if COMMENTS[k]
               printf "%30s: %10d  %12s  %s\n", k, v, v<10 ? v : ("0x"+v.to_s(16)),
-                COMMENTS[k][v] || COMMENTS[k]['default'] || ''
+                COMMENTS[k][v] || (COMMENTS[k].is_a?(Hash) ? COMMENTS[k]['default'] : '') || ''
             else
               printf "%30s: %10d  %12s\n", k, v, v<10 ? v : ("0x"+v.to_s(16))
             end
@@ -257,8 +260,10 @@ class PEdump::CLI
       dir.entries.each do |child|
         dump_res_dir child, level+1
       end
-    else
+    elsif dir
       printf "DATA: %8x %8x %5s %8x\n", dir.OffsetToData, dir.Size, dir.CodePage, dir.Reserved
+    else
+      puts # null dir
     end
   end
 
@@ -309,18 +314,18 @@ class PEdump::CLI
     data.each do |s|
       name = s.Name[/[^a-z0-9_.]/i] ? s.Name.inspect : s.Name
       name = "#{name}\n          " if name.size > 8
-      printf "  %-8s %8x %8x %8x %8x %5x %8x %5x %8x  %8x  %s\n", name,
-        s.VirtualAddress,      s.VirtualSize,
-        s.SizeOfRawData,       s.PointerToRawData,
-        s.NumberOfRelocations, s.PointerToRelocations,
-        s.NumberOfLinenumbers, s.PointerToLinenumbers,
-        s.flags,               s.flags_desc
+      printf "  %-8s %8x %8x %8x %8x %5x %8x %5x %8x  %8x  %s\n", name.to_s,
+        s.VirtualAddress.to_i,      s.VirtualSize.to_i,
+        s.SizeOfRawData.to_i,       s.PointerToRawData.to_i,
+        s.NumberOfRelocations.to_i, s.PointerToRelocations.to_i,
+        s.NumberOfLinenumbers.to_i, s.PointerToLinenumbers.to_i,
+        s.flags.to_i,               s.flags_desc
     end
   end
 
   def dump_data_dir data
     data.each do |row|
-      printf "  %-12s  rva:0x%8x   size:0x %8x\n", row.type, row.va, row.size
+      printf "  %-12s  rva:0x%8x   size:0x %8x\n", row.type, row.va.to_i, row.size.to_i
     end
   end
 
