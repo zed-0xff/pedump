@@ -448,6 +448,77 @@ class PEdump
   end
   alias :section_table :sections
 
+  ##############################################################################
+  # imports
+  ##############################################################################
+
+  # http://sandsprite.com/CodeStuff/Understanding_imports.html
+  # http://stackoverflow.com/questions/5631317/import-table-it-vs-import-address-table-iat
+  IMAGE_IMPORT_DESCRIPTOR = create_struct 'V5',
+    :OriginalFirstThunk,
+    :TimeDateStamp,
+    :ForwarderChain,
+    :Name,
+    :FirstThunk,
+    # manual:
+    :module_name,
+    :original_first_thunk,
+    :first_thunk
+
+  ImportedFunction = Struct.new(:name, :hint, :ordinal)
+
+  def imports f=nil
+    return nil unless pe(f) && pe(f).ioh && f
+    dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::IMPORT]
+    return [] if !dir || (dir.va == 0 && dir.size == 0)
+    va = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::IMPORT].va
+    f.seek va2file(va)
+    r = []
+    until (t=IMAGE_IMPORT_DESCRIPTOR.read(f)).empty?
+      r << t
+    end
+    r.each do |x|
+      if x.Name.to_i != 0 && (va = va2file(x.Name))
+        f.seek va
+        # hope no module name will be longer than 0x100 chars :)
+        x.module_name = f.read(0x100).split("\x00").first
+      end
+      if x.OriginalFirstThunk.to_i != 0 && (va = va2file(x.OriginalFirstThunk))
+        f.seek va
+        x.original_first_thunk ||= []
+        while (t = f.read(4).unpack('V').first) != 0
+          x.original_first_thunk << t
+        end
+      end
+      if x.FirstThunk.to_i != 0 && (va = va2file(x.FirstThunk))
+        f.seek va
+        x.first_thunk ||= []
+        while (t = f.read(4).unpack('V').first) != 0
+          x.first_thunk << t
+        end
+      end
+      cache = {}
+      [:original_first_thunk, :first_thunk].each do |tbl|
+        x.send(tbl).map! do |t|
+          cache[t] ||=
+            if t & 0x8000_0000 > 0
+              ImportedFunction.new(nil,nil,t&0x7fff_ffff)
+            else
+              f.seek va2file(t)
+              ImportedFunction.new(*f.read(0x100).unpack('vZ*').reverse)
+            end
+        end
+      end
+      if x.original_first_thunk != x.first_thunk
+        logger.warn "[?] import table: #{x.module_name}: original_first_thunk != first_thunk"
+      end
+    end
+  end
+
+  ##############################################################################
+  # resources
+  ##############################################################################
+
   IMAGE_RESOURCE_DIRECTORY = create_struct 'V2v4',
     :Characteristics, :TimeDateStamp, # 2dw
     :MajorVersion, :MinorVersion, :NumberOfNamedEntries, :NumberOfIdEntries, # 4w

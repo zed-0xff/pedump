@@ -12,7 +12,11 @@ end
 class PEdump::CLI
   attr_accessor :data, :argv
 
-  KNOWN_ACTIONS = %w'mz dos_stub rich pe data_directory sections strings resources resource_directory'.map(&:to_sym)
+  KNOWN_ACTIONS = (
+    %w'mz dos_stub rich pe data_directory sections' +
+    %w'strings resources resource_directory imports'
+  ).map(&:to_sym)
+
   DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory'.map(&:to_sym)
 
   def initialize argv = ARGV
@@ -108,6 +112,8 @@ class PEdump::CLI
         return dump_resources(data)
       when :strings
         return dump_strings(data)
+      when :imports
+        return dump_imports(data)
       else
         if data.is_a?(Struct) && data.respond_to?(:pack)
           data = data.pack
@@ -197,6 +203,8 @@ class PEdump::CLI
         dump_resources data
       when PEdump::STRING
         dump_strings data
+      when PEdump::IMAGE_IMPORT_DESCRIPTOR
+        dump_imports data
       else
         puts "[?] don't know how to dump: #{data.inspect[0,50]}" unless data.empty?
       end
@@ -206,6 +214,22 @@ class PEdump::CLI
       dump_rich_hdr data
     else
       puts "[?] Don't know how to display #{data.inspect[0,50]}... as a table"
+    end
+  end
+
+  def dump_imports data
+    fmt = "%-15s %5s %5s %s\n"
+    printf fmt, "MODULE_NAME", "HINT", "ORD", "FUNCTION_NAME"
+    data.each do |iid|
+      # image import descriptor
+      (iid.original_first_thunk + iid.first_thunk).uniq.each do |f|
+        # imported function
+        printf fmt,
+          iid.module_name,
+          f.hint ? f.hint.to_s(16) : '',
+          f.ordinal ? f.ordinal.to_s(16) : '',
+          f.name
+      end
     end
   end
 
