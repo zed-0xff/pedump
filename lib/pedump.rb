@@ -324,7 +324,12 @@ class PEdump
   def mz f=nil
     @mz ||= MZ.read(f).tap do |mz|
       if mz.signature != 'MZ' && mz.signature != 'ZM'
-        logger.warn "[?] no MZ signature (want: 'MZ' or 'ZM', got: #{mz.signature.inspect}"
+        if @force
+          logger.warn  "[?] no MZ signature. want: 'MZ' or 'ZM', got: #{mz.signature.inspect}"
+        else
+          logger.error "[!] no MZ signature. want: 'MZ' or 'ZM', got: #{mz.signature.inspect}. (not forced)"
+          return nil
+        end
       end
     end
   end
@@ -332,7 +337,7 @@ class PEdump
   def dos_stub f=nil
     @dos_stub ||=
       begin
-        mz = mz(f)
+        return nil unless mz = mz(f)
         dos_stub_offset = mz.header_paragraphs.to_i * 0x10
         dos_stub_size   = mz.lfanew.to_i - dos_stub_offset
         if dos_stub_offset <= 0
@@ -385,7 +390,14 @@ class PEdump
           f.seek pe_offset
           pe_sig = f.read 4
           logger.error "[!] 'NE' format is not supported!" if pe_sig == "NE\x00\x00"
-          logger.warn  "[?] no PE signature (want: 'PE\\x00\\x00', got: #{pe_sig.inspect})" if pe_sig != "PE\x00\x00"
+          if pe_sig != "PE\x00\x00"
+            if @force
+              logger.warn  "[?] no PE signature (want: 'PE\\x00\\x00', got: #{pe_sig.inspect})"
+            else
+              logger.error "[?] no PE signature (want: 'PE\\x00\\x00', got: #{pe_sig.inspect}). (not forced)"
+              return nil
+            end
+          end
           PE.new(pe_sig).tap do |pe|
             pe.image_file_header = IMAGE_FILE_HEADER.read(f)
             if pe.ifh.SizeOfOptionalHeader > 0
@@ -397,7 +409,7 @@ class PEdump
             end
 
             if (nToRead=pe.ifh.NumberOfSections) > 32
-              if @force
+              if @force.is_a?(Numeric) && @force > 1
                 logger.warn "[!] too many sections (#{pe.ifh.NumberOfSections}). forced. reading all"
               else
                 logger.warn "[!] too many sections (#{pe.ifh.NumberOfSections}). not forced, reading first 32"

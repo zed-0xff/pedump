@@ -30,7 +30,8 @@ class PEdump::CLI
         @options[:verbose] += 1
       end
       opts.on "-F", "--force", "Try to dump by all means (can cause exceptions & heavy wounds)" do |v|
-        @options[:force] = true
+        @options[:force] ||= 0
+        @options[:force] += 1
       end
       opts.on "-f", "--format FORMAT", [:binary, :c, :dump, :hex, :inspect, :table],
         "Output format: bin,c,dump,hex,inspect,table (default)" do |v|
@@ -70,6 +71,8 @@ class PEdump::CLI
             x.logger.level = @options[:verbose] > 1 ? Logger::INFO : Logger::DEBUG
           end
         end
+
+        return if !@options[:force] && !@pedump.mz(f)
 
         @actions.each do |action|
           dump_action action,f
