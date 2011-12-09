@@ -322,7 +322,7 @@ class PEdump
   end
 
   def mz f=nil
-    @mz ||= MZ.read(f).tap do |mz|
+    @mz ||= f && MZ.read(f).tap do |mz|
       if mz.signature != 'MZ' && mz.signature != 'ZM'
         if @force
           logger.warn  "[?] no MZ signature. want: 'MZ' or 'ZM', got: #{mz.signature.inspect}"
@@ -379,7 +379,7 @@ class PEdump
   def pe f=nil
     @pe ||=
       begin
-        pe_offset = mz(f).try(:lfanew)
+        pe_offset = mz(f) && mz(f).lfanew
         if pe_offset.nil?
           logger.fatal "[!] NULL PE offset (e_lfanew). cannot continue."
           nil
@@ -430,8 +430,13 @@ class PEdump
 
   # OPTIONAL: assigns @mz, @rich_hdr, @pe, etc
   def dump f=nil
-    f ? pe(f) : File.open(@fname){ |f| pe(f) }
+    f ? _dump_handle(f) : File.open(@fname){ |f| _dump_handle(f) }
     self
+  end
+
+  def _dump_handle h
+    rich_hdr(h)  # includes mz(h)
+    resources(h) # includes pe(h)
   end
 
   def data_directory f=nil
@@ -529,7 +534,7 @@ class PEdump
   end
 
   def _read_resource_directory_tree f
-    return nil unless pe(f).try(:ioh)
+    return nil unless pe(f) && pe(f).ioh && f
     res_dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::RESOURCE]
     return [] if !res_dir || (res_dir.va == 0 && res_dir.size == 0)
     res_va = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::RESOURCE].va
