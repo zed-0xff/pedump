@@ -252,6 +252,8 @@ class PEdump::CLI
       data.NumberOfFunctions,
       data.NumberOfNames
 
+    return unless data.ordinals || data.entry_points || data.names
+
     puts
 
     printf "%5s %8s  %s\n", "ORD", "ENTRY_VA", "NAME"
@@ -264,7 +266,7 @@ class PEdump::CLI
   end
 
   def dump_imports data
-    fmt = "%-15s %5s %5s %s\n"
+    fmt = "%-15s %5s %5s  %s\n"
     printf fmt, "MODULE_NAME", "HINT", "ORD", "FUNCTION_NAME"
     data.each do |iid|
       # image import descriptor

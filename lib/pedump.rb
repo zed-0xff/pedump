@@ -658,6 +658,7 @@ class PEdump
         return va - s.VirtualAddress + s.PointerToRawData
       end
     end
+    logger.error "[?] can't find file_offset of VA 0x#{va.to_i.to_s(16)}"
     nil
   end
 
@@ -673,7 +674,7 @@ class PEdump
     end
     f.seek res_section.PointerToRawData
     IMAGE_RESOURCE_DIRECTORY.base = res_section.PointerToRawData
-    @resource_data_base = res_section.PointerToRawData - res_section.VirtualAddress
+    #@resource_data_base = res_section.PointerToRawData - res_section.VirtualAddress
     IMAGE_RESOURCE_DIRECTORY.read(f)
   end
 
@@ -777,8 +778,25 @@ class PEdump
       when 'STRING'
         f.seek file_offset
         16.times do
-          nChars = f.read(2).unpack('v').first
-          data << f.read(nChars*2).force_encoding('UTF-16LE').encode!('UTF-8')
+          break if f.tell >= file_offset+self.size
+          nChars = f.read(2).to_s.unpack('v').first.to_i
+          t =
+            if nChars*2 + 1 > self.size
+              # TODO: if it's not 1st string in table then truncated size must be less
+              PEdump.logger.error "[!] string size(#{nChars*2}) > stringtable size(#{self.size}). truncated to #{self.size-2}"
+              f.read(self.size-2)
+            else
+              f.read(nChars*2)
+            end
+          data <<
+            begin
+              t.force_encoding('UTF-16LE').encode!('UTF-8')
+            rescue
+              t.force_encoding('ASCII')
+              tt = t.size > 0x10 ? t[0,0x10].inspect+'...' : t.inspect
+              PEdump.logger.error "[!] cannot convert #{tt} to UTF-16"
+              [nChars,t].pack('va*')
+            end
         end
         # XXX: check if readed strings summary length is less than resource data length
       end
@@ -878,7 +896,8 @@ class PEdump
             entry.name,
             nil,          # id
             entry.Name,   # lang
-            entry.data.OffsetToData + @resource_data_base,
+            #entry.data.OffsetToData + @resource_data_base,
+            va2file(entry.data.OffsetToData),
             entry.data.Size,
             entry.data.CodePage,
             entry.data.Reserved
