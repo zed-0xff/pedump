@@ -511,8 +511,12 @@ class PEdump
             end
         end
       end
-      if x.original_first_thunk != x.first_thunk
-        logger.warn "[?] import table: #{x.module_name}: original_first_thunk != first_thunk"
+      if x.original_first_thunk && !x.first_thunk
+        logger.warn "[?] import table: empty FirstThunk of #{x.module_name}"
+      elsif !x.original_first_thunk && x.first_thunk
+        logger.warn "[?] import table: empty OriginalFirstThunk of #{x.module_name}"
+      elsif x.original_first_thunk != x.first_thunk
+        logger.warn "[?] import table: OriginalFirstThunk != FirstThunk of #{x.module_name}"
       end
     end
   end
@@ -650,7 +654,7 @@ class PEdump
 
   def va2file va
     sections.each do |s|
-      if (s.VirtualAddress..(s.VirtualAddress+s.VirtualSize)).include?(va)
+      if (s.VirtualAddress...(s.VirtualAddress+s.VirtualSize)).include?(va)
         return va - s.VirtualAddress + s.PointerToRawData
       end
     end

@@ -48,6 +48,9 @@ class PEdump::CLI
       opts.on "--all", "Dump all but #{(KNOWN_ACTIONS-DEFAULT_ALL_ACTIONS).join(',')} (default)" do
         @actions = DEFAULT_ALL_ACTIONS
       end
+      opts.on "--va2file VA", "Convert RVA to file offset" do |va|
+        @actions << [:va2file,va]
+      end
     end
 
     if (@argv = optparser.parse(@argv)).empty?
@@ -55,7 +58,7 @@ class PEdump::CLI
       return
     end
 
-    if (@actions-KNOWN_ACTIONS).any?
+    if (@actions-KNOWN_ACTIONS).any?{ |x| !x.is_a?(Array) }
       puts "[?] unknown actions: #{@actions-KNOWN_ACTIONS}"
       @actions.delete_if{ |x| !KNOWN_ACTIONS.include?(x) }
     end
@@ -95,6 +98,18 @@ class PEdump::CLI
   end
 
   def dump_action action, f
+    if action.is_a?(Array)
+      case action[0]
+      when :va2file
+        @pedump.sections(f)
+        va = action[1] =~ /(^0x)|(h$)/i ? action[1].to_i(16) : action[1].to_i
+        file_offset = @pedump.va2file(va)
+        printf "va2file(0x%x) = 0x%x  (%d)\n", va, file_offset, file_offset
+        return
+      else raise "unknown action #{action.inspect}"
+      end
+    end
+
     data = @pedump.send(action, f)
     return if !data || (data.respond_to?(:empty?) && data.empty?)
 
