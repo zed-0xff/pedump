@@ -3,8 +3,8 @@ require 'optparse'
 
 unless Object.instance_methods.include?(:try)
   class Object
-    def try(method)
-      send method if respond_to? method
+    def try(*x)
+      send(*x) if respond_to?(x.first)
     end
   end
 end
@@ -14,7 +14,7 @@ class PEdump::CLI
 
   KNOWN_ACTIONS = (
     %w'mz dos_stub rich pe data_directory sections' +
-    %w'strings resources resource_directory imports'
+    %w'strings resources resource_directory imports exports'
   ).map(&:to_sym)
 
   DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory'.map(&:to_sym)
@@ -114,6 +114,8 @@ class PEdump::CLI
         return dump_strings(data)
       when :imports
         return dump_imports(data)
+      when :exports
+        return dump_exports(data)
       else
         if data.is_a?(Struct) && data.respond_to?(:pack)
           data = data.pack
@@ -164,35 +166,42 @@ class PEdump::CLI
     :Subsystem => PEdump::IMAGE_SUBSYSTEMS
   }
 
+  def dump_generic_table data
+    data.each_pair do |k,v|
+      case v
+      when Numeric
+        case k
+        when /\AMajor.*Version\Z/
+          printf "%30s: %24s\n", k.to_s.sub('Major',''), "#{v}.#{data[k.to_s.sub('Major','Minor')]}"
+        when /\AMinor.*Version\Z/
+        when /TimeDateStamp/
+          printf "%30s: %24s\n", k, Time.at(v).strftime('"%Y-%m-%d %H:%M:%S"')
+        else
+          if COMMENTS[k]
+            printf "%30s: %10d  %12s  %s\n", k, v, v<10 ? v : ("0x"+v.to_s(16)),
+              COMMENTS[k][v] || (COMMENTS[k].is_a?(Hash) ? COMMENTS[k]['default'] : '') || ''
+          else
+            printf "%30s: %10d  %12s\n", k, v, v<10 ? v : ("0x"+v.to_s(16))
+          end
+        end
+      when Struct
+        printf "\n# %s:\n", v.class.to_s.split('::').last
+        dump_table v
+      when Time
+        printf "%30s: %24s\n", k, v.strftime('"%Y-%m-%d %H:%M:%S"')
+      when Array
+        next if %w'DataDirectory section_table'.include?(k)
+      else
+        printf "%30s: %24s\n", k, v.to_s.inspect
+      end
+    end
+  end
+
   def dump_table data
     if data.is_a?(Struct)
       return dump_res_dir(data) if data.is_a?(PEdump::IMAGE_RESOURCE_DIRECTORY)
-      data.each_pair do |k,v|
-        case v
-        when Numeric
-          case k
-          when /\AMajor.*Version\Z/
-            printf "%30s: %24s\n", k.to_s.sub('Major',''), "#{v}.#{data[k.to_s.sub('Major','Minor')]}"
-          when /\AMinor.*Version\Z/
-          else
-            if COMMENTS[k]
-              printf "%30s: %10d  %12s  %s\n", k, v, v<10 ? v : ("0x"+v.to_s(16)),
-                COMMENTS[k][v] || (COMMENTS[k].is_a?(Hash) ? COMMENTS[k]['default'] : '') || ''
-            else
-              printf "%30s: %10d  %12s\n", k, v, v<10 ? v : ("0x"+v.to_s(16))
-            end
-          end
-        when Struct
-          printf "\n# %s:\n", v.class.to_s.split('::').last
-          dump_table v
-        when Time
-          printf "%30s: %24s\n", k, v.strftime('"%Y-%m-%d %H:%M:%S"')
-        when Array
-          next if %w'DataDirectory section_table'.include?(k)
-        else
-          printf "%30s: %24s\n", k, v.to_s.inspect
-        end
-      end
+      return dump_exports(data) if data.is_a?(PEdump::IMAGE_EXPORT_DIRECTORY)
+      dump_generic_table data
     elsif data.is_a?(Enumerable) && data.map(&:class).uniq.size == 1
       case data.first
       when PEdump::IMAGE_DATA_DIRECTORY
@@ -217,12 +226,34 @@ class PEdump::CLI
     end
   end
 
+  def dump_exports data
+    printf "# module_name=%s  flags=0x%x  ts=%s  version=%d.%d\n",
+      data.name.inspect,
+      data.Characteristics,
+      Time.at(data.TimeDateStamp.to_i).strftime('"%Y-%m-%d %H:%M:%S"'),
+      data.MajorVersion, data.MinorVersion
+
+    printf "# n_funcs=%d  n_names=%d\n",
+      data.NumberOfFunctions,
+      data.NumberOfNames
+
+    puts
+
+    printf "%5s %8s  %s\n", "ORD", "ENTRY_VA", "NAME"
+    data.NumberOfFunctions.times do |i|
+      printf "%5s %8x  %s\n",
+        data.ordinals[i].try(:to_s,16),
+        data.entry_points[i],
+        data.names[i]
+    end
+  end
+
   def dump_imports data
     fmt = "%-15s %5s %5s %s\n"
     printf fmt, "MODULE_NAME", "HINT", "ORD", "FUNCTION_NAME"
     data.each do |iid|
       # image import descriptor
-      (iid.original_first_thunk + iid.first_thunk).uniq.each do |f|
+      (Array(iid.original_first_thunk) + Array(iid.first_thunk)).uniq.each do |f|
         # imported function
         printf fmt,
           iid.module_name,

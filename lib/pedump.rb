@@ -126,14 +126,18 @@ class PEdump
     :lfanew
   )
 
-  PE = Struct.new(
+  class PE < Struct.new(
     :signature,            # "PE\x00\x00"
     :image_file_header,
     :image_optional_header,
     :section_table
   )
-  class PE; alias :ifh :image_file_header; end
-  class PE; alias :ioh :image_optional_header; end
+    alias :ifh :image_file_header
+    alias :ioh :image_optional_header
+    def x64?
+      ifh && ifh.Machine == 0x8664
+    end
+  end
 
   # http://msdn.microsoft.com/en-us/library/ms809762.aspx
   IMAGE_FILE_HEADER = create_struct( 'v2V3v2',
@@ -401,7 +405,7 @@ class PEdump
           PE.new(pe_sig).tap do |pe|
             pe.image_file_header = IMAGE_FILE_HEADER.read(f)
             if pe.ifh.SizeOfOptionalHeader > 0
-              if pe.ifh.Machine == 0x8664
+              if pe.x64?
                 pe.image_optional_header = IMAGE_OPTIONAL_HEADER64.read(f, pe.ifh.SizeOfOptionalHeader)
               else
                 pe.image_optional_header = IMAGE_OPTIONAL_HEADER.read(f, pe.ifh.SizeOfOptionalHeader)
@@ -465,7 +469,7 @@ class PEdump
     :original_first_thunk,
     :first_thunk
 
-  ImportedFunction = Struct.new(:name, :hint, :ordinal)
+  ImportedFunction = Struct.new(:hint, :name, :ordinal)
 
   def imports f=nil
     return nil unless pe(f) && pe(f).ioh && f
@@ -480,37 +484,86 @@ class PEdump
     r.each do |x|
       if x.Name.to_i != 0 && (va = va2file(x.Name))
         f.seek va
-        # hope no module name will be longer than 0x100 chars :)
-        x.module_name = f.read(0x100).split("\x00").first
+        x.module_name = f.gets("\x00").chop
       end
-      if x.OriginalFirstThunk.to_i != 0 && (va = va2file(x.OriginalFirstThunk))
-        f.seek va
-        x.original_first_thunk ||= []
-        while (t = f.read(4).unpack('V').first) != 0
-          x.original_first_thunk << t
-        end
-      end
-      if x.FirstThunk.to_i != 0 && (va = va2file(x.FirstThunk))
-        f.seek va
-        x.first_thunk ||= []
-        while (t = f.read(4).unpack('V').first) != 0
-          x.first_thunk << t
-        end
-      end
-      cache = {}
       [:original_first_thunk, :first_thunk].each do |tbl|
-        x.send(tbl).map! do |t|
+        camel = tbl.capitalize.to_s.gsub(/_./){ |char| char[1..-1].upcase}
+        if x[camel].to_i != 0 && (va = va2file(x[camel]))
+          f.seek va
+          x[tbl] ||= []
+          if pe.x64?
+            x[tbl] << t while (t = f.read(8).unpack('Q').first) != 0
+          else
+            x[tbl] << t while (t = f.read(4).unpack('V').first) != 0
+          end
+        end
+        cache = {}
+        bits = pe.x64? ? 64 : 32
+        x[tbl] && x[tbl].map! do |t|
           cache[t] ||=
-            if t & 0x8000_0000 > 0
-              ImportedFunction.new(nil,nil,t&0x7fff_ffff)
+            if t & (2**(bits-1)) > 0                            # 0x8000_0000(_0000_0000)
+              ImportedFunction.new(nil,nil,t & (2**(bits-1)-1)) # 0x7fff_ffff(_ffff_ffff)
+            elsif va=va2file(t)
+              f.seek va
+              ImportedFunction.new(f.read(2).unpack('v').first, f.gets("\x00").chop)
             else
-              f.seek va2file(t)
-              ImportedFunction.new(*f.read(0x100).unpack('vZ*').reverse)
+              nil
             end
         end
       end
       if x.original_first_thunk != x.first_thunk
         logger.warn "[?] import table: #{x.module_name}: original_first_thunk != first_thunk"
+      end
+    end
+  end
+
+  ##############################################################################
+  # exports
+  ##############################################################################
+
+  #http://msdn.microsoft.com/en-us/library/ms809762.aspx
+  IMAGE_EXPORT_DIRECTORY = create_struct 'V2v2V7',
+    :Characteristics,
+    :TimeDateStamp,
+    :MajorVersion,          # These fields appear to be unused and are set to 0.
+    :MinorVersion,          # These fields appear to be unused and are set to 0.
+    :Name,
+    :Base,                  # The starting ordinal number for exported functions
+    :NumberOfFunctions,
+    :NumberOfNames,
+    :AddressOfFunctions,
+    :AddressOfNames,
+    :AddressOfNameOrdinals,
+    # manual:
+    :name, :entry_points, :names, :ordinals
+
+  def exports f=nil
+    return nil unless pe(f) && pe(f).ioh && f
+    dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::EXPORT]
+    return [] if !dir || (dir.va == 0 && dir.size == 0)
+    va = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::EXPORT].va
+    f.seek va2file(va)
+    IMAGE_EXPORT_DIRECTORY.read(f).tap do |x|
+      if x.Name.to_i != 0 && (va = va2file(x.Name))
+        f.seek va
+        x.name = f.gets("\x00").chop
+      end
+      if x.NumberOfFunctions.to_i != 0
+        if x.AddressOfFunctions.to_i !=0 && (va = va2file(x.AddressOfFunctions))
+          f.seek va
+          x.entry_points = f.read(x.NumberOfFunctions*4).unpack('V*')
+        end
+        if x.AddressOfNameOrdinals.to_i !=0 && (va = va2file(x.AddressOfNameOrdinals))
+          f.seek va
+          x.ordinals = f.read(x.NumberOfFunctions*2).unpack('v*').map{ |o| o+x.Base }
+        end
+      end
+      if x.NumberOfNames.to_i != 0 && x.AddressOfNames.to_i !=0 && (va = va2file(x.AddressOfNames))
+        f.seek va
+        x.names = f.read(x.NumberOfNames*4).unpack('V*').map do |va|
+          f.seek va2file(va)
+          f.gets("\x00").chop
+        end
       end
     end
   end
