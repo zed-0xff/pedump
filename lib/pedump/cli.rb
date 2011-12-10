@@ -79,7 +79,7 @@ class PEdump::CLI
           end
         end
 
-        return if !@options[:force] && !@pedump.mz(f)
+        next if !@options[:force] && !@pedump.mz(f)
 
         @actions.each do |action|
           dump_action action,f
