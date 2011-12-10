@@ -242,26 +242,42 @@ class PEdump::CLI
   end
 
   def dump_exports data
-    printf "# module_name=%s  flags=0x%x  ts=%s  version=%d.%d\n",
+    printf "# module %s\n# flags=0x%x  ts=%s  version=%d.%d  ord_base=%d\n",
       data.name.inspect,
       data.Characteristics,
       Time.at(data.TimeDateStamp.to_i).strftime('"%Y-%m-%d %H:%M:%S"'),
-      data.MajorVersion, data.MinorVersion
+      data.MajorVersion, data.MinorVersion,
+      data.Base
 
-    printf "# n_funcs=%d  n_names=%d\n",
+    if @options[:verbose]
+      printf "# Names        rva=0x%08x  file_offset=%8d\n",
+        data.AddressOfNames, @pedump.va2file(data.AddressOfNames)
+      printf "# EntryPoints  rva=0x%08x  file_offset=%8d\n",
+        data.AddressOfFunctions, @pedump.va2file(data.AddressOfFunctions)
+      printf "# Ordinals     rva=0x%08x  file_offset=%8d\n",
+        data.AddressOfNameOrdinals, @pedump.va2file(data.AddressOfNameOrdinals)
+    end
+
+    printf "# nFuncs=%d  nNames=%d\n",
       data.NumberOfFunctions,
       data.NumberOfNames
 
-    return unless data.ordinals || data.entry_points || data.names
+    return unless data.name_ordinals.any? || data.entry_points.any? || data.names.any?
 
     puts
 
+    ord2name = {}
+    data.NumberOfNames.times do |i|
+      ord2name[data.name_ordinals[i]] ||= []
+      ord2name[data.name_ordinals[i]] << data.names[i]
+    end
+
     printf "%5s %8s  %s\n", "ORD", "ENTRY_VA", "NAME"
     data.NumberOfFunctions.times do |i|
-      printf "%5s %8x  %s\n",
-        data.ordinals[i].try(:to_s,16),
-        data.entry_points[i],
-        data.names[i]
+      ep = data.entry_points[i]
+      names = ord2name[i+data.Base].try(:join,', ')
+      next if ep.to_i == 0 && names.nil?
+      printf "%5d %8x  %s\n", i + data.Base, ep, names
     end
   end
 

@@ -539,7 +539,7 @@ class PEdump
     :AddressOfNames,
     :AddressOfNameOrdinals,
     # manual:
-    :name, :entry_points, :names, :ordinals
+    :name, :entry_points, :names, :name_ordinals
 
   def exports f=nil
     return nil unless pe(f) && pe(f).ioh && f
@@ -548,6 +548,9 @@ class PEdump
     va = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::EXPORT].va
     f.seek va2file(va)
     IMAGE_EXPORT_DIRECTORY.read(f).tap do |x|
+      x.entry_points = []
+      x.name_ordinals = []
+      x.names = []
       if x.Name.to_i != 0 && (va = va2file(x.Name))
         f.seek va
         x.name = f.gets("\x00").chop
@@ -559,7 +562,7 @@ class PEdump
         end
         if x.AddressOfNameOrdinals.to_i !=0 && (va = va2file(x.AddressOfNameOrdinals))
           f.seek va
-          x.ordinals = f.read(x.NumberOfFunctions*2).unpack('v*').map{ |o| o+x.Base }
+          x.name_ordinals = f.read(x.NumberOfNames*2).unpack('v*').map{ |o| o+x.Base }
         end
       end
       if x.NumberOfNames.to_i != 0 && x.AddressOfNames.to_i !=0 && (va = va2file(x.AddressOfNames))
