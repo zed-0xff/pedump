@@ -446,6 +446,7 @@ class PEdump
     rich_hdr(h)  # includes mz(h)
     resources(h) # includes pe(h)
     imports h
+    exports h
   end
 
   def data_directory f=nil
@@ -550,6 +551,7 @@ class PEdump
     :name, :entry_points, :names, :name_ordinals
 
   def exports f=nil
+    return @exports if @exports
     return nil unless pe(f) && pe(f).ioh && f
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::EXPORT]
     return [] if !dir || (dir.va == 0 && dir.size == 0)
@@ -557,7 +559,7 @@ class PEdump
     file_offset = va2file(va)
     return nil unless file_offset
     f.seek file_offset
-    IMAGE_EXPORT_DIRECTORY.read(f).tap do |x|
+    @exports = IMAGE_EXPORT_DIRECTORY.read(f).tap do |x|
       x.entry_points = []
       x.name_ordinals = []
       x.names = []
