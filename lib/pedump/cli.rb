@@ -287,6 +287,7 @@ class PEdump::CLI
     data.each do |iid|
       # image import descriptor
       (Array(iid.original_first_thunk) + Array(iid.first_thunk)).uniq.each do |f|
+        next unless f
         # imported function
         printf fmt,
           iid.module_name,
@@ -391,7 +392,7 @@ class PEdump::CLI
       fmt.each_with_index do |f,i|
         v = res.send(keys[i])
         if f['x']
-          printf f.tr('x','s'), v < 10 ? v.to_s : "0x#{v.to_s(16)}"
+          printf f.tr('x','s'), v.to_i < 10 ? v.to_s : "0x#{v.to_s(16)}"
         else
           printf f, v
         end
@@ -421,10 +422,18 @@ class PEdump::CLI
   end
 
   def dump_rich_hdr data
-    puts "    LIB_ID        VERSION        TIMES_USED   "
-    data.decode.each do |row|
-      printf " %5d  %2x    %7d  %4x   %7d %3x\n",
-        row.id, row.id, row.version, row.version, row.times, row.times
+    if decoded = data.decode
+      puts "    LIB_ID        VERSION        TIMES_USED   "
+      decoded.each do |row|
+        printf " %5d  %2x    %7d  %4x   %7d %3x\n",
+          row.id, row.id, row.version, row.version, row.times, row.times
+      end
+    else
+      puts "# raw:"
+      puts hexdump(data)
+      puts
+      puts "# dexored:"
+      puts hexdump(data.dexor)
     end
   end
 
