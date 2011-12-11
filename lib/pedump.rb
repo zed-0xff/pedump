@@ -695,7 +695,7 @@ class PEdump
     IMAGE_RESOURCE_DIRECTORY.read(f)
   end
 
-  class Resource < Struct.new(:type, :name, :id, :lang, :file_offset, :size, :cp, :reserved, :data)
+  class Resource < Struct.new(:type, :name, :id, :lang, :file_offset, :size, :cp, :reserved, :data, :valid)
     def bitmap_hdr
       bmp_info_hdr = data.find{ |x| x.is_a?(BITMAPINFOHEADER) }
       raise "no BITMAPINFOHEADER for #{self.type} #{self.name}" unless bmp_info_hdr
@@ -829,6 +829,24 @@ class PEdump
         end
         # XXX: check if readed strings summary length is less than resource data length
       end
+
+      data.delete_if do |x|
+        valid = !x.respond_to?(:valid?) || x.valid?
+        PEdump.logger.warn "[?] ignoring invalid #{x.class}" unless valid
+        !valid
+      end
+    ensure
+      validate
+    end
+
+    def validate
+      self.valid =
+        case type
+        when 'BITMAP','ICON','CURSOR'
+          data.any?{ |x| x.is_a?(BITMAPINFOHEADER) && x.valid? }
+        else
+          true
+        end
     end
   end
 
@@ -846,7 +864,7 @@ class PEdump
 
   # see also http://www.informit.com/articles/article.aspx?p=1186882 about icons format
 
-  BITMAPINFOHEADER = create_struct 'V3v2V6',
+  class BITMAPINFOHEADER < create_struct 'V3v2V6',
     :biSize,          # BITMAPINFOHEADER::SIZE
     :biWidth,
     :biHeight,
@@ -858,6 +876,11 @@ class PEdump
     :biYPelsPerMeter,
     :biClrUsed,
     :biClrImportant
+
+    def valid?
+      self.biSize == 40
+    end
+  end
 
   # http://www.devsource.com/c/a/Architecture/Resources-From-PE-I/2/
   CUR_ICO_HEADER = create_struct('v3',
