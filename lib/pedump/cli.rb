@@ -19,6 +19,8 @@ class PEdump::CLI
 
   DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory web'.map(&:to_sym)
 
+  URL_BASE = "http://pedump.me"
+
   def initialize argv = ARGV
     @argv = argv
   end
@@ -41,7 +43,6 @@ class PEdump::CLI
         "Output format: bin,c,dump,hex,inspect,table (default)" do |v|
         @options[:format] = v
       end
-      # TODO: imports, exports
       KNOWN_ACTIONS.each do |t|
         opts.on "--#{t.to_s.tr('_','-')}", eval("lambda{ |_| @actions << :#{t.to_s.tr('-','_')} }")
       end
@@ -51,7 +52,7 @@ class PEdump::CLI
       opts.on "--va2file VA", "Convert RVA to file offset" do |va|
         @actions << [:va2file,va]
       end
-      opts.on "--web" do
+      opts.on "-W", "--web", "Upload file to a #{URL_BASE} for a nice HTML tables with image previews, candies & stuff" do
         @actions << :web
       end
     end
@@ -98,6 +99,25 @@ class PEdump::CLI
     # prevents a 'Broken pipe - <STDOUT> (Errno::EPIPE)' message
   end
 
+  class ProgressProxy
+    def initialize file
+      @file = file
+      @pbar = ProgressBar.new("[.] uploading", file.size, STDOUT)
+      @pbar.try(:file_transfer_mode)
+      @pbar.bar_mark = '='
+    end
+    def read *args
+      @pbar.inc args.first
+      @file.read *args
+    end
+    def method_missing *args
+      @file.send *args
+    end
+    def respond_to? *args
+      @file.respond_to?(*args) || super(*args)
+    end
+  end
+
   def upload f
     if @pedump.mz(f).signature != 'MZ'
       @pedump.logger.error "[!] refusing to upload a non-MZ file"
@@ -107,11 +127,14 @@ class PEdump::CLI
     require 'digest/md5'
     require 'open-uri'
     require 'rest-client'
+    require 'progressbar'
+
+    stdout_sync = STDOUT.sync
+    STDOUT.sync = true
 
     md5 = Digest::MD5.file(f.path).hexdigest
     @pedump.logger.info "[.] md5: #{md5}"
-    url_base = "http://zmac"
-    url = "#{url_base}/#{md5}/"
+    url = "#{URL_BASE}/#{md5}/"
 
     @pedump.logger.info "[.] checking if file already uploaded.."
     begin
@@ -125,20 +148,20 @@ class PEdump::CLI
       raise unless $!.to_s == "404 Not Found"
     end
 
-    @pedump.logger.info "[.] uploading..."
-
     f.rewind
-    if (r=RestClient.post(url_base, :file => f)) != "OK"
+    if (r=RestClient.post(URL_BASE, :file => ProgressProxy.new(f))) != "OK"
       raise "invalid server response: #{r}"
     end
+    puts
+    puts "[.] analyzing..."
 
-    @pedump.logger.info "[.] analyzing..."
-
-    if (r=open(File.join(url_base,md5,'analyze')).read) != "OK"
+    if (r=open(File.join(URL_BASE,md5,'analyze')).read) != "OK"
       raise "invalid server response: #{r}"
     end
 
     puts "[.] uploaded: #{url}"
+  ensure
+    STDOUT.sync = stdout_sync
   end
 
   def action_title action
