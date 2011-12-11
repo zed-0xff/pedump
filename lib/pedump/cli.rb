@@ -17,7 +17,7 @@ class PEdump::CLI
     %w'strings resources resource_directory imports exports web'
   ).map(&:to_sym)
 
-  DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory'.map(&:to_sym)
+  DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory web'.map(&:to_sym)
 
   def initialize argv = ARGV
     @argv = argv
@@ -115,9 +115,12 @@ class PEdump::CLI
 
     @pedump.logger.info "[.] checking if file already uploaded.."
     begin
-      open(url).read
-      @pedump.logger.warn "[.] file already uploaded: #{url}"
-      return
+      if (r=open(url).read) == "OK"
+        @pedump.logger.warn "[.] file already uploaded: #{url}"
+        return
+      else
+        raise "invalid server response: #{r}"
+      end
     rescue OpenURI::HTTPError
       raise unless $!.to_s == "404 Not Found"
     end
