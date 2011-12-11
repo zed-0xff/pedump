@@ -766,14 +766,26 @@ class PEdump
       when 'GROUP_CURSOR'
         f.seek file_offset
         data << CUR_ICO_HEADER.read(f)
+        nRead = CUR_ICO_HEADER::SIZE
         data.last.wNumImages.times do
-          data << CURDIRENTRY.read(f)
+          if nRead >= self.size
+            PEdump.logger.error "[!] refusing to read CURDIRENTRY beyond resource size"
+            break
+          end
+          data  << CURDIRENTRY.read(f)
+          nRead += CURDIRENTRY::SIZE
         end
       when 'GROUP_ICON'
         f.seek file_offset
         data << CUR_ICO_HEADER.read(f)
+        nRead = CUR_ICO_HEADER::SIZE
         data.last.wNumImages.times do
-          data << ICODIRENTRY.read(f)
+          if nRead >= self.size
+            PEdump.logger.error "[!] refusing to read ICODIRENTRY beyond resource size"
+            break
+          end
+          data  << ICODIRENTRY.read(f)
+          nRead += ICODIRENTRY::SIZE
         end
       when 'STRING'
         f.seek file_offset
