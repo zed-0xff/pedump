@@ -49,3 +49,29 @@ task :default => :spec
 #  rdoc.rdoc_files.include('README*')
 #  rdoc.rdoc_files.include('lib/**/*.rb')
 #end
+
+namespace :test do
+  desc "test on all files in given path"
+  task :all_files do
+    require './lib/pedump'
+    require './lib/pedump/cli'
+    path = ENV['path'] || raise("run me with path=...")
+    `find #{path} -type f`.split("\n").each do |fname|
+      puts "\n### #{fname}\n"
+      PEdump::CLI.new(fname).run
+    end
+  end
+
+  namespace :all_files do
+    desc "output file name to stderr, use with stdout redirection"
+    task :stderr do
+      require './lib/pedump'
+      require './lib/pedump/cli'
+      path = ENV['path'] || raise("run me with path=...")
+      `find #{path} -type f`.split("\n").each do |fname|
+        STDERR.puts "\n### #{fname}\n"
+        PEdump::CLI.new(fname).run
+      end
+    end
+  end
+end
