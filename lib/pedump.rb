@@ -445,6 +445,7 @@ class PEdump
   def _dump_handle h
     rich_hdr(h)  # includes mz(h)
     resources(h) # includes pe(h)
+    imports h
   end
 
   def data_directory f=nil
@@ -476,6 +477,7 @@ class PEdump
   ImportedFunction = Struct.new(:hint, :name, :ordinal)
 
   def imports f=nil
+    return @imports if @imports
     return nil unless pe(f) && pe(f).ioh && f
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::IMPORT]
     return [] if !dir || (dir.va == 0 && dir.size == 0)
@@ -487,7 +489,7 @@ class PEdump
     until (t=IMAGE_IMPORT_DESCRIPTOR.read(f)).empty?
       r << t
     end
-    r.each do |x|
+    @imports = r.each do |x|
       if x.Name.to_i != 0 && (va = va2file(x.Name))
         f.seek va
         x.module_name = f.gets("\x00").chop
