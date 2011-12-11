@@ -303,13 +303,17 @@ class PEdump
     end
 
     def dexor
-      self[4..-9].sub(/\A(#{Regexp::escape(key)})+/,'').xor(key)
+      self[4..-9].sub(/\A(#{Regexp::escape(key)}){3}/,'').xor(key)
     end
 
     def decode
       x = dexor
-      raise "dexored size must be a multiple of 8" unless x.size%8 == 0
-      x.unpack('vvV'*(x.size/8)).each_slice(3).map{ |slice| Entry.new(*slice)}
+      if x.size%8 == 0
+        x.unpack('vvV'*(x.size/8)).each_slice(3).map{ |slice| Entry.new(*slice)}
+      else
+        PEdump.logger.error "[?] #{self.class}: dexored size(#{x.size}) must be a multiple of 8"
+        nil
+      end
     end
   end
 
@@ -476,7 +480,9 @@ class PEdump
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::IMPORT]
     return [] if !dir || (dir.va == 0 && dir.size == 0)
     va = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::IMPORT].va
-    f.seek va2file(va)
+    file_offset = va2file(va)
+    return nil unless file_offset
+    f.seek file_offset
     r = []
     until (t=IMAGE_IMPORT_DESCRIPTOR.read(f)).empty?
       r << t
@@ -546,7 +552,9 @@ class PEdump
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::EXPORT]
     return [] if !dir || (dir.va == 0 && dir.size == 0)
     va = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::EXPORT].va
-    f.seek va2file(va)
+    file_offset = va2file(va)
+    return nil unless file_offset
+    f.seek file_offset
     IMAGE_EXPORT_DIRECTORY.read(f).tap do |x|
       x.entry_points = []
       x.name_ordinals = []
@@ -658,6 +666,12 @@ class PEdump
   def va2file va
     sections.each do |s|
       if (s.VirtualAddress...(s.VirtualAddress+s.VirtualSize)).include?(va)
+        return va - s.VirtualAddress + s.PointerToRawData
+      end
+    end
+    # not found with regular search. assume any of VirtualSize was 0, and try with RawSize
+    sections.each do |s|
+      if (s.VirtualAddress...(s.VirtualAddress+s.SizeOfRawData)).include?(va)
         return va - s.VirtualAddress + s.PointerToRawData
       end
     end
