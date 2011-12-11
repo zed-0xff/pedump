@@ -14,7 +14,7 @@ class PEdump::CLI
 
   KNOWN_ACTIONS = (
     %w'mz dos_stub rich pe data_directory sections' +
-    %w'strings resources resource_directory imports exports'
+    %w'strings resources resource_directory imports exports web'
   ).map(&:to_sym)
 
   DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory'.map(&:to_sym)
@@ -51,6 +51,9 @@ class PEdump::CLI
       opts.on "--va2file VA", "Convert RVA to file offset" do |va|
         @actions << [:va2file,va]
       end
+      opts.on "--web" do
+        @actions << :web
+      end
     end
 
     if (@argv = optparser.parse(@argv)).empty?
@@ -82,13 +85,57 @@ class PEdump::CLI
         next if !@options[:force] && !@pedump.mz(f)
 
         @actions.each do |action|
-          dump_action action,f
+          if action == :web
+            upload f
+          else
+            dump_action action,f
+          end
         end
       end
     end
   rescue Errno::EPIPE
     # output interrupt, f.ex. when piping output to a 'head' command
     # prevents a 'Broken pipe - <STDOUT> (Errno::EPIPE)' message
+  end
+
+  def upload f
+    if @pedump.mz(f).signature != 'MZ'
+      @pedump.logger.error "[!] refusing to upload a non-MZ file"
+      return
+    end
+
+    require 'digest/md5'
+    require 'open-uri'
+    require 'rest-client'
+
+    md5 = Digest::MD5.file(f.path).hexdigest
+    @pedump.logger.info "[.] md5: #{md5}"
+    url_base = "http://zmac"
+    url = "#{url_base}/#{md5}/"
+
+    @pedump.logger.info "[.] checking if file already uploaded.."
+    begin
+      open(url).read
+      @pedump.logger.warn "[.] file already uploaded: #{url}"
+      return
+    rescue OpenURI::HTTPError
+      raise unless $!.to_s == "404 Not Found"
+    end
+
+    @pedump.logger.info "[.] uploading..."
+
+    f.rewind
+    if (r=RestClient.post(url_base, :file => f)) != "OK"
+      raise "invalid server response: #{r}"
+    end
+
+    @pedump.logger.info "[.] analyzing..."
+
+    if (r=open(File.join(url_base,md5,'analyze')).read) != "OK"
+      raise "invalid server response: #{r}"
+    end
+
+    puts "[.] uploaded: #{url}"
   end
 
   def action_title action
