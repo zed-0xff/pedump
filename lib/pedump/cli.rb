@@ -325,18 +325,17 @@ class PEdump::CLI
   def dump_exports data
     printf "# module %s\n# flags=0x%x  ts=%s  version=%d.%d  ord_base=%d\n",
       data.name.inspect,
-      data.Characteristics,
+      data.Characteristics.to_i,
       Time.at(data.TimeDateStamp.to_i).strftime('"%Y-%m-%d %H:%M:%S"'),
       data.MajorVersion, data.MinorVersion,
       data.Base
 
     if @options[:verbose]
-      printf "# Names        rva=0x%08x  file_offset=%8d\n",
-        data.AddressOfNames, @pedump.va2file(data.AddressOfNames)
-      printf "# EntryPoints  rva=0x%08x  file_offset=%8d\n",
-        data.AddressOfFunctions, @pedump.va2file(data.AddressOfFunctions)
-      printf "# Ordinals     rva=0x%08x  file_offset=%8d\n",
-        data.AddressOfNameOrdinals, @pedump.va2file(data.AddressOfNameOrdinals)
+      [%w'Names', %w'EntryPoints Functions', %w'Ordinals NameOrdinals'].each do |x|
+        va  = data["AddressOf"+x.last]
+        ofs = @pedump.va2file(va) || '?'
+        printf "# %-12s rva=0x%08x  file_offset=%8s\n", x.first, va, ofs
+      end
     end
 
     printf "# nFuncs=%d  nNames=%d\n",
