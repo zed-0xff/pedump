@@ -351,7 +351,7 @@ class PEdump
         if dos_stub_offset <= 0
           logger.warn "[?] invalid DOS stub offset #{dos_stub_offset}"
           nil
-        elsif dos_stub_offset > f.size
+        elsif f && dos_stub_offset > f.size
           logger.warn "[?] DOS stub offset beyond EOF: #{dos_stub_offset}"
           nil
         elsif dos_stub_size < 0
@@ -359,6 +359,9 @@ class PEdump
           nil
         elsif dos_stub_size == 0
           # no DOS stub, it's ok
+          nil
+        elsif !f
+          # no open file, it's ok
           nil
         else
           if dos_stub_size > 0x1000
