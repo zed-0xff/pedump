@@ -100,6 +100,8 @@ class PEdump::CLI
   end
 
   class ProgressProxy
+    attr_reader :pbar
+
     def initialize file
       @file = file
       @pbar = ProgressBar.new("[.] uploading", file.size, STDOUT)
@@ -126,7 +128,7 @@ class PEdump::CLI
 
     require 'digest/md5'
     require 'open-uri'
-    require 'rest-client'
+    require 'net/http/post/multipart'
     require 'progressbar'
 
     stdout_sync = STDOUT.sync
@@ -134,12 +136,12 @@ class PEdump::CLI
 
     md5 = Digest::MD5.file(f.path).hexdigest
     @pedump.logger.info "[.] md5: #{md5}"
-    url = "#{URL_BASE}/#{md5}/"
+    file_url = "#{URL_BASE}/#{md5}/"
 
     @pedump.logger.info "[.] checking if file already uploaded.."
     begin
-      if (r=open(url).read) == "OK"
-        @pedump.logger.warn "[.] file already uploaded: #{url}"
+      if (r=open(file_url).read) == "OK"
+        @pedump.logger.warn "[.] file already uploaded: #{file_url}"
         return
       else
         raise "invalid server response: #{r}"
@@ -149,9 +151,15 @@ class PEdump::CLI
     end
 
     f.rewind
-    if (r=RestClient.post(URL_BASE, :file => ProgressProxy.new(f))) != "OK"
-      raise "invalid server response: #{r}"
-    end
+
+    # upload with progressbar
+    post_url = URI.parse(URL_BASE+'/')
+    uio = UploadIO.new(f, "application/octet-stream", File.basename(f.path))
+    ppx = ProgressProxy.new(uio)
+    req = Net::HTTP::Post::Multipart.new post_url.path, "file" => ppx
+    res = Net::HTTP.start(post_url.host, post_url.port){ |http| http.request(req) }
+    ppx.pbar.finish
+
     puts
     puts "[.] analyzing..."
 
@@ -159,7 +167,7 @@ class PEdump::CLI
       raise "invalid server response: #{r}"
     end
 
-    puts "[.] uploaded: #{url}"
+    puts "[.] uploaded: #{file_url}"
   ensure
     STDOUT.sync = stdout_sync
   end
