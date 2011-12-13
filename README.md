@@ -83,6 +83,17 @@ Usage
                          reserved6:          0             0
                             lfanew:        232          0xe8
 
+### DOS stub
+
+    # pedump --dos-stub calc.exe
+
+    === DOS STUB ===
+    
+    00000000:  0e 1f ba 0e 00 b4 09 cd  21 b8 01 4c cd 21 54 68  |........!..L.!Th|
+    00000010:  69 73 20 70 72 6f 67 72  61 6d 20 63 61 6e 6e 6f  |is program canno|
+    00000020:  74 20 62 65 20 72 75 6e  20 69 6e 20 44 4f 53 20  |t be run in DOS |
+    00000030:  6d 6f 64 65 2e 0d 0d 0a  24 00 00 00 00 00 00 00  |mode....$.......|
+
 ### 'Rich' Header
 
     # pedump --rich calc.exe
@@ -242,46 +253,100 @@ Usage
 
 ### Imports
 
-    # pedump --imports calc.exe
+    # pedump --imports zlib.dll
 
     === IMPORTS ===
     
     MODULE_NAME      HINT   ORD  FUNCTION_NAME
-    SHLWAPI.dll              e1  
-    gdiplus.dll        50        GdipCreateBitmapFromScan0
-    gdiplus.dll        5f        GdipCreateHBITMAPFromBitmap
-    gdiplus.dll        82        GdipCreateSolidFill
-    gdiplus.dll       121        GdipGetImageGraphicsContext
-    gdiplus.dll       218        GdipSetInterpolationMode
-    gdiplus.dll       249        GdipSetSmoothingMode
-    gdiplus.dll       224        GdipSetPageUnit
-    gdiplus.dll        bc        GdipDrawLineI
-    gdiplus.dll        9b        GdipDrawArcI
-    gdiplus.dll        e5        GdipFillRectangleI
-    gdiplus.dll        32        GdipCloneBrush
-    gdiplus.dll        98        GdipDisposeImage
-    gdiplus.dll        4d        GdipCreateBitmapFromHBITMAP
-    gdiplus.dll        4f        GdipCreateBitmapFromResource
-    gdiplus.dll        5b        GdipCreateFromHDC
-    gdiplus.dll        b8        GdipDrawImageRectI
-    gdiplus.dll        31        GdipCloneBitmapAreaI
-    gdiplus.dll        7a        GdipCreatePen1
-    gdiplus.dll        8a        GdipDeleteBrush
-    gdiplus.dll        21        GdipAlloc
-    gdiplus.dll        ed        GdipFree
-    ...
+    KERNEL32.dll       e1        GetLastError
+    KERNEL32.dll      153        HeapAlloc
+    KERNEL32.dll      159        HeapFree
+    KERNEL32.dll       9f        GetCommandLineA
+    KERNEL32.dll      103        GetProcAddress
+    KERNEL32.dll       eb        GetModuleHandleA
+    KERNEL32.dll      137        GetVersion
+    KERNEL32.dll      164        InitializeCriticalSection
+    KERNEL32.dll       44        DeleteCriticalSection
+    KERNEL32.dll       4f        EnterCriticalSection
+    KERNEL32.dll      177        LeaveCriticalSection
+    KERNEL32.dll      1fa        SetHandleCount
+    KERNEL32.dll       dc        GetFileType
+    KERNEL32.dll      116        GetStdHandle
+    KERNEL32.dll      114        GetStartupInfoA
+    KERNEL32.dll      155        HeapCreate
+    KERNEL32.dll      157        HeapDestroy
+    KERNEL32.dll       c7        GetCurrentThreadId
+    KERNEL32.dll      222        TlsSetValue
+    KERNEL32.dll      21f        TlsAlloc
+    KERNEL32.dll      220        TlsFree
+    KERNEL32.dll      1fd        SetLastError
+    KERNEL32.dll      221        TlsGetValue
+    KERNEL32.dll       62        ExitProcess
+    KERNEL32.dll      1b8        ReadFile
+    KERNEL32.dll       16        CloseHandle
+    KERNEL32.dll      24f        WriteFile
+    KERNEL32.dll       83        FlushFileBuffers
+    KERNEL32.dll       e9        GetModuleFileNameA
+    KERNEL32.dll       98        GetCPInfo
+    KERNEL32.dll       92        GetACP
+    KERNEL32.dll       f6        GetOEMCP
+    KERNEL32.dll       8b        FreeEnvironmentStringsA
+    KERNEL32.dll       d0        GetEnvironmentStrings
+    KERNEL32.dll       8c        FreeEnvironmentStringsW
+    KERNEL32.dll       d2        GetEnvironmentStringsW
+    KERNEL32.dll      242        WideCharToMultiByte
+    KERNEL32.dll       2b        CreateFileA
+    KERNEL32.dll      1f8        SetFilePointer
+    KERNEL32.dll      206        SetStdHandle
+    KERNEL32.dll      178        LoadLibraryA
+    KERNEL32.dll      1ef        SetEndOfFile
 
 ### Exports
 
-    # pedump --exports calc.exe
+    # pedump --exports zlib.dll
 
-
+    === EXPORTS ===
+    
+    # module "zlib.dll"
+    # flags=0x0  ts="1996-05-07 12:46:46"  version=0.0  ord_base=1
+    # nFuncs=27  nNames=27
+    
+      ORD ENTRY_VA  NAME
+        1     76d0  adler32
+        2     2db0  compress
+        3     4aa0  crc32
+        4     3c90  deflate
+        5     4060  deflateCopy
+        6     3fd0  deflateEnd
+        7     37f0  deflateInit2_
+        8     37c0  deflateInit_
+        9     3bc0  deflateParams
+       10     3b40  deflateReset
+       11     3a40  deflateSetDictionary
+       12     7510  gzclose
+       13     6f00  gzdopen
+       14     75a0  gzerror
+       15     73f0  gzflush
+       16     6c50  gzopen
+       17     7190  gzread
+       18     7350  gzwrite
+       19     4e50  inflate
+       20     4cc0  inflateEnd
+       21     4d20  inflateInit2_
+       22     4e30  inflateInit_
+       23     4c70  inflateReset
+       24     5260  inflateSetDictionary
+       25     52f0  inflateSync
+       26     4bd0  uncompress
+       27     e340  zlib_version
 
 ### Packer / Compiler detection
 
-    # pedump --packer calc.exe
+    # pedump --packer zlib.dll
 
-
+    === Packer / Compiler ===
+    
+      Microsoft Visual C v2.0
 
 License
 -------

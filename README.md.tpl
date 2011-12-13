@@ -30,6 +30,10 @@ Usage
 
 % pedump --mz calc.exe
 
+### DOS stub
+
+% pedump --dos-stub calc.exe
+
 ### 'Rich' Header
 
 % pedump --rich calc.exe
@@ -56,15 +60,15 @@ Usage
 
 ### Imports
 
-% pedump --imports calc.exe
+% pedump --imports zlib.dll
 
 ### Exports
 
-% pedump --exports calc.exe
+% pedump --exports zlib.dll
 
 ### Packer / Compiler detection
 
-% pedump --packer calc.exe
+% pedump --packer zlib.dll
 
 License
 -------
