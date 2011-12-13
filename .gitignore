@@ -1,5 +1,7 @@
 /?.rb
 tmp
+samples/*.exe
+samples/*.mui
 
 # rcov generated
 coverage
