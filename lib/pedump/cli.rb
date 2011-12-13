@@ -31,6 +31,10 @@ class PEdump::CLI
     optparser = OptionParser.new do |opts|
       opts.banner = "Usage: pedump [options]"
 
+      opts.on "-V", "--version", "Print version information and exit" do
+        puts PEdump::VERSION
+        exit
+      end
       opts.on "-v", "--[no-]verbose", "Run verbosely" do |v|
         @options[:verbose] ||= 0
         @options[:verbose] += 1
@@ -46,7 +50,7 @@ class PEdump::CLI
       KNOWN_ACTIONS.each do |t|
         opts.on "--#{t.to_s.tr('_','-')}", eval("lambda{ |_| @actions << :#{t.to_s.tr('-','_')} }")
       end
-      opts.on '-P', "--packer-only", "only packers/compiler detect,","mimics 'file' command output" do
+      opts.on '-P', "--packer-only", "packer/compiler detect only,","mimics 'file' command output" do
         @actions << :packer_only
       end
       opts.on "--all", "Dump all but resource-directory (default)" do

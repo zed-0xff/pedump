@@ -52,6 +52,28 @@ task :default => :spec
 #  rdoc.rdoc_files.include('lib/**/*.rb')
 #end
 
+class Jeweler::Commands::Version::Base
+  alias :commit_version_old :commit_version
+  def commit_version
+    code = <<-EOF
+class PEdump
+  module Version
+    MAJOR = #{version_helper.major}
+    MINOR = #{version_helper.minor}
+    PATCH = #{version_helper.patch}
+    BUILD = nil
+
+    STRING = [MAJOR, MINOR, PATCH, BUILD].compact.join('.')
+  end
+end
+    EOF
+    vfile = working_subdir.join("lib/pedump/version.rb")
+    File.open(vfile,"w"){ |f| f << code }
+    self.repo.add vfile if self.repo
+    commit_version_old
+  end
+end
+
 namespace :test do
   desc "test on all files in given path"
   task :all_files do

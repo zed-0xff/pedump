@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 require 'logger'
+require 'pedump/version'
 
 # pedump.rb by zed_0xff
 #
@@ -36,6 +37,8 @@ end
 
 class PEdump
   attr_accessor :fname, :logger, :force
+
+  VERSION = Version::STRING
 
   def initialize fname, params = {}
     @fname = fname
