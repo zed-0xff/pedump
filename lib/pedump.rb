@@ -525,6 +525,7 @@ class PEdump
               nil
             end
         end
+        x[tbl] && x[tbl].compact!
       end
       if x.original_first_thunk && !x.first_thunk
         logger.warn "[?] import table: empty FirstThunk of #{x.module_name}"
