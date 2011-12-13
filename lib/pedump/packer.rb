@@ -45,16 +45,13 @@ class PEdump
       end
 
       def of_data data
-        r = nil
-#        r = find_all{ |packer| data.index(packer.re) != nil }
-#        r.any?? r : nil
+        r = []
         each do |packer|
-          if idx=data.index(packer.re)
-            r ||= []
+          if (idx=data.index(packer.re)) == 0
             r << Match.new(idx, packer)
           end
         end
-        r
+        r.any? ? r.sort_by{ |x| -x.packer.size } : nil
       end
 
       def method_missing *args, &block
@@ -115,6 +112,10 @@ class PEdump
               end
             end.join
           )
+          if sig.name[/-+>/]
+            a = sig.name.split(/-+>/,2).map(&:strip)
+            sig.name = "#{a[0]} (#{a[1]})"
+          end
         end
         sigs
       end
