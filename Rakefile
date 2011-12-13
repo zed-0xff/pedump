@@ -102,11 +102,12 @@ namespace :sig do
     end
   end
 
+  desc "convert txt2bin"
   task :convert do
     require './lib/pedump/packer'
     t0 = Time.now
     sigs = PEdump::Packer.parse
-    printf "[.] loaded %d definitions in %6.3fs\n", sigs.size, Time.now-t0
+    printf "[.] parsed %d definitions in %6.3fs\n", sigs.size, Time.now-t0
     File.open(PEdump::Packer::BIN_SIGS_FILE,"wb"){ |f| Marshal.dump(sigs,f) }
   end
 end
