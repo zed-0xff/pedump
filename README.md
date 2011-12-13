@@ -27,6 +27,4 @@ Please see [the wiki](https://github.com/wycats/thor/wiki) for basic usage and o
 
 License
 -------
-Released under the MIT License.  See the [LICENSE][license] file for further details.
-
-[license]: https://github.com/zed-0xff/pedump/blob/master/LICENSE.md
+Released under the MIT License.  See the [LICENSE](LICENSE.txt) file for further details.
