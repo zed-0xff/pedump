@@ -41,12 +41,12 @@ Usage
             --rich
             --pe
             --data-directory
-            --sections
-            --strings
-            --resources
+        -S, --sections
+        -s, --strings
+        -R, --resources
             --resource-directory
-            --imports
-            --exports
+        -I, --imports
+        -E, --exports
             --packer
         -P, --packer-only                packer/compiler detect only,
                                          mimics 'file' command output

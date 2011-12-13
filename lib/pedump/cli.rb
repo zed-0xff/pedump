@@ -50,7 +50,13 @@ class PEdump::CLI
         @options[:format] = v
       end
       KNOWN_ACTIONS.each do |t|
-        opts.on "--#{t.to_s.tr('_','-')}", eval("lambda{ |_| @actions << :#{t.to_s.tr('-','_')} }")
+        a = [
+          "--#{t.to_s.tr('_','-')}",
+          eval("lambda{ |_| @actions << :#{t.to_s.tr('-','_')} }")
+        ]
+        a.unshift(a[0][1,2].upcase) if a[0] =~ /--((ex|im)port|section|resource)s/
+        a.unshift(a[0][1,2]) if a[0] =~ /--strings/
+        opts.on *a
       end
       opts.on '-P', "--packer-only", "packer/compiler detect only,","mimics 'file' command output" do
         @actions << :packer_only
