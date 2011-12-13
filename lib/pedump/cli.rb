@@ -14,10 +14,10 @@ class PEdump::CLI
 
   KNOWN_ACTIONS = (
     %w'mz dos_stub rich pe data_directory sections' +
-    %w'strings resources resource_directory imports exports packer web'
+    %w'strings resources resource_directory imports exports packer web packer_only'
   ).map(&:to_sym)
 
-  DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory web'.map(&:to_sym)
+  DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory web packer_only'.map(&:to_sym)
 
   URL_BASE = "http://pedump.me"
 
@@ -35,24 +35,27 @@ class PEdump::CLI
         @options[:verbose] ||= 0
         @options[:verbose] += 1
       end
-      opts.on "-F", "--force", "Try to dump by all means (can cause exceptions & heavy wounds)" do |v|
+      opts.on "-F", "--force", "Try to dump by all means","(can cause exceptions & heavy wounds)" do |v|
         @options[:force] ||= 0
         @options[:force] += 1
       end
       opts.on "-f", "--format FORMAT", [:binary, :c, :dump, :hex, :inspect, :table],
-        "Output format: bin,c,dump,hex,inspect,table (default)" do |v|
+        "Output format: bin,c,dump,hex,inspect,table","(default: table)" do |v|
         @options[:format] = v
       end
       KNOWN_ACTIONS.each do |t|
         opts.on "--#{t.to_s.tr('_','-')}", eval("lambda{ |_| @actions << :#{t.to_s.tr('-','_')} }")
       end
-      opts.on "--all", "Dump all but #{(KNOWN_ACTIONS-DEFAULT_ALL_ACTIONS).join(',')} (default)" do
+      opts.on '-P', "--packer-only", "only packers/compiler detect,","mimics 'file' command output" do
+        @actions << :packer_only
+      end
+      opts.on "--all", "Dump all but resource-directory (default)" do
         @actions = DEFAULT_ALL_ACTIONS
       end
       opts.on "--va2file VA", "Convert RVA to file offset" do |va|
         @actions << [:va2file,va]
       end
-      opts.on "-W", "--web", "Upload file to a #{URL_BASE} for a nice HTML tables with image previews, candies & stuff" do
+      opts.on "-W", "--web", "Uploads files to a #{URL_BASE}","for a nice HTML tables with image previews,","candies & stuff" do
         @actions << :web
       end
     end
@@ -68,13 +71,16 @@ class PEdump::CLI
     end
     @actions = DEFAULT_ALL_ACTIONS if @actions.empty?
 
+    if @actions.include?(:packer_only)
+      raise "[!] can't mix --packer-only with other actions" if @actions.size > 1
+      dump_packer_only(argv)
+      return
+    end
+
     argv.each_with_index do |fname,idx|
-      if argv.size > 1
-        puts if idx > 0
-        puts "# -----------------------------------------------"
-        puts "# #{fname}"
-        puts "# -----------------------------------------------"
-      end
+      @need_fname_header = (argv.size > 1)
+      @file_idx  = idx
+      @file_name = fname
 
       File.open(fname,'rb') do |f|
         @pedump = PEdump.new(fname, :force => @options[:force]).tap do |x|
@@ -97,6 +103,23 @@ class PEdump::CLI
   rescue Errno::EPIPE
     # output interrupt, f.ex. when piping output to a 'head' command
     # prevents a 'Broken pipe - <STDOUT> (Errno::EPIPE)' message
+  end
+
+  def dump_packer_only fnames
+    max_fname_len = fnames.map(&:size).max
+    fnames.each do |fname|
+      File.open(fname,'rb') do |f|
+        @pedump = PEdump.new(fname, :force => @options[:force]).tap do |x|
+          if @options[:verbose]
+            x.logger.level = @options[:verbose] > 1 ? Logger::INFO : Logger::DEBUG
+          end
+        end
+        packers = @pedump.packers(f)
+        pname = Array(packers).first.try(:packer).try(:name)
+        pname ||= "unknown" if @options[:verbose]
+        printf("%-*s %s\n", max_fname_len+1, "#{fname}:", pname) if pname
+      end
+    end
   end
 
   class ProgressProxy
@@ -173,8 +196,17 @@ class PEdump::CLI
   end
 
   def action_title action
+    if @need_fname_header
+      @need_fname_header = false
+      puts if @file_idx > 0
+      puts "# -----------------------------------------------"
+      puts "# #@file_name"
+      puts "# -----------------------------------------------"
+    end
+
     s = action.to_s.upcase.tr('_',' ')
     s += " Header" if [:mz, :pe, :rich].include?(action)
+    s = "Packer / Compiler" if action == :packer
     "\n=== %s ===\n\n" % s
   end
 
@@ -310,6 +342,8 @@ class PEdump::CLI
         dump_strings data
       when PEdump::IMAGE_IMPORT_DESCRIPTOR
         dump_imports data
+      when PEdump::Packer::Match
+        dump_packers data
       else
         puts "[?] don't know how to dump: #{data.inspect[0,50]}" unless data.empty?
       end
@@ -319,6 +353,17 @@ class PEdump::CLI
       dump_rich_hdr data
     else
       puts "[?] Don't know how to display #{data.inspect[0,50]}... as a table"
+    end
+  end
+
+  def dump_packers data
+    if @options[:verbose]
+      data.each do |p|
+        printf "%8x %4d %s\n", p.offset, p.packer.size, p.packer.name
+      end
+    else
+      # show only largest detected unless verbose output requested
+      puts "  #{data.first.packer.name}"
     end
   end
 
