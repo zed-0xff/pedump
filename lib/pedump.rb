@@ -969,7 +969,7 @@ class PEdump
   end
 
   def packer f = nil
-    @packer ||= pe(f) && @pe.ioh
+    @packer ||= pe(f) && @pe.ioh &&
       begin
         if !(va=@pe.ioh.AddressOfEntryPoint)
           logger.error "[?] can't find EntryPoint RVA"
@@ -988,6 +988,7 @@ class PEdump
         end
       end
   end
+  alias :packers :packer
 end
 
 ####################################################################################
