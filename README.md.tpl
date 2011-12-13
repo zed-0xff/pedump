@@ -15,7 +15,7 @@ A pure ruby implementation of win32 PE binary files dumper, including:
  * Strings
  * Imports & Exports
  * PE Packer/Compiler detection
- * a conventient way to upload your PE's to http://pedump.me for a nice HTML tables with image previews, candies & stuff
+ * a convenient way to upload your PE's to http://pedump.me for a nice HTML tables with image previews, candies & stuff
 
 Installation
 ------------
