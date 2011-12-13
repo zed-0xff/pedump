@@ -143,9 +143,12 @@ task :readme do
   end
   def run cmd
     cmd.strip!
+    puts "[.] #{cmd} ..."
     r = "    # #{cmd}\n\n"
     cmd.sub! /^pedump/,"../bin/pedump"
-    r << `#{cmd}`.sub(/\A\n+/m,'').sub(/\s+\Z/,'').split("\n").map{|x| "    #{x}"}.join("\n")
+    lines = `#{cmd}`.sub(/\A\n+/m,'').sub(/\s+\Z/,'').split("\n")
+    lines = lines[0,30] + ['...'] if lines.size > 50
+    r << lines.map{|x| "    #{x}"}.join("\n")
     r << "\n"
   end
   Dir.chdir 'samples'

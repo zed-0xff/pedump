@@ -83,6 +83,185 @@ Usage
                          reserved6:          0             0
                             lfanew:        232          0xe8
 
+### 'Rich' Header
+
+    # pedump --rich calc.exe
+
+    === RICH Header ===
+    
+        LIB_ID        VERSION        TIMES_USED   
+       149  95      21022  521e         9   9
+         1   1          0     0       367 16f
+       147  93      21022  521e        29  1d
+       132  84      21022  521e       129  81
+       131  83      21022  521e        25  19
+       148  94      21022  521e         1   1
+       145  91      21022  521e         1   1
+
+### PE Header
+
+    # pedump --pe calc.exe
+
+    === PE Header ===
+    
+                         signature:             "PE\x00\x00"
+    
+    # IMAGE_FILE_HEADER:
+                           Machine:        332         0x14c  x86
+                  NumberOfSections:          4             4
+                     TimeDateStamp:    "2008-09-14 11:28:52"
+              PointerToSymbolTable:          0             0
+                   NumberOfSymbols:          0             0
+              SizeOfOptionalHeader:        224          0xe0
+                   Characteristics:        258         0x102
+    
+    # IMAGE_OPTIONAL_HEADER:
+                             Magic:        267         0x10b  32-bit executable
+                     LinkerVersion:                      9.0
+                        SizeOfCode:     305664       0x4aa00
+             SizeOfInitializedData:     340480       0x53200
+           SizeOfUninitializedData:          0             0
+               AddressOfEntryPoint:     230155       0x3830b
+                        BaseOfCode:       4096        0x1000
+                        BaseOfData:     311296       0x4c000
+                         ImageBase:   16777216     0x1000000
+                  SectionAlignment:       4096        0x1000
+                     FileAlignment:        512         0x200
+            OperatingSystemVersion:                      5.1
+                      ImageVersion:                    5.256
+                  SubsystemVersion:                      5.1
+                         Reserved1:          0             0
+                       SizeOfImage:     659456       0xa1000
+                     SizeOfHeaders:       1024         0x400
+                          CheckSum:     690555       0xa897b
+                         Subsystem:          2             2  WINDOWS_GUI
+                DllCharacteristics:      33088        0x8140
+                SizeOfStackReserve:     262144       0x40000
+                 SizeOfStackCommit:       8192        0x2000
+                 SizeOfHeapReserve:    1048576      0x100000
+                  SizeOfHeapCommit:       4096        0x1000
+                       LoaderFlags:          0             0
+               NumberOfRvaAndSizes:         16          0x10
+
+### Data Directory
+
+    # pedump --data-directory calc.exe
+
+    === DATA DIRECTORY ===
+    
+      EXPORT        rva:0x       0   size:0x        0
+      IMPORT        rva:0x   49c1c   size:0x      12c
+      RESOURCE      rva:0x   51000   size:0x    4ab07
+      EXCEPTION     rva:0x       0   size:0x        0
+      SECURITY      rva:0x       0   size:0x        0
+      BASERELOC     rva:0x   9c000   size:0x     3588
+      DEBUG         rva:0x    1610   size:0x       1c
+      ARCHITECTURE  rva:0x       0   size:0x        0
+      GLOBALPTR     rva:0x       0   size:0x        0
+      TLS           rva:0x       0   size:0x        0
+      LOAD_CONFIG   rva:0x    3d78   size:0x       40
+      Bound_IAT     rva:0x     280   size:0x      12c
+      IAT           rva:0x    1000   size:0x      594
+      Delay_IAT     rva:0x   49bac   size:0x       40
+      CLR_Header    rva:0x       0   size:0x        0
+                    rva:0x       0   size:0x        0
+
+### Sections
+
+    # pedump --sections calc.exe
+
+    === SECTIONS ===
+    
+      NAME          RVA      VSZ   RAW_SZ  RAW_PTR  nREL  REL_PTR nLINE LINE_PTR     FLAGS
+      .text        1000    4a99a    4aa00      400     0        0     0        0  60000020  R-X CODE
+      .data       4c000     431c     3000    4ae00     0        0     0        0  c0000040  RW- IDATA
+      .rsrc       51000    4ab07    4ac00    4de00     0        0     0        0  40000040  R-- IDATA
+      .reloc      9c000     41f6     4200    98a00     0        0     0        0  42000040  R-- IDATA DISCARDABLE
+
+### Resources
+
+    # pedump --resources calc.exe
+
+    === RESOURCES ===
+    
+    FILE_OFFSET    CP  LANG     SIZE  TYPE          NAME
+        0x4ec84     0 0x409     7465  IMAGE         #157
+        0x509b0     0 0x409     4086  IMAGE         #165
+        0x519a8     0 0x409     4234  IMAGE         #170
+        0x52a34     0 0x409     4625  IMAGE         #175
+        0x53c48     0 0x409     4873  IMAGE         #180
+        0x54f54     0 0x409     3048  IMAGE         #204
+        0x55b3c     0 0x409     3052  IMAGE         #208
+        0x56728     0 0x409     3217  IMAGE         #212
+        0x573bc     0 0x409     3338  IMAGE         #216
+        0x580c8     0 0x409     4191  IMAGE         #217
+        0x59128     0 0x409     4229  IMAGE         #218
+        0x5a1b0     0 0x409     4110  IMAGE         #219
+        0x5b1c0     0 0x409     4065  IMAGE         #220
+        0x5c1a4     0 0x409     3235  IMAGE         #961
+        0x5ce48     0 0x409      470  IMAGE         #981
+        0x5d020     0 0x409      587  IMAGE         #982
+        0x5d26c     0 0x409      518  IMAGE         #983
+        0x5d474     0 0x409     5344  IMAGE         #3000
+        0x5e954     0 0x409     4154  IMAGE         #3015
+        0x5f990     0 0x409     4815  IMAGE         #3045
+        0x60c60     0 0x409     6038  IMAGE         #3051
+        0x623f8     0 0x409     4290  IMAGE         #3060
+        0x634bc     0 0x409     4815  IMAGE         #3075
+        0x6478c     0 0x409     4550  IMAGE         #3091
+        0x65954     0 0x409     1545  IMAGE         #3100
+        0x65f60     0 0x409     1518  IMAGE         #3102
+        0x66550     0 0x409      853  IMAGE         #3103
+    ...
+
+### Imports
+
+    # pedump --imports calc.exe
+
+    === IMPORTS ===
+    
+    MODULE_NAME      HINT   ORD  FUNCTION_NAME
+    SHLWAPI.dll              e1  
+    gdiplus.dll        50        GdipCreateBitmapFromScan0
+    gdiplus.dll        5f        GdipCreateHBITMAPFromBitmap
+    gdiplus.dll        82        GdipCreateSolidFill
+    gdiplus.dll       121        GdipGetImageGraphicsContext
+    gdiplus.dll       218        GdipSetInterpolationMode
+    gdiplus.dll       249        GdipSetSmoothingMode
+    gdiplus.dll       224        GdipSetPageUnit
+    gdiplus.dll        bc        GdipDrawLineI
+    gdiplus.dll        9b        GdipDrawArcI
+    gdiplus.dll        e5        GdipFillRectangleI
+    gdiplus.dll        32        GdipCloneBrush
+    gdiplus.dll        98        GdipDisposeImage
+    gdiplus.dll        4d        GdipCreateBitmapFromHBITMAP
+    gdiplus.dll        4f        GdipCreateBitmapFromResource
+    gdiplus.dll        5b        GdipCreateFromHDC
+    gdiplus.dll        b8        GdipDrawImageRectI
+    gdiplus.dll        31        GdipCloneBitmapAreaI
+    gdiplus.dll        7a        GdipCreatePen1
+    gdiplus.dll        8a        GdipDeleteBrush
+    gdiplus.dll        21        GdipAlloc
+    gdiplus.dll        ed        GdipFree
+    gdiplus.dll       275        GdiplusStartup
+    gdiplus.dll       274        GdiplusShutdown
+    gdiplus.dll        36        GdipCloneImage
+    gdiplus.dll        94        GdipDeletePen
+    gdiplus.dll        90        GdipDeleteGraphics
+    ...
+
+### Exports
+
+    # pedump --exports calc.exe
+
+
+
+### Packer / Compiler detection
+
+    # pedump --packer calc.exe
+
+
+
 License
 -------
 Released under the MIT License.  See the [LICENSE](https://github.com/zed-0xff/pedump/blob/master/LICENSE.txt) file for further details.

@@ -30,6 +30,38 @@ Usage
 
 % pedump --mz calc.exe
 
+### 'Rich' Header
+
+% pedump --rich calc.exe
+
+### PE Header
+
+% pedump --pe calc.exe
+
+### Data Directory
+
+% pedump --data-directory calc.exe
+
+### Sections
+
+% pedump --sections calc.exe
+
+### Resources
+
+% pedump --resources calc.exe
+
+### Imports
+
+% pedump --imports calc.exe
+
+### Exports
+
+% pedump --exports calc.exe
+
+### Packer / Compiler detection
+
+% pedump --packer calc.exe
+
 License
 -------
 Released under the MIT License.  See the [LICENSE](https://github.com/zed-0xff/pedump/blob/master/LICENSE.txt) file for further details.
