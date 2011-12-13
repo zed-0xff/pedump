@@ -5,17 +5,18 @@
 
 Gem::Specification.new do |s|
   s.name = "pedump"
-  s.version = "0.3.2"
+  s.version = "0.3.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2011-12-12"
+  s.date = "2011-12-13"
   s.description = "dump headers, sections, extract resources of win32 PE exe,dll,etc"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["pedump"]
   s.extra_rdoc_files = [
     "LICENSE.txt",
-    "README.rdoc"
+    "README.md",
+    "README.md.tpl"
   ]
   s.files = [
     ".document",
@@ -23,13 +24,19 @@ Gem::Specification.new do |s|
     "Gemfile",
     "Gemfile.lock",
     "LICENSE.txt",
-    "README.rdoc",
+    "README.md",
+    "README.md.tpl",
     "Rakefile",
     "VERSION",
     "bin/pedump",
+    "data/sig.bin",
+    "data/sig.txt",
     "lib/pedump.rb",
     "lib/pedump/cli.rb",
+    "lib/pedump/packer.rb",
+    "lib/pedump/version.rb",
     "pedump.gemspec",
+    "samples/calc.7z",
     "spec/pedump_spec.rb",
     "spec/spec_helper.rb"
   ]
