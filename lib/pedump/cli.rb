@@ -14,7 +14,7 @@ class PEdump::CLI
 
   KNOWN_ACTIONS = (
     %w'mz dos_stub rich pe data_directory sections' +
-    %w'strings resources resource_directory imports exports web'
+    %w'strings resources resource_directory imports exports packer web'
   ).map(&:to_sym)
 
   DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory web'.map(&:to_sym)

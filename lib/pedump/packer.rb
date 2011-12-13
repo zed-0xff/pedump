@@ -5,6 +5,8 @@ class PEdump
     BIN_SIGS_FILE  = File.join(DATA_ROOT, "data", "sig.bin")
     TEXT_SIGS_FILE = File.join(DATA_ROOT, "data", "sig.txt")
 
+    Match = Struct.new :offset, :packer
+
     class << self
 
       def all
@@ -24,22 +26,40 @@ class PEdump
       end
       alias :load :all
 
+      def max_size
+        @@max_size ||= all.map(&:size).max
+      end
+
+      def of data, ep_offset = nil
+        if data.respond_to?(:read) && data.respond_to?(:seek) && ep_offset
+          of_file data, ep_offset
+        else
+          of_data data
+        end
+      end
+
+      # try to determine packer of FILE f, ep_offset - offset to entrypoint from start of file
+      def of_file f, ep_offset
+        f.seek(ep_offset)
+        of_data f.read(max_size)
+      end
+
+      def of_data data
+        r = nil
+#        r = find_all{ |packer| data.index(packer.re) != nil }
+#        r.any?? r : nil
+        each do |packer|
+          if idx=data.index(packer.re)
+            r ||= []
+            r << Match.new(idx, packer)
+          end
+        end
+        r
+      end
+
       def method_missing *args, &block
         all.respond_to?(args.first) ? all.send(*args,&block) : super
       end
-
-#      def each
-#        return enum_for(:each) unless block_given?
-#        all.each do |x|
-#          yield x
-#        end
-#      end
-#      def map
-#        return enum_for(:map) unless block_given?
-#        all.map do |x|
-#          yield x
-#        end
-#      end
 
       def unmarshal
         File.open(BIN_SIGS_FILE,"rb") do |f|

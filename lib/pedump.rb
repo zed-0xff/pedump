@@ -967,6 +967,27 @@ class PEdump
       end
     end.flatten.compact
   end
+
+  def packer f = nil
+    @packer ||= pe(f) && @pe.ioh
+      begin
+        if !(va=@pe.ioh.AddressOfEntryPoint)
+          logger.error "[?] can't find EntryPoint RVA"
+          nil
+        elsif !(ofs = va2file(va))
+          logger.error "[?] can't find EntryPoint RVA (0x#{va.to_s(16)}) file offset"
+          nil
+        else
+          require 'pedump/packer'
+          if PEdump::Packer.all.size == 0
+            logger.error "[?] no packer definitions found"
+            nil
+          else
+            Packer.of(f, ofs)
+          end
+        end
+      end
+  end
 end
 
 ####################################################################################
