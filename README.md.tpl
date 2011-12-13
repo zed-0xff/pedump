@@ -28,7 +28,7 @@ Usage
 
 ### MZ Header
 
-% pedump --mz 
+% pedump --mz calc.exe
 
 License
 -------

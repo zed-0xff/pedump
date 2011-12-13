@@ -143,10 +143,13 @@ task :readme do
   end
   def run cmd
     cmd.strip!
-    cmd.sub! /^pedump/,"./bin/pedump"
-    `#{cmd}`.sub(/\A\n+/m,'').sub(/\s+\Z/,'').split("\n").map{|x| "    #{x}"}.join("\n") + "\n"
+    r = "    # #{cmd}\n\n"
+    cmd.sub! /^pedump/,"../bin/pedump"
+    r << `#{cmd}`.sub(/\A\n+/m,'').sub(/\s+\Z/,'').split("\n").map{|x| "    #{x}"}.join("\n")
+    r << "\n"
   end
-  File.open 'README.md','w' do |f|
-    f << ERB.new(tpl,nil,'%>').result
-  end
+  Dir.chdir 'samples'
+  result = ERB.new(tpl,nil,'%>').result
+  Dir.chdir '..'
+  File.open('README.md','w'){ |f| f << result }
 end
