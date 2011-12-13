@@ -133,3 +133,20 @@ namespace :sig do
     File.open(PEdump::Packer::BIN_SIGS_FILE,"wb"){ |f| Marshal.dump(sigs,f) }
   end
 end
+
+desc "build readme"
+task :readme do
+  require 'erb'
+  tpl = File.read('README.md.tpl').gsub(/^%\s+(.+)/) do |x|
+    x.sub! /^%/,''
+    "<%= run(\"#{x}\") %>"
+  end
+  def run cmd
+    cmd.strip!
+    cmd.sub! /^pedump/,"./bin/pedump"
+    `#{cmd}`.sub(/\A\n+/m,'').sub(/\s+\Z/,'').split("\n").map{|x| "    #{x}"}.join("\n") + "\n"
+  end
+  File.open 'README.md','w' do |f|
+    f << ERB.new(tpl,nil,'%>').result
+  end
+end

@@ -23,7 +23,33 @@ Installation
 
 Usage and documentation
 -----------------------
-Please see [the wiki](https://github.com/wycats/thor/wiki) for basic usage and other documentation on using Thor.
+
+    Usage: pedump [options]
+        -V, --version                    Print version information and exit
+        -v, --[no-]verbose               Run verbosely
+        -F, --force                      Try to dump by all means
+                                         (can cause exceptions & heavy wounds)
+        -f, --format FORMAT              Output format: bin,c,dump,hex,inspect,table
+                                         (default: table)
+            --mz
+            --dos-stub
+            --rich
+            --pe
+            --data-directory
+            --sections
+            --strings
+            --resources
+            --resource-directory
+            --imports
+            --exports
+            --packer
+        -P, --packer-only                packer/compiler detect only,
+                                         mimics 'file' command output
+            --all                        Dump all but resource-directory (default)
+            --va2file VA                 Convert RVA to file offset
+        -W, --web                        Uploads files to a http://pedump.me
+                                         for a nice HTML tables with image previews,
+                                         candies & stuff
 
 License
 -------
