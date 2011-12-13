@@ -70,6 +70,16 @@ Usage
 
 % pedump --packer zlib.dll
 
+#### pedump can mimic 'file' command output:
+
+    #pedump --packer-only -qqq samples/*
+    
+    samples/StringLoader.dll:                 Microsoft Visual C++ 6.0 DLL (Debug)
+    samples/control.exe:                      ASPack v2.12
+    samples/gms_v1_0_3.exe:                   UPX 2.90 [LZMA] (Markus Oberhumer, Laszlo Molnar & John Reiser)
+    samples/unpackme.exe:                     ASProtect 1.33 - 2.1 Registered (Alexey Solodovnikov)
+    samples/zlib.dll:                         Microsoft Visual C v2.0
+
 License
 -------
 Released under the MIT License.  See the [LICENSE](https://github.com/zed-0xff/pedump/blob/master/LICENSE.txt) file for further details.

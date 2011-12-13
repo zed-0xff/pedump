@@ -27,7 +27,7 @@ class PEdump::CLI
 
   def run
     @actions = []
-    @options = { :format => :table }
+    @options = { :format => :table, :verbose => 0 }
     optparser = OptionParser.new do |opts|
       opts.banner = "Usage: pedump [options]"
 
@@ -35,9 +35,11 @@ class PEdump::CLI
         puts PEdump::VERSION
         exit
       end
-      opts.on "-v", "--[no-]verbose", "Run verbosely" do |v|
-        @options[:verbose] ||= 0
+      opts.on "-v", "--verbose", "Run verbosely","(can be used multiple times)" do |v|
         @options[:verbose] += 1
+      end
+      opts.on "-q", "--quiet", "Silent any warnings","(can be used multiple times)" do |v|
+        @options[:verbose] -= 1
       end
       opts.on "-F", "--force", "Try to dump by all means","(can cause exceptions & heavy wounds)" do |v|
         @options[:force] ||= 0
@@ -87,11 +89,7 @@ class PEdump::CLI
       @file_name = fname
 
       File.open(fname,'rb') do |f|
-        @pedump = PEdump.new(fname, :force => @options[:force]).tap do |x|
-          if @options[:verbose]
-            x.logger.level = @options[:verbose] > 1 ? Logger::INFO : Logger::DEBUG
-          end
-        end
+        @pedump = create_pedump fname
 
         next if !@options[:force] && !@pedump.mz(f)
 
@@ -109,18 +107,34 @@ class PEdump::CLI
     # prevents a 'Broken pipe - <STDOUT> (Errno::EPIPE)' message
   end
 
+  def create_pedump fname
+    PEdump.new(fname, :force => @options[:force]).tap do |x|
+      x.logger.level =
+        case @options[:verbose]
+        when -100..-3
+          Logger::FATAL + 1
+        when -2
+          Logger::FATAL
+        when -1
+          Logger::ERROR
+        when 0
+          Logger::WARN  # default
+        when 1
+          Logger::INFO
+        when 2..100
+          Logger::DEBUG
+        end
+    end
+  end
+
   def dump_packer_only fnames
     max_fname_len = fnames.map(&:size).max
     fnames.each do |fname|
       File.open(fname,'rb') do |f|
-        @pedump = PEdump.new(fname, :force => @options[:force]).tap do |x|
-          if @options[:verbose]
-            x.logger.level = @options[:verbose] > 1 ? Logger::INFO : Logger::DEBUG
-          end
-        end
+        @pedump = create_pedump fname
         packers = @pedump.packers(f)
         pname = Array(packers).first.try(:packer).try(:name)
-        pname ||= "unknown" if @options[:verbose]
+        pname ||= "unknown" if @options[:verbose] > 0
         printf("%-*s %s\n", max_fname_len+1, "#{fname}:", pname) if pname
       end
     end
@@ -361,7 +375,7 @@ class PEdump::CLI
   end
 
   def dump_packers data
-    if @options[:verbose]
+    if @options[:verbose] > 0
       data.each do |p|
         printf "%8x %4d %s\n", p.offset, p.packer.size, p.packer.name
       end
@@ -379,7 +393,7 @@ class PEdump::CLI
       data.MajorVersion, data.MinorVersion,
       data.Base
 
-    if @options[:verbose]
+    if @options[:verbose] > 0
       [%w'Names', %w'EntryPoints Functions', %w'Ordinals NameOrdinals'].each do |x|
         va  = data["AddressOf"+x.last]
         ofs = @pedump.va2file(va) || '?'
