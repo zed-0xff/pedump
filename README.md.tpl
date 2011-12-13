@@ -21,10 +21,14 @@ Installation
 ------------
     gem install pedump
 
-Usage and documentation
------------------------
+Usage
+-----
 
 % pedump -h
+
+### MZ Header
+
+% pedump --mz 
 
 License
 -------
