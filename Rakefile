@@ -147,7 +147,7 @@ task :readme do
     r = "    # #{cmd}\n\n"
     cmd.sub! /^pedump/,"../bin/pedump"
     lines = `#{cmd}`.sub(/\A\n+/m,'').sub(/\s+\Z/,'').split("\n")
-    lines = lines[0,30] + ['...'] if lines.size > 50
+    lines = lines[0,25] + ['...'] if lines.size > 50
     r << lines.map{|x| "    #{x}"}.join("\n")
     r << "\n"
   end

@@ -207,11 +207,37 @@ Usage
         0x5f990     0 0x409     4815  IMAGE         #3045
         0x60c60     0 0x409     6038  IMAGE         #3051
         0x623f8     0 0x409     4290  IMAGE         #3060
-        0x634bc     0 0x409     4815  IMAGE         #3075
-        0x6478c     0 0x409     4550  IMAGE         #3091
-        0x65954     0 0x409     1545  IMAGE         #3100
-        0x65f60     0 0x409     1518  IMAGE         #3102
-        0x66550     0 0x409      853  IMAGE         #3103
+    ...
+
+### Strings
+
+    # pedump --strings calc.exe.mui
+
+    === STRINGS ===
+    
+       ID    ID  LANG  STRING
+        0     0   409  "+/-"
+        1     1   409  "C"
+        2     2   409  "CE"
+        3     3   409  "Backspace"
+        4     4   409  "."
+        6     6   409  "And"
+        7     7   409  "Or"
+        8     8   409  "Xor"
+        9     9   409  "Lsh"
+       10     a   409  "Rsh"
+       11     b   409  "/"
+       12     c   409  "*"
+       13     d   409  "+"
+       14     e   409  "-"
+       15     f   409  "Mod"
+       16    10   409  "R"
+       17    11   409  "^"
+       18    12   409  "Int"
+       19    13   409  "RoL"
+       20    14   409  "RoR"
+       21    15   409  "Not"
+       22    16   409  "sin"
     ...
 
 ### Imports
@@ -243,11 +269,6 @@ Usage
     gdiplus.dll        8a        GdipDeleteBrush
     gdiplus.dll        21        GdipAlloc
     gdiplus.dll        ed        GdipFree
-    gdiplus.dll       275        GdiplusStartup
-    gdiplus.dll       274        GdiplusShutdown
-    gdiplus.dll        36        GdipCloneImage
-    gdiplus.dll        94        GdipDeletePen
-    gdiplus.dll        90        GdipDeleteGraphics
     ...
 
 ### Exports

@@ -50,6 +50,10 @@ Usage
 
 % pedump --resources calc.exe
 
+### Strings
+
+% pedump --strings calc.exe.mui
+
 ### Imports
 
 % pedump --imports calc.exe
