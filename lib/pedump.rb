@@ -900,7 +900,7 @@ class PEdump
       self.valid =
         case type
         when 'BITMAP','ICON','CURSOR'
-          data.any?{ |x| x.is_a?(BITMAPINFOHEADER) && x.valid? }
+          data.any?{ |x| x.is_a?(BITMAPINFOHEADER) && x.valid? } || data.first == 'PNG'
         else
           true
         end
