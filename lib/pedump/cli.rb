@@ -318,8 +318,22 @@ class PEdump::CLI
     :Subsystem => PEdump::IMAGE_SUBSYSTEMS
   }
 
+  def _flags2string flags
+    return '' if !flags || flags.empty?
+    a = [flags.shift.dup]
+    flags.each do |f|
+      if (a.last.size + f.size) < 40
+        a.last << ", " << f
+      else
+        a << f.dup
+      end
+    end
+    a.join("\n"+ ' '*58)
+  end
+
   def dump_generic_table data
     data.each_pair do |k,v|
+      next if [:DataDirectory, :section_table].include?(k)
       case v
       when Numeric
         case k
@@ -329,20 +343,25 @@ class PEdump::CLI
         when /TimeDateStamp/
           printf "%30s: %24s\n", k, Time.at(v).strftime('"%Y-%m-%d %H:%M:%S"')
         else
+          comment = ''
           if COMMENTS[k]
-            printf "%30s: %10d  %12s  %s\n", k, v, v<10 ? v : ("0x"+v.to_s(16)),
-              COMMENTS[k][v] || (COMMENTS[k].is_a?(Hash) ? COMMENTS[k]['default'] : '') || ''
-          else
-            printf "%30s: %10d  %12s\n", k, v, v<10 ? v : ("0x"+v.to_s(16))
+            comment = COMMENTS[k][v] || (COMMENTS[k].is_a?(Hash) ? COMMENTS[k]['default'] : '') || ''
+          elsif data.is_a?(PEdump::IMAGE_FILE_HEADER) && k == :Characteristics
+            comment = _flags2string(data.flags)
+          elsif k == :DllCharacteristics
+            comment = _flags2string(data.flags)
           end
+          comment.strip!
+          comment = "  #{comment}" unless comment.empty?
+          printf "%30s: %10d  %12s%s\n", k, v, v<10 ? v : ("0x"+v.to_s(16)), comment
         end
       when Struct
+        # IMAGE_FILE_HEADER:
+        # IMAGE_OPTIONAL_HEADER:
         printf "\n# %s:\n", v.class.to_s.split('::').last
         dump_table v
       when Time
         printf "%30s: %24s\n", k, v.strftime('"%Y-%m-%d %H:%M:%S"')
-      when Array
-        next if %w'DataDirectory section_table'.include?(k)
       else
         printf "%30s: %24s\n", k, v.to_s.inspect
       end

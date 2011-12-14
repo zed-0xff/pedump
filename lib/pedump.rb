@@ -64,6 +64,17 @@ class PEdump
     end
   end
 
+  module Readable
+    def read file, size = nil
+      size ||= const_get 'SIZE'
+      data = file.read(size).to_s
+      if data.size < size && PEdump.logger
+        PEdump.logger.error "[!] #{self.to_s} want #{size} bytes, got #{data.size}"
+      end
+      new(*data.unpack(const_get('FORMAT')))
+    end
+  end
+
   class << self
     def logger;    @@logger;   end
     def logger= l; @@logger=l; end
@@ -91,14 +102,7 @@ class PEdump
             to_a.all?{ |t| t == 0 || t.nil? || t.to_s.tr("\x00","").empty? }
           end
         end
-        def x.read file, size = nil
-          size ||= const_get 'SIZE'
-          data = file.read(size).to_s
-          if data.size < size && PEdump.logger
-            PEdump.logger.error "[!] #{self.to_s} want #{size} bytes, got #{data.size}"
-          end
-          new(*data.unpack(const_get('FORMAT')))
-        end
+        x.extend Readable
       end
     end
   end
@@ -145,7 +149,7 @@ class PEdump
   end
 
   # http://msdn.microsoft.com/en-us/library/ms809762.aspx
-  IMAGE_FILE_HEADER = create_struct( 'v2V3v2',
+  class IMAGE_FILE_HEADER < create_struct( 'v2V3v2',
     :Machine,              # w
     :NumberOfSections,     # w
     :TimeDateStamp,        # dw
@@ -154,19 +158,97 @@ class PEdump
     :SizeOfOptionalHeader, # w
     :Characteristics       # w
   )
-  class IMAGE_FILE_HEADER
+    # Characteristics, http://msdn.microsoft.com/en-us/library/windows/desktop/ms680313(v=VS.85).aspx)
+    FLAGS = {
+      0x0001 => 'RELOCS_STRIPPED',          # Relocation information was stripped from the file.
+                                            # The file must be loaded at its preferred base address.
+                                            # If the base address is not available, the loader reports an error.
+      0x0002 => 'EXECUTABLE_IMAGE',
+      0x0004 => 'LINE_NUMS_STRIPPED',
+      0x0008 => 'LOCAL_SYMS_STRIPPED',
+      0x0010 => 'AGGRESIVE_WS_TRIM',        # Aggressively trim the working set. This value is obsolete as of Windows 2000.
+      0x0020 => 'LARGE_ADDRESS_AWARE',      # The application can handle addresses larger than 2 GB.
+      0x0040 => '16BIT_MACHINE',
+      0x0080 => 'BYTES_REVERSED_LO',        # The bytes of the word are reversed. This flag is obsolete.
+      0x0100 => '32BIT_MACHINE',
+      0x0200 => 'DEBUG_STRIPPED',
+      0x0400 => 'REMOVABLE_RUN_FROM_SWAP',
+      0x0800 => 'NET_RUN_FROM_SWAP',
+      0x1000 => 'SYSTEM',
+      0x2000 => 'DLL',
+      0x4000 => 'UP_SYSTEM_ONLY',           # The file should be run only on a uniprocessor computer.
+      0x8000 => 'BYTES_REVERSED_HI'         # The bytes of the word are reversed. This flag is obsolete.
+    }
+
     def initialize *args
       super
       self.TimeDateStamp = Time.at(self.TimeDateStamp)
     end
-    def method_missing mname
-      mname = mname.to_s.capitalize
-      self.send(mname) if self.respond_to?(mname)
+    def flags
+      FLAGS.find_all{ |k,v| (self.Characteristics & k) != 0 }.map(&:last)
+    end
+  end
+
+  module IMAGE_OPTIONAL_HEADER
+    # DllCharacteristics, http://msdn.microsoft.com/en-us/library/windows/desktop/ms680339(v=vs.85).aspx)
+    FLAGS = {
+      0x0001 => '0x01', # reserved
+      0x0002 => '0x02', # reserved
+      0x0004 => '0x04', # reserved
+      0x0008 => '0x08', # reserved
+      0x0010 => '0x10', # ?
+      0x0020 => '0x20', # ?
+      0x0040 => 'DYNAMIC_BASE',
+      0x0080 => 'FORCE_INTEGRITY',
+      0x0100 => 'NX_COMPAT',
+      0x0200 => 'NO_ISOLATION',
+      0x0400 => 'NO_SEH',
+      0x0800 => 'NO_BIND',
+      0x1000 => '0x1000',               # ?
+      0x2000 => 'WDM_DRIVER',
+      0x4000 => '0x4000',               # ?
+      0x8000 => 'TERMINAL_SERVER_AWARE'
+    }
+    def initialize *args
+      super
+      self.extend InstanceMethods
+    end
+    def self.included base
+      base.extend ClassMethods
+    end
+    module ClassMethods
+      def read file, size = nil
+        usual_size = self.const_get('USUAL_SIZE')
+        cSIZE   = self.const_get 'SIZE'
+        cFORMAT = self.const_get 'FORMAT'
+        size ||= cSIZE
+        PEdump.logger.warn "[?] unusual size of IMAGE_OPTIONAL_HEADER = #{size} (must be #{usual_size})" if size != usual_size
+        new(*file.read([size,cSIZE].min).to_s.unpack(cFORMAT)).tap do |ioh|
+          ioh.DataDirectory = []
+
+          # check if "...this address is outside the memory mapped file and is zeroed by the OS"
+          # see http://www.phreedom.org/solar/code/tinype/, section "Removing the data directories"
+          ioh.each_pair{ |k,v| ioh[k] = 0 if v.nil? }
+
+          # http://opcode0x90.wordpress.com/2007/04/22/windows-loader-does-it-differently/
+          # maximum of 0x10 entries, even if bigger
+          [0x10,ioh.NumberOfRvaAndSizes].min.times do |idx|
+            ioh.DataDirectory << IMAGE_DATA_DIRECTORY.read(file)
+            ioh.DataDirectory.last.type = IMAGE_DATA_DIRECTORY::TYPES[idx]
+          end
+          #ioh.DataDirectory.pop while ioh.DataDirectory.last.empty?
+        end
+      end
+    end
+    module InstanceMethods
+      def flags
+        FLAGS.find_all{ |k,v| (self.DllCharacteristics & k) != 0 }.map(&:last)
+      end
     end
   end
 
   # http://msdn.microsoft.com/en-us/library/ms809762.aspx
-  IMAGE_OPTIONAL_HEADER = create_struct( 'vC2V9v6V4v2V6',
+  class IMAGE_OPTIONAL_HEADER32 < create_struct( 'vC2V9v6V4v2V6',
     :Magic, # w
     :MajorLinkerVersion, :MinorLinkerVersion, # 2b
     :SizeOfCode, :SizeOfInitializedData, :SizeOfUninitializedData, :AddressOfEntryPoint, # 9dw
@@ -179,9 +261,12 @@ class PEdump
     :LoaderFlags, :NumberOfRvaAndSizes,
     :DataDirectory # readed manually
   )
+    USUAL_SIZE = 224
+    include IMAGE_OPTIONAL_HEADER
+  end
 
   # http://msdn.microsoft.com/en-us/library/windows/desktop/ms680339(v=VS.85).aspx)
-  IMAGE_OPTIONAL_HEADER64 = create_struct( 'vC2V5QV2v6V4v2Q4V2',
+  class IMAGE_OPTIONAL_HEADER64 < create_struct( 'vC2V5QV2v6V4v2Q4V2',
     :Magic, # w
     :MajorLinkerVersion, :MinorLinkerVersion, # 2b
     :SizeOfCode, :SizeOfInitializedData, :SizeOfUninitializedData, :AddressOfEntryPoint, :BaseOfCode, # 5dw
@@ -195,49 +280,8 @@ class PEdump
     :LoaderFlags, :NumberOfRvaAndSizes, #2dw
     :DataDirectory # readed manually
   )
-
-  class IMAGE_OPTIONAL_HEADER
-    def self.read file, size = SIZE
-      usual_size = 224
-      PEdump.logger.warn "[?] unusual size of IMAGE_OPTIONAL_HEADER = #{size} (must be #{usual_size})" if size != usual_size
-      new(*file.read([size,SIZE].min).to_s.unpack(FORMAT)).tap do |ioh|
-        ioh.DataDirectory = []
-
-        # check if "...this address is outside the memory mapped file and is zeroed by the OS"
-        # see http://www.phreedom.org/solar/code/tinype/, section "Removing the data directories"
-        ioh.each_pair{ |k,v| ioh[k] = 0 if v.nil? }
-
-        # http://opcode0x90.wordpress.com/2007/04/22/windows-loader-does-it-differently/
-        # maximum of 0x10 entries, even if bigger
-        [0x10,ioh.NumberOfRvaAndSizes].min.times do |idx|
-          ioh.DataDirectory << IMAGE_DATA_DIRECTORY.read(file)
-          ioh.DataDirectory.last.type = IMAGE_DATA_DIRECTORY::TYPES[idx]
-        end
-        #ioh.DataDirectory.pop while ioh.DataDirectory.last.empty?
-      end
-    end
-  end
-
-  class IMAGE_OPTIONAL_HEADER64
-    def self.read file, size = SIZE
-      usual_size = 240
-      PEdump.logger.warn "[?] unusual size of IMAGE_OPTIONAL_HEADER = #{size} (must be #{usual_size})" if size != usual_size
-      new(*file.read([size,SIZE].min).unpack(FORMAT)).tap do |ioh|
-        ioh.DataDirectory = []
-
-        # check if "...this address is outside the memory mapped file and is zeroed by the OS"
-        # see http://www.phreedom.org/solar/code/tinype/, section "Removing the data directories"
-        ioh.each_pair{ |k,v| ioh[k] = 0 if v.nil? }
-
-        # http://opcode0x90.wordpress.com/2007/04/22/windows-loader-does-it-differently/
-        # maximum of 0x10 entries, even if bigger
-        [0x10,ioh.NumberOfRvaAndSizes].min.times do |idx|
-          ioh.DataDirectory << IMAGE_DATA_DIRECTORY.read(file)
-          ioh.DataDirectory.last.type = IMAGE_DATA_DIRECTORY::TYPES[idx]
-        end
-        #ioh.DataDirectory.pop while ioh.DataDirectory.last.empty?
-      end
-    end
+    USUAL_SIZE = 240
+    include IMAGE_OPTIONAL_HEADER
   end
 
   IMAGE_DATA_DIRECTORY = create_struct( "VV", :va, :size, :type )
@@ -420,7 +464,7 @@ class PEdump
               if pe.x64?
                 pe.image_optional_header = IMAGE_OPTIONAL_HEADER64.read(f, pe.ifh.SizeOfOptionalHeader)
               else
-                pe.image_optional_header = IMAGE_OPTIONAL_HEADER.read(f, pe.ifh.SizeOfOptionalHeader)
+                pe.image_optional_header = IMAGE_OPTIONAL_HEADER32.read(f, pe.ifh.SizeOfOptionalHeader)
               end
             end
 

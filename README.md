@@ -127,9 +127,9 @@ Usage
               PointerToSymbolTable:          0             0
                    NumberOfSymbols:          0             0
               SizeOfOptionalHeader:        224          0xe0
-                   Characteristics:        258         0x102
+                   Characteristics:        258         0x102  EXECUTABLE_IMAGE, 32BIT_MACHINE
     
-    # IMAGE_OPTIONAL_HEADER:
+    # IMAGE_OPTIONAL_HEADER32:
                              Magic:        267         0x10b  32-bit executable
                      LinkerVersion:                      9.0
                         SizeOfCode:     305664       0x4aa00
@@ -149,7 +149,8 @@ Usage
                      SizeOfHeaders:       1024         0x400
                           CheckSum:     690555       0xa897b
                          Subsystem:          2             2  WINDOWS_GUI
-                DllCharacteristics:      33088        0x8140
+                DllCharacteristics:      33088        0x8140  DYNAMIC_BASE, NX_COMPAT
+                                                              TERMINAL_SERVER_AWARE
                 SizeOfStackReserve:     262144       0x40000
                  SizeOfStackCommit:       8192        0x2000
                  SizeOfHeapReserve:    1048576      0x100000
