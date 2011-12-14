@@ -40,6 +40,8 @@ class PEdump
 
   VERSION = Version::STRING
 
+  @@logger = nil
+
   def initialize fname, params = {}
     @fname = fname
     @force = params[:force]
