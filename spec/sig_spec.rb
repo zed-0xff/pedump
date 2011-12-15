@@ -18,19 +18,8 @@ describe "PEdump::Packer" do
     a.map(&:class).uniq.should == [PEdump::Packer]
   end
 
-  describe "matchers" do
-    PEdump::Packer.parse(:raw => true).each do |sig|
-      data = sig.re.join
-      next if data == "This program cannot be run in DOS mo"
-      it "should find #{sig.name}" do
-        PEdump::Packer.of(data).map(&:name).should include(sig.name)
-      end
-    end
-  end
-
   it "should not react to DOS signature" do
     data = "This program cannot be run in DOS mode"
     PEdump::Packer.of(data).should be_nil
   end
-
 end
