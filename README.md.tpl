@@ -14,6 +14,7 @@ A pure ruby implementation of win32 PE binary files dumper, including:
  * Resources
  * Strings
  * Imports & Exports
+ * VS_VERSIONINFO parsing
  * PE Packer/Compiler detection
  * a convenient way to upload your PE's to http://pedump.me for a nice HTML tables with image previews, candies & stuff
 
@@ -65,6 +66,10 @@ Usage
 ### Exports
 
 % pedump --exports zlib.dll
+
+### VS_VERSIONINFO parsing
+
+% pedump --version-info calc.exe
 
 ### Packer / Compiler detection
 

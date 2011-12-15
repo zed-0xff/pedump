@@ -14,6 +14,7 @@ A pure ruby implementation of win32 PE binary files dumper, including:
  * Resources
  * Strings
  * Imports & Exports
+ * VS_VERSIONINFO parsing
  * PE Packer/Compiler detection
  * a convenient way to upload your PE's to http://pedump.me for a nice HTML tables with image previews, candies & stuff
 
@@ -27,7 +28,7 @@ Usage
     # pedump -h
 
     Usage: pedump [options]
-        -V, --version                    Print version information and exit
+            --version                    Print version information and exit
         -v, --verbose                    Run verbosely
                                          (can be used multiple times)
         -q, --quiet                      Silent any warnings
@@ -47,6 +48,7 @@ Usage
             --resource-directory
         -I, --imports
         -E, --exports
+        -V, --version-info
             --packer
         -P, --packer-only                packer/compiler detect only,
                                          mimics 'file' command output
@@ -343,6 +345,34 @@ Usage
        25     52f0  inflateSync
        26     4bd0  uncompress
        27     e340  zlib_version
+
+### VS_VERSIONINFO parsing
+
+    # pedump --version-info calc.exe
+
+    === VERSION INFO ===
+    
+    # VS_FIXEDFILEINFO:
+      FileVersion         :  6.1.6801.0
+      ProductVersion      :  6.1.6801.0
+      StrucVersion        :  0x10000
+      FileFlagsMask       :  0x3f
+      FileFlags           :  0
+      FileOS              :  0x40004
+      FileType            :  1
+      FileSubtype         :  0
+    
+    # StringTable 040904B0:
+      CompanyName         :  "Microsoft Corporation"
+      FileDescription     :  "Windows Calculator"
+      FileVersion         :  "6.1.6801.0 (winmain_win7m3.080913-2030)"
+      InternalName        :  "CALC"
+      LegalCopyright      :  "© Microsoft Corporation. All rights reserved."
+      OriginalFilename    :  "CALC.EXE"
+      ProductName         :  "Microsoft® Windows® Operating System"
+      ProductVersion      :  "6.1.6801.0"
+    
+      VarFileInfo         :  [ 0x409, 0x4b0 ]
 
 ### Packer / Compiler detection
 
