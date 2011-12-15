@@ -67,10 +67,11 @@ class PEdump
       end
 
       # parse text signatures
-      def parse fname = TEXT_SIGS_FILE
+      def parse args = {}
+        args[:fname] ||= TEXT_SIGS_FILE
         sigs = {}; sig = nil
 
-        File.open(fname,'r:utf-8') do |f|
+        File.open(args[:fname],'r:utf-8') do |f|
           while line = f.gets
             line.strip!
 
@@ -97,9 +98,10 @@ class PEdump
           end
         end
 
+        # convert strings to Regexps
         sigs = sigs.values
         sigs.each do |sig|
-          sig.re = Regexp.new(
+          sig.re = ( #Regexp.new(
             sig.re.split(' ').tap do |a|
               sig.size = a.size
             end.map do |x|
@@ -110,14 +112,124 @@ class PEdump
                 Regexp::escape x.to_i(16).chr
               else raise x
               end
-            end.join
+            end
           )
           if sig.name[/-+>/]
             a = sig.name.split(/-+>/,2).map(&:strip)
             sig.name = "#{a[0]} (#{a[1]})"
           end
         end
+
+        # false signature
+        sigs.delete_if{ |sig| sig.re == /This\ program\ cannot\ be\ run\ in\ DOS\ mo/ }
+
+        optimize sigs if args[:optimize]
+
+        # convert re-arrays to Regexps
+        sigs.each do |sig|
+          sig.re = Regexp.new(
+            sig.re.map do |x|
+              if x.is_a?(Array)
+                [ '(', x.map(&:join).join('|'), ')' ]
+              else
+                x
+              end
+            end.flatten.join, Regexp::MULTILINE
+          )
+        end
+
         sigs
+      end
+
+      def optimize sigs
+        # replaces all duplicate names with references to one name
+        # saves ~30k out of ~200k mem
+        h = {}
+        sigs.each do |sig|
+          sig.name = (h[sig.name] ||= sig.name)
+        end
+
+        # try to merge signatures with same name, size & ep_only
+        sigs.group_by{ |sig|
+          [sig.re.size, sig.name, sig.ep_only]
+        }.values.each do |a|
+          next if a.size == 1
+          if merged_re = _merge(a)
+            a.each{ |sig| sig.re = merged_re }
+          end
+        end
+
+        print "[.] sigs merge: #{sigs.size}"
+        sigs.uniq!
+        puts  " -> #{sigs.size}"
+
+        # merge signatures with same prefix & suffix
+        # most ineffecient part :)
+        sigs.group_by{ |sig|
+          [sig.name, sig.ep_only, sig.re.index{ |x| x.is_a?(Array)}]
+        }.values.each do |a|
+          next if a.size == 1
+          next unless idx = a.first.re.index{ |x| x.is_a?(Array) }
+          a.group_by{ |sig| [sig.re[0...idx], sig.re[(idx+1)..-1]] }.each do |k,v|
+            # prefix |            infix          | suffix
+            # s o m    [[b r e r o] [e w h a t]]   h e r e
+            prefix, suffix = k
+            infix = v.map{ |sig| sig.re[idx] }
+            #infix = [['f','o','o']]
+            merged_re = prefix + infix + suffix
+            v.each{ |sig| sig.re = merged_re; sig.size = v.map(&:size).max }
+          end
+        end
+
+        print "[.] sigs merge: #{sigs.size}"
+        sigs.uniq!
+        puts  " -> #{sigs.size}"
+
+        sigs
+      end
+
+      # range of common difference between N given sigs
+      def _diff res
+        raise "diff sizes" if res.map(&:size).uniq.size != 1
+        size = res.first.size
+
+        dstart  = nil
+        dend    = size - 1
+        prev_eq = true
+
+        size.times do |i|
+          eq = res.map{ |re| re[i] }.uniq.size == 1
+          if eq != prev_eq
+            if eq
+              # end of current diff
+              dend = i-1
+            else
+              # start of new diff
+              return nil if dstart # return nil if it's a 2nd diff
+              dstart = i
+            end
+          end
+          prev_eq = eq
+        end
+        r = dstart..dend
+        r == (0..(size-1)) ? nil : r
+      end
+
+      # merge array of signatures into one signature
+      def _merge sigs
+        sizes = sigs.map(&:re).map(&:size)
+
+        if sizes.uniq.size != 1
+          puts "[?] wrong sizes: #{sizes.inspect}"
+          return nil
+        end
+
+        res = sigs.map(&:re)
+        diff = _diff res
+        return nil unless diff
+
+        ref = res.first
+        ref[0...diff.first] + [res.map{ |re| re[diff] }] + ref[(diff.last+1)..-1]
       end
     end
   end

@@ -100,7 +100,7 @@ namespace :test do
   end
 end
 
-namespace :sig do
+namespace :sigs do
   desc "update packers db from http://research.pandasecurity.com/blogs/images/userdb.txt"
   task :update do
     require './lib/pedump/packer'
@@ -128,9 +128,23 @@ namespace :sig do
   task :convert do
     require './lib/pedump/packer'
     t0 = Time.now
-    sigs = PEdump::Packer.parse
+    sigs = PEdump::Packer.parse :optimize => true
     printf "[.] parsed %d definitions in %6.3fs\n", sigs.size, Time.now-t0
     File.open(PEdump::Packer::BIN_SIGS_FILE,"wb"){ |f| Marshal.dump(sigs,f) }
+  end
+
+  desc "dump"
+  task :dump do
+    require './lib/pedump/packer'
+    PEdump::Packer.all.sort_by{ |sig| sig.size }.each do |sig|
+      t = sig.re.to_s.sub(/\A\(\?m-ix:/,'').sub(/\)\Z/,'').
+        split('').
+        map do |c| 
+          c = c.ord > 127 ? (c.ord&0x7f).chr : c
+          c.ord < 32 ? '_' : c
+        end.join.gsub("\\x00",'_')
+      puts t
+    end
   end
 end
 

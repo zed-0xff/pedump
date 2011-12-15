@@ -3,7 +3,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../lib/pedump/packer')
 
 describe PEdump::Packer do
   it "should have enough signatures" do
-    PEdump::Packer.count.should > 2000
+    PEdump::Packer.count.should > 1900
   end
 
   it "should not match" do
