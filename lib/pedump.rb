@@ -841,7 +841,7 @@ class PEdump
         f.seek file_offset
         data << CUR_ICO_HEADER.read(f)
         nRead = CUR_ICO_HEADER::SIZE
-        data.last.wNumImages.times do
+        data.last.wNumImages.to_i.times do
           if nRead >= self.size
             PEdump.logger.error "[!] refusing to read CURDIRENTRY beyond resource size"
             break
@@ -853,7 +853,7 @@ class PEdump
         f.seek file_offset
         data << CUR_ICO_HEADER.read(f)
         nRead = CUR_ICO_HEADER::SIZE
-        data.last.wNumImages.times do
+        data.last.wNumImages.to_i.times do
           if nRead >= self.size
             PEdump.logger.error "[!] refusing to read ICODIRENTRY beyond resource size"
             break
@@ -885,6 +885,10 @@ class PEdump
             end
         end
         # XXX: check if readed strings summary length is less than resource data length
+      when 'VERSION'
+        require 'pedump/version_info'
+        f.seek file_offset
+        data << PEdump::VS_VERSIONINFO.read(f)
       end
 
       data.delete_if do |x|
@@ -973,6 +977,10 @@ class PEdump
 
   def resources f=nil
     @resources ||= _scan_resources(f)
+  end
+
+  def version_info f=nil
+    resources(f) && resources(f).find_all{ |res| res.type == 'VERSION' }.map(&:data).flatten
   end
 
   def _scan_resources f=nil, dir=nil

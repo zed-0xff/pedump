@@ -1,4 +1,5 @@
 require 'pedump'
+require 'pedump/packer'
 require 'optparse'
 
 unless Object.instance_methods.include?(:try)
@@ -14,7 +15,7 @@ class PEdump::CLI
 
   KNOWN_ACTIONS = (
     %w'mz dos_stub rich pe data_directory sections' +
-    %w'strings resources resource_directory imports exports packer web packer_only'
+    %w'strings resources resource_directory imports exports version_info packer web packer_only'
   ).map(&:to_sym)
 
   DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory web packer_only'.map(&:to_sym)
@@ -31,7 +32,7 @@ class PEdump::CLI
     optparser = OptionParser.new do |opts|
       opts.banner = "Usage: pedump [options]"
 
-      opts.on "-V", "--version", "Print version information and exit" do
+      opts.on "--version", "Print version information and exit" do
         puts PEdump::VERSION
         exit
       end
@@ -54,7 +55,7 @@ class PEdump::CLI
           "--#{t.to_s.tr('_','-')}",
           eval("lambda{ |_| @actions << :#{t.to_s.tr('-','_')} }")
         ]
-        a.unshift(a[0][1,2].upcase) if a[0] =~ /--((ex|im)port|section|resource)s/
+        a.unshift(a[0][1,2].upcase) if a[0] =~ /--(((ex|im)port|section|resource)s|version-info)/
         a.unshift(a[0][1,2]) if a[0] =~ /--strings/
         opts.on *a
       end
@@ -268,6 +269,8 @@ class PEdump::CLI
         return dump_imports(data)
       when :exports
         return dump_exports(data)
+      when :version_info
+        return dump_version_info(data)
       else
         if data.is_a?(Struct) && data.respond_to?(:pack)
           data = data.pack
@@ -387,6 +390,8 @@ class PEdump::CLI
         dump_imports data
       when PEdump::Packer::Match
         dump_packers data
+      when PEdump::VS_VERSIONINFO
+        dump_version_info data
       else
         puts "[?] don't know how to dump: #{data.inspect[0,50]}" unless data.empty?
       end
@@ -396,6 +401,64 @@ class PEdump::CLI
       dump_rich_hdr data
     else
       puts "[?] Don't know how to display #{data.inspect[0,50]}... as a table"
+    end
+  end
+
+  def dump_version_info data
+    if @options[:format] != :table
+      File.open(@file_name,'rb') do |f|
+        @pedump.resources.find_all{ |r| r.type == 'VERSION'}.each do |res|
+          f.seek res.file_offset
+          data = f.read(res.size)
+          dump data
+        end
+      end
+      return
+    end
+
+    fmt = "  %-20s:  %s\n"
+    data.each do |vi|
+      puts "# VS_FIXEDFILEINFO:"
+
+      if @options[:verbose] > 0 || vi.Value.dwSignature != 0xfeef04bd
+        printf(fmt, "Signature", "0x#{vi.Value.dwSignature.to_s(16)}")
+      end
+
+      printf fmt, 'FileVersion', [
+        vi.Value.dwFileVersionMS >> 16,
+        vi.Value.dwFileVersionMS &  0xffff,
+        vi.Value.dwFileVersionLS >> 16,
+        vi.Value.dwFileVersionLS &  0xffff
+      ].join('.')
+
+      printf fmt, 'ProductVersion', [
+        vi.Value.dwProductVersionMS >> 16,
+        vi.Value.dwProductVersionMS &  0xffff,
+        vi.Value.dwProductVersionLS >> 16,
+        vi.Value.dwProductVersionLS &  0xffff
+      ].join('.')
+
+      vi.Value.each_pair do |k,v|
+        next if k[/[ML]S$/] || k == :valid || k == :dwSignature
+        printf fmt, k.to_s.sub(/^dw/,''), v > 9 ? "0x#{v.to_s(16)}" : v
+      end
+
+      vi.Children.each do |file_info|
+        case file_info
+        when PEdump::StringFileInfo
+          file_info.Children.each do |string_table|
+            puts "\n# StringTable #{string_table.szKey}:"
+            string_table.Children.each do |string|
+              printf fmt, string.szKey, string.Value.inspect
+            end
+          end
+        when PEdump::VarFileInfo
+          puts
+          printf fmt, "VarFileInfo", '[ 0x' + file_info.Children.Value.map{|v| v.to_s(16)}.join(", 0x") + ' ]'
+        else
+          puts "[?] unknown child type: #{file_info.inspect}, use -fi to inspect"
+        end
+      end
     end
   end
 
