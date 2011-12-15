@@ -1,9 +1,9 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 require File.expand_path(File.dirname(__FILE__) + '/../lib/pedump/packer')
 
-describe PEdump::Packer do
+describe "PEdump::Packer" do
   it "should have enough signatures" do
-    PEdump::Packer.count.should > 1900
+    PEdump::Packer.count.should > 1000
   end
 
   it "should not match" do
@@ -17,4 +17,20 @@ describe PEdump::Packer do
     a.should be_instance_of(Array)
     a.map(&:class).uniq.should == [PEdump::Packer]
   end
+
+  describe "matchers" do
+    PEdump::Packer.parse(:raw => true).each do |sig|
+      data = sig.re.join
+      next if data == "This program cannot be run in DOS mo"
+      it "should find #{sig.name}" do
+        PEdump::Packer.of(data).map(&:name).should include(sig.name)
+      end
+    end
+  end
+
+  it "should not react to DOS signature" do
+    data = "This program cannot be run in DOS mode"
+    PEdump::Packer.of(data).should be_nil
+  end
+
 end

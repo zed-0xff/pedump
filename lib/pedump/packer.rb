@@ -5,19 +5,25 @@ class PEdump
     BIN_SIGS_FILE  = File.join(DATA_ROOT, "data", "sig.bin")
     TEXT_SIGS_FILE = File.join(DATA_ROOT, "data", "sig.txt")
 
-    Match = Struct.new :offset, :packer
+    class Match < Struct.new(:offset, :packer)
+      def name
+        packer.name
+      end
+    end
+
+    class OrBlock < Array; end
 
     class << self
-
       def all
         @@all ||=
           begin
             r = unmarshal
             unless r
+              msg = "[?] #{self}: unmarshal failed, using slow text parsing instead"
               if PEdump.respond_to?(:logger) && PEdump.logger
-                PEdump.logger.warn "[?] #{self}: unmarshal failed, using slow text parsing instead"
+                PEdump.logger.warn msg
               else
-                STDERR.puts "[?] #{self}: unmarshal failed, using slow text parsing instead"
+                STDERR.puts msg
               end
               r = parse
             end
@@ -87,7 +93,8 @@ class PEdump
             when /^signature = (.+)$/
               sig.re = $1
               if sigs[sig.re]
-                next if sigs[sig.re].name == sig.name
+                next if sigs[sig.re].name.split.first == sig.name.split.first
+                next if sigs[sig.re].name.upcase.tr('V ','') == sig.name.upcase.tr('V ','')
                 printf "[?] dup %-40s, %s\n", sigs[sig.re].name.inspect, sig.name.inspect
               end
               sigs[sig.re] = sig
@@ -101,7 +108,7 @@ class PEdump
         # convert strings to Regexps
         sigs = sigs.values
         sigs.each do |sig|
-          sig.re = ( #Regexp.new(
+          sig.re =
             sig.re.split(' ').tap do |a|
               sig.size = a.size
             end.map do |x|
@@ -109,36 +116,42 @@ class PEdump
               when '??'
                 '.'
               when /[a-f0-9]{2}/i
-                Regexp::escape x.to_i(16).chr
+                x = x.to_i(16).chr
+                args[:raw] ? x : Regexp::escape(x)
               else raise x
               end
             end
-          )
           if sig.name[/-+>/]
             a = sig.name.split(/-+>/,2).map(&:strip)
             sig.name = "#{a[0]} (#{a[1]})"
           end
         end
-
-        # false signature
-        sigs.delete_if{ |sig| sig.re == /This\ program\ cannot\ be\ run\ in\ DOS\ mo/ }
+        return sigs if args[:raw]
 
         optimize sigs if args[:optimize]
 
         # convert re-arrays to Regexps
         sigs.each do |sig|
-          sig.re = Regexp.new(
-            sig.re.map do |x|
-              if x.is_a?(Array)
-                [ '(', x.map(&:join).join('|'), ')' ]
-              else
-                x
-              end
-            end.flatten.join, Regexp::MULTILINE
-          )
+          sig.re = Regexp.new( _join(sig.re), Regexp::MULTILINE )
         end
 
+        # false signature
+        sigs.delete_if{ |sig| sig.re == /This\ program\ cannot\ be\ run\ in\ DOS\ mo/m }
+
         sigs
+      end
+
+      def _join a, sep=''
+        a.map do |x|
+          case x
+          when OrBlock
+            '(' + _join(x, '|') + ')'
+          when Array
+            _join x
+          when String
+            x
+          end
+        end.join(sep)
       end
 
       def optimize sigs
@@ -155,35 +168,60 @@ class PEdump
         }.values.each do |a|
           next if a.size == 1
           if merged_re = _merge(a)
-            a.each{ |sig| sig.re = merged_re }
+            a.first.re = merged_re
+            a[1..-1].each{ |sig| sig.re = nil }
           end
         end
+        print "[.] sigs merge: #{sigs.size}"; sigs.delete_if{ |x| x.re.nil? }; puts  " -> #{sigs.size}"
 
-        print "[.] sigs merge: #{sigs.size}"
-        sigs.uniq!
-        puts  " -> #{sigs.size}"
 
-        # merge signatures with same prefix & suffix
-        # most ineffecient part :)
+        # 361 entries of ["VMProtect v1.25 (PolyTech)", true, "h....\xE8...."])
         sigs.group_by{ |sig|
-          [sig.name, sig.ep_only, sig.re.index{ |x| x.is_a?(Array)}]
-        }.values.each do |a|
-          next if a.size == 1
-          next unless idx = a.first.re.index{ |x| x.is_a?(Array) }
-          a.group_by{ |sig| [sig.re[0...idx], sig.re[(idx+1)..-1]] }.each do |k,v|
-            # prefix |            infix          | suffix
-            # s o m    [[b r e r o] [e w h a t]]   h e r e
-            prefix, suffix = k
-            infix = v.map{ |sig| sig.re[idx] }
-            #infix = [['f','o','o']]
-            merged_re = prefix + infix + suffix
-            v.each{ |sig| sig.re = merged_re; sig.size = v.map(&:size).max }
-          end
-        end
+          [sig.name, sig.ep_only, sig.re[0,10].join]
+        }.each do |k,entries|
+          next if entries.size < 10
+          #printf "%5d  %s\n", entries.size, k
+          prefix = entries.first.re[0,10]
+          infix  = entries.map{ |sig| sig.re[10..-1] }
 
-        print "[.] sigs merge: #{sigs.size}"
-        sigs.uniq!
-        puts  " -> #{sigs.size}"
+          entries.first.re   = prefix + [OrBlock.new(infix)]
+          entries.first.size = entries.map(&:size).max
+
+          entries[1..-1].each{ |sig| sig.re = nil }
+        end
+        print "[.] sigs merge: #{sigs.size}"; sigs.delete_if{ |x| x.re.nil? }; puts  " -> #{sigs.size}"
+
+
+#        # merge signatures with same prefix & suffix
+#        # most ineffecient part :)
+#        sigs.group_by{ |sig|
+#          [sig.name, sig.ep_only, sig.re.index{ |x| x.is_a?(Array)}]
+#        }.values.each do |a|
+#          next if a.size == 1
+#          next unless idx = a.first.re.index{ |x| x.is_a?(Array) }
+#          a.group_by{ |sig| [sig.re[0...idx], sig.re[(idx+1)..-1]] }.each do |k,entries|
+#            # prefix |            infix          | suffix
+#            # s o m    [[b r e r o] [e w h a t]]   h e r e
+#            prefix, suffix = k
+#            infix = entries.map{ |sig| sig.re[idx] }
+#            #infix = [['f','o','o']]
+#            merged_re = prefix + infix + suffix
+#            max_size = entries.map(&:size).max
+#            entries.each{ |sig| sig.re = merged_re; sig.size = max_size }
+#          end
+#        end
+#        print "[.] sigs merge: #{sigs.size}"; sigs.uniq!; puts  " -> #{sigs.size}"
+
+         # stats
+#        aa = []
+#        6.upto(20) do |len|
+#          sigs.group_by{ |sig| [sig.re[0,len].join, sig.name, sig.ep_only] }.each do |a,b|
+#            aa << [b.size, a[0], [b.map(&:size).min, b.map(&:size).max].join(' .. ') ] if b.size > 2
+#          end
+#        end
+#        aa.sort_by(&:first).each do |sz,prefix,name|
+#          printf "%5d  %-50s %s\n", sz, prefix.inspect, name
+#        end
 
         sigs
       end
@@ -229,7 +267,7 @@ class PEdump
         return nil unless diff
 
         ref = res.first
-        ref[0...diff.first] + [res.map{ |re| re[diff] }] + ref[(diff.last+1)..-1]
+        ref[0...diff.first] + [OrBlock.new(res.map{ |re| re[diff] })] + ref[(diff.last+1)..-1]
       end
     end
   end
