@@ -146,6 +146,9 @@ class PEdump
     def x64?
       ifh && ifh.Machine == 0x8664
     end
+    def dll?
+      ifh && ifh.flags.include?('DLL')
+    end
   end
 
   # http://msdn.microsoft.com/en-us/library/ms809762.aspx
@@ -1031,6 +1034,9 @@ class PEdump
       begin
         if !(va=@pe.ioh.AddressOfEntryPoint)
           logger.error "[?] can't find EntryPoint RVA"
+          nil
+        elsif va == 0 && @pe.dll?
+          logger.debug "[.] it's a DLL with no EntryPoint"
           nil
         elsif !(ofs = va2file(va))
           logger.error "[?] can't find EntryPoint RVA (0x#{va.to_s(16)}) file offset"
