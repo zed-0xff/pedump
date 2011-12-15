@@ -59,9 +59,16 @@ class PEdump::CLI
         a.unshift(a[0][1,2]) if a[0] =~ /--strings/
         opts.on *a
       end
+
+      opts.on "--deep", "packer deep scan, significantly slower" do
+        @options[:deep] = true
+        PEdump::Packer.default_deep = true
+      end
+
       opts.on '-P', "--packer-only", "packer/compiler detect only,","mimics 'file' command output" do
         @actions << :packer_only
       end
+
       opts.on "--all", "Dump all but resource-directory (default)" do
         @actions = DEFAULT_ALL_ACTIONS
       end

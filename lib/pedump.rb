@@ -493,7 +493,7 @@ class PEdump
 
   # OPTIONAL: assigns @mz, @rich_hdr, @pe, etc
   def dump f=nil
-    f ? _dump_handle(f) : File.open(@fname){ |f| _dump_handle(f) }
+    f ? _dump_handle(f) : File.open(@fname,'rb'){ |f| _dump_handle(f) }
     self
   end
 
@@ -1047,7 +1047,7 @@ class PEdump
             logger.error "[?] no packer definitions found"
             nil
           else
-            Packer.of(f, ofs)
+            Packer.of f, :ep_offset => ofs
           end
         end
       end

@@ -50,6 +50,7 @@ Usage
         -E, --exports
         -V, --version-info
             --packer
+            --deep                       packer deep scan, significantly slower
         -P, --packer-only                packer/compiler detect only,
                                          mimics 'file' command output
             --all                        Dump all but resource-directory (default)
