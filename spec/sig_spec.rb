@@ -22,4 +22,41 @@ describe "PEdump::Packer" do
     data = "This program cannot be run in DOS mode"
     PEdump::Packer.of(data).should be_nil
   end
+
+  it "should match sigs" do
+    n = 0
+    File.open('data/signatures.txt', 'r:cp1252') do |f|
+      while row = f.gets
+        row.strip!
+        next unless row =~ /^\[(.*)=(.*)\]$/
+        s = ''
+        title,hexstring = $1,$2
+        (hexstring.size/2).times do |i|
+          c = hexstring[i*2,2]
+          if c == '::'
+            s << '.'
+          else
+            s << c.to_i(16).chr
+          end
+        end
+        packers = PEdump::Packer.of(s)
+        if packers
+          names = packers.map(&:name)
+          next if names.any? do |name|
+            a = name.upcase.tr('V','')
+            b = title.upcase.tr('V','')
+            a[b] || b[a]
+          end
+          puts "[.] #{title}"
+          names.each do |x|
+            puts "\t= #{x}"
+          end
+        else
+          puts "[?] #{title}"
+        end
+        n += 1
+      end
+    end
+    puts "[.] diff = #{n}"
+  end
 end

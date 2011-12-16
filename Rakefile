@@ -100,35 +100,40 @@ namespace :test do
   end
 end
 
+def check_file url
+  require 'digest/md5'
+  require 'open-uri'
+
+  STDOUT.sync = true
+  fname = File.join 'data', File.basename(url)
+  existing_md5 = Digest::MD5.file(fname).hexdigest
+  print "[.] fetching #{url} .. "
+  remote_data  = open(url).read.force_encoding('cp1252').encode('utf-8')
+  puts "#{remote_data.size} bytes"
+  raise "too small remote data (#{remote_data.size})" if remote_data.size < 80_000
+  remote_md5   = Digest::MD5.hexdigest(remote_data)
+  if remote_md5 == existing_md5
+    puts "[.] same as local"
+  else
+    existing_size = File.size(fname)
+    File.open(fname,"wb"){ |f| f << remote_data }
+    puts "[*] updated: #{existing_size} -> #{remote_data.size}"
+  end
+end
+
 namespace :sigs do
   desc "update packers db from http://research.pandasecurity.com/blogs/images/userdb.txt"
   task :update do
     require './lib/pedump/packer'
-    fname = PEdump::Packer::TEXT_SIGS_FILE
-    url   = "http://research.pandasecurity.com/blogs/images/userdb.txt"
-
-    require 'digest/md5'
-    require 'open-uri'
-    existing_md5 = Digest::MD5.file(fname).hexdigest
-    puts "[.] fetching remote data..."
-    remote_data  = open(url).read.force_encoding('cp1252').encode('utf-8')
-    puts "[.] got #{remote_data.size} bytes"
-    raise "too small remote data (#{remote_data.size})" if remote_data.size < 100_000
-    remote_md5   = Digest::MD5.hexdigest(remote_data)
-    if remote_md5 == existing_md5
-      puts "[.] same as local"
-    else
-      existing_size = File.size(fname)
-      File.open(fname,"wb"){ |f| f << remote_data }
-      puts "[*] updated: #{existing_size} -> #{remote_data.size}"
-    end
+    check_file "http://research.pandasecurity.com/blogs/images/userdb.txt"
+    check_file "http://fuu.googlecode.com/svn/trunk/src/x86/Tools/Signaturesdb/signatures.txt"
   end
 
   desc "convert txt2bin"
   task :convert do
     require './lib/pedump/packer'
     t0 = Time.now
-    sigs = PEdump::Packer.parse :optimize => true
+    sigs = PEdump::Packer.parse :optimize => true, :verbose => true
     printf "[.] parsed %d definitions in %6.3fs\n", sigs.size, Time.now-t0
     File.open(PEdump::Packer::BIN_SIGS_FILE,"wb"){ |f| Marshal.dump(sigs,f) }
   end
@@ -136,14 +141,19 @@ namespace :sigs do
   desc "dump"
   task :dump do
     require './lib/pedump/packer'
-    PEdump::Packer.all.sort_by{ |sig| sig.size }.each do |sig|
-      t = sig.re.to_s.sub(/\A\(\?m-ix:/,'').sub(/\)\Z/,'').
-        split('').
-        map do |c| 
-          c = c.ord > 127 ? (c.ord&0x7f).chr : c
-          c.ord < 32 ? '_' : c
-        end.join.gsub("\\x00",'_')
-      puts t
+    PEdump::Packer.all.group_by{ |sig| sig.name }.each do |name,sigs|
+      next if sigs.count < 2
+      puts sigs.count
+      sigs.each do |sig|
+        t = sig.re.to_s.sub(/\A\(\?m-ix:/,'').sub(/\)\Z/,'').
+          split('').
+          map do |c| 
+            c = c.ord > 127 ? (c.ord&0x7f).chr : c
+            c.ord < 32 ? '_' : c
+          end.join.gsub("\\x00",'_')
+        #puts t
+      end
+      puts
     end
   end
 end

@@ -3,7 +3,10 @@ class PEdump
 
     DATA_ROOT      = File.dirname(File.dirname(File.dirname(__FILE__)))
     BIN_SIGS_FILE  = File.join(DATA_ROOT, "data", "sig.bin")
-    TEXT_SIGS_FILE = File.join(DATA_ROOT, "data", "sig.txt")
+    TEXT_SIGS_FILES= [
+      File.join(DATA_ROOT, "data", "userdb.txt"),
+      File.join(DATA_ROOT, "data", "signatures.txt")
+    ]
 
     class Match < Struct.new(:offset, :packer)
       def name
@@ -110,37 +113,75 @@ class PEdump
         nil
       end
 
+      # XXX
+      # "B\xE9rczi G\xE1bor".force_encoding('binary').to_yaml:
+      # RuntimeError: expected SCALAR, SEQUENCE-START, MAPPING-START, or ALIAS
+
+      def _add_sig sigs, sig, args = {}
+        raise "null RE: #{sig.inspect}" unless sig.re
+
+        # bad sigs
+        return if sig.re[/\A538BD833C0A30:::::/]
+        return if sig.name == "Name of the Packer v1.0"
+        return if sig.re == "54 68 69 73 20 70 72 6F 67 72 61 6D 20 63 61 6E 6E 6F 74 20 62 65 20 72 75 6E 20 69 6E 20 44 4F 53 20 6D 6F"
+
+        sig.name.sub!(/^\*\s+/,    '')
+        sig.name.sub!(/\s+\(h\)$/, '')
+        sig.re = sig.re.strip.upcase.tr(':','?')
+        sig.re = sig.re.scan(/../).join(' ') if sig.re.split.first.size > 2
+        if sigs[sig.re]
+          a = [sig, sigs[sig.re]].map{ |x| x.name.upcase.split('->').first.tr('V ','') }
+          return if a[0][a[1]] || a[1][a[0]]
+
+          a = [sig, sigs[sig.re]].map{ |x| x.name.split('->').first.split }
+
+          d = [a[0]-a[1], a[1]-a[0]] # different words
+          d.map! do |x|
+            x - ['EXE','vx.x','DLL','(DLL)','[LZMA]']
+          end
+          return if d.all?(&:empty?) # no different words
+          if d.map(&:size) == [1, 1]
+            new_name = sigs[sig.re].name.sub(" #{d[1][0]}", ' '+d.flatten.sort.join(' / '))
+            puts "[.] sig name join: #{new_name}" if args[:verbose]
+            raise if new_name == sigs[sig.re].name
+            sigs[sig.re].name = new_name
+            return
+          end
+
+          new_name = [sigs[sig.re].name, sig.name].join(' / ')
+          puts "[.] sig name join: #{new_name}" if args[:verbose]
+          sigs[sig.re].name = new_name
+          return
+        end
+        sigs[sig.re] = sig
+      end
+
       # parse text signatures
       def parse args = {}
-        args[:fname] ||= TEXT_SIGS_FILE
+        args[:fnames] ||= TEXT_SIGS_FILES
         sigs = {}; sig = nil
 
-        File.open(args[:fname],'r:utf-8') do |f|
-          while line = f.gets
-            line.strip!
-
-            # XXX
-            # "B\xE9rczi G\xE1bor".force_encoding('binary').to_yaml:
-            # RuntimeError: expected SCALAR, SEQUENCE-START, MAPPING-START, or ALIAS
-
-            case line
-            when /^;/,/^$/
-              next
-            when /^\[(.+)\]$/
-              sig = Packer.new($1.sub(/^\*\s+/,'').sub(/\s+\(h\)$/,''))
-            when /^signature = (.+)$/
-              sig.re = $1
-              if sigs[sig.re]
-                next if sigs[sig.re].name.split.first == sig.name.split.first
-                next if sigs[sig.re].name.upcase.tr('V ','') == sig.name.upcase.tr('V ','')
-                printf "[?] dup %-40s, %s\n", sigs[sig.re].name.inspect, sig.name.inspect
+        args[:fnames].each do |fname|
+          n0 = sigs.size
+          File.open(fname,'r:utf-8') do |f|
+            while line = f.gets
+              case line.strip
+              when /^[<;#]/, /^$/ # comments & blank lines
+                next
+              when /^\[(.+)=(.+)\]$/
+                _add_sig(sigs, Packer.new($1, $2, true), args )
+              when /^\[([^=]+)\]$/
+                sig = Packer.new($1)
+              when /^signature = (.+)$/
+                sig.re = $1
+                _add_sig(sigs, sig, args)
+              when /^ep_only = (.+)$/
+                sig.ep_only = ($1.strip.downcase == 'true')
+              else raise line
               end
-              sigs[sig.re] = sig
-            when /^ep_only = (.+)$/
-              sig.ep_only = ($1.strip.downcase == 'true')
-            else raise line
             end
           end
+          puts "[=] #{sigs.size-n0} sigs from #{File.basename(fname)}\n\n" if args[:verbose]
         end
 
         # convert strings to Regexps
@@ -153,10 +194,10 @@ class PEdump
               case x
               when '??'
                 '.'
-              when /[a-f0-9]{2}/i
+              when /\A[a-f0-9]{2}\Z/i
                 x = x.to_i(16).chr
                 args[:raw] ? x : Regexp::escape(x)
-              else raise x
+              else raise "unknown re element: #{x.inspect} in #{sig.inspect}"
               end
             end
           if sig.name[/-+>/]
@@ -172,9 +213,6 @@ class PEdump
         sigs.each do |sig|
           sig.re = Regexp.new( _join(sig.re), Regexp::MULTILINE )
         end
-
-        # false signature
-        sigs.delete_if{ |sig| sig.re == /This\ program\ cannot\ be\ run\ in\ DOS\ mo/m }
 
         sigs
       end
