@@ -61,26 +61,29 @@ class PEdump
         f.seek(h[:ep_offset])             # offset of PE EntryPoint from start of file
         r = of_data f.read(max_size)
         return r if r && r.any?
-        scan_whole_file(f) if h[:deep]
+        scan_whole_file(f, h[:deep] ? nil : 1048576) # scan only 1st mb unless :deep
       end
 
       BLOCK_SIZE = 0x10000
 
-      def scan_whole_file f
-        f.seek 0
+      def scan_whole_file f, limit = nil
+        limit ||= f.size
+        f.seek( pos = 0 )
         buf = ''.force_encoding('binary')
         sigs = self.find_all{ |sig| !sig.ep_only }
         r = []
         while true
           f.read BLOCK_SIZE, buf
+          pos += buf.size
           sigs.each do |sig|
             if idx = buf.index(sig.re)
               r << Match.new(f.tell-buf.size+idx, sig)
             end
           end
-          break if f.eof?
+          break if f.eof? || pos >= limit
           # overlap the read for the case when read buffer boundary breaks signature
           f.seek -max_size-2, IO::SEEK_CUR
+          pos -= (max_size+2)
         end
         r
       end
