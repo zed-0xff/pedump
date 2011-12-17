@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "pedump"
-  s.version = "0.3.3"
+  s.version = "0.4.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2011-12-13"
+  s.date = "2011-12-17"
   s.description = "dump headers, sections, extract resources of win32 PE exe,dll,etc"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["pedump"]
@@ -29,15 +29,23 @@ Gem::Specification.new do |s|
     "Rakefile",
     "VERSION",
     "bin/pedump",
+    "data/fs.txt",
     "data/sig.bin",
-    "data/sig.txt",
+    "data/signatures.txt",
+    "data/userdb.txt",
     "lib/pedump.rb",
     "lib/pedump/cli.rb",
     "lib/pedump/packer.rb",
+    "lib/pedump/sig_parser.rb",
     "lib/pedump/version.rb",
+    "lib/pedump/version_info.rb",
     "pedump.gemspec",
     "samples/calc.7z",
+    "samples/zlib.dll",
     "spec/pedump_spec.rb",
+    "spec/resource_spec.rb",
+    "spec/sig_all_packers_spec.rb",
+    "spec/sig_spec.rb",
     "spec/spec_helper.rb"
   ]
   s.homepage = "http://github.com/zed-0xff/pedump"
@@ -56,6 +64,7 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<bundler>, ["~> 1.0.0"])
       s.add_development_dependency(%q<jeweler>, ["~> 1.6.4"])
       s.add_development_dependency(%q<rcov>, [">= 0"])
+      s.add_development_dependency(%q<awesome_print>, [">= 0"])
     else
       s.add_dependency(%q<multipart-post>, ["~> 1.1.4"])
       s.add_dependency(%q<progressbar>, ["~> 0.9.2"])
@@ -63,6 +72,7 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<bundler>, ["~> 1.0.0"])
       s.add_dependency(%q<jeweler>, ["~> 1.6.4"])
       s.add_dependency(%q<rcov>, [">= 0"])
+      s.add_dependency(%q<awesome_print>, [">= 0"])
     end
   else
     s.add_dependency(%q<multipart-post>, ["~> 1.1.4"])
@@ -71,6 +81,7 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<bundler>, ["~> 1.0.0"])
     s.add_dependency(%q<jeweler>, ["~> 1.6.4"])
     s.add_dependency(%q<rcov>, [">= 0"])
+    s.add_dependency(%q<awesome_print>, [">= 0"])
   end
 end
 
