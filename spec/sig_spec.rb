@@ -13,7 +13,7 @@ describe "PEdump::Packer" do
   end
 
   it "should parse" do
-    a = PEdump::Packer.parse
+    a = PEdump::SigParser.parse
     a.should be_instance_of(Array)
     a.map(&:class).uniq.should == [PEdump::Packer]
   end
@@ -47,16 +47,17 @@ describe "PEdump::Packer" do
             b = title.upcase.tr('V','')
             a[b] || b[a]
           end
-          puts "[.] #{title}"
-          names.each do |x|
-            puts "\t= #{x}"
-          end
+#          puts "[.] #{title}"
+#          names.each do |x|
+#            puts "\t= #{x}"
+#          end
         else
           puts "[?] #{title}"
+          n += 1
         end
-        n += 1
       end
     end
-    puts "[.] diff = #{n}"
+    #puts "[.] diff = #{n}"
+    n.should == 0
   end
 end
