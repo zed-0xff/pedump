@@ -61,8 +61,9 @@ class PEdump::CLI
       end
 
       opts.on "--deep", "packer deep scan, significantly slower" do
-        @options[:deep] = true
-        PEdump::Packer.default_deep = true
+        @options[:deep] ||= 0
+        @options[:deep] += 1
+        PEdump::Packer.default_deep = @options[:deep]
       end
 
       opts.on '-P', "--packer-only", "packer/compiler detect only,","mimics 'file' command output" do

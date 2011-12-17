@@ -41,21 +41,26 @@ class PEdump
           puts "[=] #{sigs.size-n0} sigs from #{File.basename(fname)}\n\n" if args[:verbose]
         end
 
+        bins = Hash.new{ |k,v| k[v] = ''.force_encoding('binary') }
+
         # convert strings to Regexps
         sigs = sigs.values
-        sigs.each do |sig|
+        sigs.each_with_index do |sig,idx|
           sig.re =
             sig.re.split(' ').tap do |a|
               sig.size = a.size
             end.map do |x|
               case x
               when /\A\?\?\Z/
+                bins[sig] << '.'
                 '.'
               when /\A.\?/,/\?.\Z/
                 puts "[?] #{x.inspect} -> \"??\" in #{sig.name}" if args[:verbose]
+                bins[sig] << '.'
                 '.'
               when /\A[a-f0-9]{2}\Z/i
                 x = x.to_i(16).chr
+                bins[sig] << x
                 args[:raw] ? x : Regexp::escape(x)
               else
                 puts "[?] unknown re element: #{x.inspect} in #{sig.inspect}" if args[:verbose]
@@ -71,6 +76,34 @@ class PEdump
         end
         sigs.delete_if{ |sig| !sig.re || sig.re.index('BAD_RE') }
         return sigs if args[:raw]
+
+#        require 'awesome_print'
+#        bins.each do |bin_sig, bin|
+#          next if bin.size < 5
+#          #next unless bin_sig.name['UPX']
+#
+#          bin_re = Regexp.new(bin_sig.re.join, Regexp::MULTILINE)
+#          was = false
+#          sigs.each do |sig|
+#            next if sig.size < 5 || sig == bin_sig
+#            #next unless sig.name['UPX']
+#
+#            re = Regexp.new(sig.re.join, Regexp::MULTILINE)
+#            if bin.index(re) == 0
+#              rd = _re_diff(bin_re.source, re.source)
+#              if rd.any? && rd.size <= 4
+#                #if sig.name.split.first.upcase != bin_sig.name.split.first.upcase
+#                  puts "\n[.] #{bin_sig.name.yellow}\n#{bin_re.source.inspect.red}" unless was
+#                  puts "[=] #{sig.name}"
+#                  puts re.source.inspect.green
+#                  p rd
+#                  was = true
+#                #end
+#              end
+#            end
+#          end
+#        end
+
 
         optimize sigs if args[:optimize]
 
@@ -110,54 +143,61 @@ class PEdump
           a = [sig, sigs[sig.re]].map{ |x| x.name.upcase.split('->').first.tr('V ','') }
           return if a[0][a[1]] || a[1][a[0]]
 
-          a = [sig, sigs[sig.re]].map{ |x| x.name.split('->').first.split }
-
-          d = [a[0]-a[1], a[1]-a[0]] # different words
-          d.map! do |x|
-            x - [
-              'EXE','[EXE]',
-              'vx.x','v?.?',
-              'DLL','(DLL)','[DLL]',
-              '[LZMA]','(LZMA)','LZMA',
-              '-','~','(pack)','(1)','(2)',
-              '19??'
-            ]
+          new_name = _merge_names(sigs[sig.re].name, sig.name)
+          if new_name && new_name != sig.name && new_name != sigs[sig.re].name
+            puts "[.] sig name join: #{new_name}" if args[:verbose]
+            sigs[sig.re].name = new_name
           end
-          return if d.all?(&:empty?) # no different words
+        else
+          # new sig
+          sigs[sig.re] = sig
+        end
+      end
 
-          # [["v1.14/v1.20"], ["v1.14,", "v1.20"]]]
-          # [["EXEShield", "v0.3b/v0.3", "v0.6"], ["Shield", "v0.3b,", "v0.3"]]]
-          2.times do |i|
-            return if d[i].all? do |x|
-              x = x.downcase.delete(',-').sub(/tm$/,'')
-              d[1-i].any? do |y|
-                y = y.downcase.delete(',-').sub(/tm$/,'')
-                y[x]
-              end
+      def _merge_names name1, name2
+        a = [name1, name2].map{ |x| x.split('->').first.split }
+
+        d = [a[0]-a[1], a[1]-a[0]] # different words
+        d.map! do |x|
+          x - [
+            'EXE','[EXE]',
+            'vx.x','v?.?',
+            'DLL','(DLL)','[DLL]',
+            '[LZMA]','(LZMA)','LZMA',
+            '-','~','(pack)','(1)','(2)',
+            '19??'
+          ]
+        end
+        return if d.all?(&:empty?) # no different words
+
+        # [["v1.14/v1.20"], ["v1.14,", "v1.20"]]]
+        # [["EXEShield", "v0.3b/v0.3", "v0.6"], ["Shield", "v0.3b,", "v0.3"]]]
+        2.times do |i|
+          return if d[i].all? do |x|
+            x = x.downcase.delete(',-').sub(/tm$/,'')
+            d[1-i].any? do |y|
+              y = y.downcase.delete(',-').sub(/tm$/,'')
+              y[x]
             end
           end
-
-          a = sigs[sig.re].name.split
-          b = sig.name.split
-          new_name_head = []
-          while a.any? && b.any? && a.first.upcase == b.first.upcase
-            new_name_head << a.shift
-            b.shift
-          end
-          new_name_tail = []
-          while a.any? && b.any? && a.last.upcase == b.last.upcase
-            new_name_tail.unshift a.pop
-            b.pop
-          end
-          new_name = new_name_head
-          new_name << [a.join(' '), b.join(' ')].delete_if{|x| x.empty?}.join(' / ')
-          new_name += new_name_tail
-          new_name = new_name.join(' ')
-          puts "[.] sig name join: #{new_name}" if args[:verbose]
-          sigs[sig.re].name = new_name
-          return
         end
-        sigs[sig.re] = sig
+
+        a = name1.split
+        b = name2.split
+        new_name_head = []
+        while a.any? && b.any? && a.first.upcase == b.first.upcase
+          new_name_head << a.shift
+          b.shift
+        end
+        new_name_tail = []
+        while a.any? && b.any? && a.last.upcase == b.last.upcase
+          new_name_tail.unshift a.pop
+          b.pop
+        end
+        new_name = new_name_head
+        new_name << [a.join(' '), b.join(' ')].delete_if{|x| x.empty?}.join(' / ')
+        new_name += new_name_tail
+        new_name = new_name.join(' ')
       end
 
       def _join a, sep=''
@@ -173,6 +213,57 @@ class PEdump
         end.join(sep)
       end
 
+      def _re_diff a,b, max_cnt = 1000
+        r = []
+        [a,b].map(&:size).max.times.map do |i|
+          if a[i] != b[i]
+            r << [a[i],b[i]]
+            return nil if r.size > max_cnt
+          end
+        end
+        r
+      end
+
+      def _optimize sigs
+        nfound   = 0
+        min_sz   = 6
+        max_diff = 6
+        sigs.each_with_index do |sig1,idx|
+          #break if idx == 100
+          next if sig1.re.size < min_sz
+          next if sig1.name['PseudoSigner']
+
+          sigs[(idx+1)..-1].each do |sig2|
+            next if sig2.re.size < min_sz
+            next if sig2.name['PseudoSigner']
+
+            if rd = _re_diff(sig1.re, sig2.re, max_diff)
+              if    rd.all?{ |x| x[0].nil? || x[0] == '.' } && sig2.re.size >= sig1.re.size
+                if new_name = _merge_names(sig2.name, sig1.name)
+                  #pp ["FIRST", sig1.name, sig2.name, new_name, sig1.re.join, sig2.re.join] if new_name
+                  sig1.name = new_name
+                end
+                sig2.ep_only ||= sig1.ep_only
+                sig2.re = []
+              elsif rd.all?{ |x| x[1].nil? || x[1] == '.' } && sig1.re.size >= sig2.re.size
+                if new_name = _merge_names(sig2.name, sig1.name)
+                  #pp ["SECOND", sig1.name, sig2.name, new_name, sig1.re.join, sig2.re.join] if new_name
+                  sig2.name = new_name
+                end
+                sig1.re = []
+                sig1.ep_only ||= sig2.ep_only
+                break
+              else
+                next
+              end
+              nfound += 1
+            end
+          end
+        end
+
+        sigs.delete_if{ |sig| sig.re.empty? }
+      end
+
       def optimize sigs
         # replaces all duplicate names with references to one name
         # saves ~30k out of ~200k mem
@@ -180,6 +271,8 @@ class PEdump
         sigs.each do |sig|
           sig.name = (h[sig.name] ||= sig.name)
         end
+
+        print "[.] sigs merge: #{sigs.size}"; _optimize(sigs); puts  " -> #{sigs.size}"
 
         # try to merge signatures with same name, size & ep_only
         sigs.group_by{ |sig|

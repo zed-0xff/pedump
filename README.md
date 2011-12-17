@@ -381,7 +381,7 @@ Usage
 
     === Packer / Compiler ===
     
-      Microsoft Visual C v2.0
+      MS Visual C v2.0
 
 #### pedump can mimic 'file' command output:
 

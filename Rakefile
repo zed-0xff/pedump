@@ -23,8 +23,8 @@ Jeweler::Tasks.new do |gem|
   gem.authors = ["Andrey \"Zed\" Zaikin"]
   gem.executables = %w'pedump'
   gem.files.include "lib/**/*.rb"
-  gem.files.include "data/sig.bin"
-  gem.files.include "data/sig.txt"
+  gem.files.include "data/*.bin"
+  gem.files.include "data/*.txt"
   # dependencies defined in Gemfile
 end
 Jeweler::RubygemsDotOrgTasks.new
@@ -141,20 +141,17 @@ namespace :sigs do
   desc "dump"
   task :dump do
     require './lib/pedump/packer'
-    PEdump::Packer.all.group_by{ |sig| sig.name }.each do |name,sigs|
-      next if sigs.count < 2
-      puts sigs.count
-      sigs.each do |sig|
-        t = sig.re.to_s.sub(/\A\(\?m-ix:/,'').sub(/\)\Z/,'').
-          split('').
-          map do |c| 
-            c = c.ord > 127 ? (c.ord&0x7f).chr : c
-            c.ord < 32 ? '_' : c
-          end.join.gsub("\\x00",'_')
-        #puts t
+    require 'awesome_print'
+    PEdump::Packer.all.
+      group_by{ |sig| sig.name }.
+      sort_by{|name,sigs| name }.
+      each do |name,sigs|
+        next if sigs.size == 1
+        puts name.green
+        sigs.each do |sig|
+          printf "    %-5s  %s\n", sig.ep_only, sig.re.source.inspect
+        end
       end
-      puts
-    end
   end
 end
 

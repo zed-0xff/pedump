@@ -57,19 +57,30 @@ class PEdump
       # try to determine packer of FILE f, ep_offset - offset to entrypoint from start of file
       def of_pe_file f, h
         h[:deep] = @@deep unless h.key?(:deep)
+        h[:deep] = 1 if h[:deep] == true
+        h[:deep] = 0 if h[:deep] == false
+
         f.seek(h[:ep_offset])             # offset of PE EntryPoint from start of file
-        r = of_data f.read(max_size)
-        return r if r && r.any?
-        scan_whole_file(f, h[:deep] ? nil : 1048576) # scan only 1st mb unless :deep
+        r = Array(of_data(f.read(max_size)))
+        return r if r && r.any? && h[:deep] < 2
+        r += scan_whole_file(f,
+                             :limit => (h[:deep] > 0 ? nil : 1048576),
+                             :deep  => h[:deep]
+                            ) # scan only 1st mb unless :deep
       end
 
       BLOCK_SIZE = 0x10000
 
-      def scan_whole_file f, limit = nil
-        limit ||= f.size
+      def scan_whole_file f, h = {}
+        h[:limit] ||= f.size
         f.seek( pos = 0 )
         buf = ''.force_encoding('binary')
-        sigs = self.find_all{ |sig| !sig.ep_only }
+        sigs =
+          if h[:deep].is_a?(Numeric) && h[:deep] > 1
+            self.all
+          else
+            self.find_all{ |sig| !sig.ep_only }
+          end
         r = []
         while true
           f.read BLOCK_SIZE, buf
@@ -79,7 +90,7 @@ class PEdump
               r << Match.new(f.tell-buf.size+idx, sig)
             end
           end
-          break if f.eof? || pos >= limit
+          break if f.eof? || pos >= h[:limit]
           # overlap the read for the case when read buffer boundary breaks signature
           f.seek -max_size-2, IO::SEEK_CUR
           pos -= (max_size+2)
