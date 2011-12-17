@@ -133,7 +133,7 @@ namespace :sigs do
   task :convert do
     require './lib/pedump/packer'
     t0 = Time.now
-    sigs = PEdump::Packer.parse :optimize => true, :verbose => true
+    sigs = PEdump::SigParser.parse :optimize => true, :verbose => true
     printf "[.] parsed %d definitions in %6.3fs\n", sigs.size, Time.now-t0
     File.open(PEdump::Packer::BIN_SIGS_FILE,"wb"){ |f| Marshal.dump(sigs,f) }
   end
