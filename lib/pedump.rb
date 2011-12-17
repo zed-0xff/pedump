@@ -502,6 +502,7 @@ class PEdump
     resources(h) # includes pe(h)
     imports h
     exports h
+    packer  h
   end
 
   def data_directory f=nil
