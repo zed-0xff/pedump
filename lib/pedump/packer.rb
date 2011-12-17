@@ -5,7 +5,8 @@ class PEdump
     BIN_SIGS_FILE  = File.join(DATA_ROOT, "data", "sig.bin")
     TEXT_SIGS_FILES= [
       File.join(DATA_ROOT, "data", "userdb.txt"),
-      File.join(DATA_ROOT, "data", "signatures.txt")
+      File.join(DATA_ROOT, "data", "signatures.txt"),
+      File.join(DATA_ROOT, "data", "fs.txt")
     ]
 
     class Match < Struct.new(:offset, :packer)
@@ -123,10 +124,18 @@ class PEdump
         # bad sigs
         return if sig.re[/\A538BD833C0A30:::::/]
         return if sig.name == "Name of the Packer v1.0"
-        return if sig.re == "54 68 69 73 20 70 72 6F 67 72 61 6D 20 63 61 6E 6E 6F 74 20 62 65 20 72 75 6E 20 69 6E 20 44 4F 53 20 6D 6F"
+        return if sig.re == "54 68 69 73 20 70 72 6F 67 72 61 6D 20 63 61 6E 6E 6F 74 20 62 65 20 72 75 6E 20 69 6E 20 44 4F 53 20 6D 6F" # dos stub
 
         sig.name.sub!(/^\*\s+/,    '')
         sig.name.sub!(/\s+\(h\)$/, '')
+        sig.name.sub!(/version (\d)/i,"v\\1")
+        sig.name.sub!(/Microsoft/i, "MS")
+        sig.name.sub!(/ or /i, " / ")
+        sig.name.sub! 'RLP ','RLPack '
+        sig.name.sub! '.beta', ' beta'
+        sig.name.sub! '(com)','[com]'
+        sig.name = sig.name.split(/\s*-+>\s*/).join(' -> ') # fix spaces around '->'
+
         sig.re = sig.re.strip.upcase.tr(':','?')
         sig.re = sig.re.scan(/../).join(' ') if sig.re.split.first.size > 2
         if sigs[sig.re]
@@ -137,18 +146,88 @@ class PEdump
 
           d = [a[0]-a[1], a[1]-a[0]] # different words
           d.map! do |x|
-            x - ['EXE','vx.x','DLL','(DLL)','[LZMA]']
+            x - [
+              'EXE','[EXE]',
+              'vx.x','v?.?',
+              'DLL','(DLL)','[DLL]',
+              '[LZMA]','(LZMA)','LZMA',
+              '-','~','(pack)','(1)','(2)',
+              '19??'
+            ]
           end
           return if d.all?(&:empty?) # no different words
-          if d.map(&:size) == [1, 1]
-            new_name = sigs[sig.re].name.sub(" #{d[1][0]}", ' '+d.flatten.sort.join(' / '))
-            puts "[.] sig name join: #{new_name}" if args[:verbose]
-            raise if new_name == sigs[sig.re].name
-            sigs[sig.re].name = new_name
-            return
+
+          # [["(main", "CRT", "Startup)"], ["(_mainCRTStartup)"]]]
+          if d[0].size == 1 && d[1].size > 0
+            return if d[1].all?{ |x| d[0][0][x.tr('()_','')] }
+          elsif d[1].size == 1 && d[0].size > 0
+            return if d[0].all?{ |x| d[1][0][x.tr('()_','')] }
           end
 
-          new_name = [sigs[sig.re].name, sig.name].join(' / ')
+          if d.map(&:size) == [1, 1] && false
+            old_name = sigs[sig.re].name
+            d.flatten!
+
+            # keep old name if it already contains diff substring
+            # example: "nbuild v1.0 [soft] / soft"
+            return if old_name[d[0]]
+
+            # ignore difference is only in punctuations, dashes, etc
+            return if d.map{ |x| x.delete('~()[]-').upcase }.uniq.size == 1
+
+            # MS FORTRAN Library 1901 / 19??
+            return if d[1] == '19??'
+
+            new_name = old_name.
+              sub('->',' ->').
+              split.map do |word|
+                if word == d[1]
+                  if d[1][d[0]]
+                    d[1]            # d[0] is a substring of d[1] => keep d[1]
+                  elsif d[0][d[1]]
+                    d[0]            # d[1] is a substring of d[0] => keep d[0]
+                  else
+                    d.sort.join(' / ')
+                  end
+                else
+                  word
+                end
+              end.join(' ')
+            raise "cannot join #{new_name.inspect}, #{d.inspect}" if new_name == old_name
+            puts "[.] sig name join: #{new_name}" if args[:verbose]
+
+            sigs[sig.re].name = new_name
+            return
+          else
+            # [["v1.14/v1.20"], ["v1.14,", "v1.20"]]]
+            # [["EXEShield", "v0.3b/v0.3", "v0.6"], ["Shield", "v0.3b,", "v0.3"]]]
+            2.times do |i|
+              return if d[i].all? do |x|
+                x = x.downcase.delete(',-').sub(/tm$/,'')
+                d[1-i].any? do |y|
+                  y = y.downcase.delete(',-').sub(/tm$/,'')
+                  y[x]
+                end
+              end
+            end
+          end
+
+          a = sigs[sig.re].name.split
+          b = sig.name.split
+          new_name_head = []
+          while a.any? && b.any? && a.first.upcase == b.first.upcase
+            new_name_head << a.shift
+            b.shift
+          end
+          new_name_tail = []
+          while a.any? && b.any? && a.last.upcase == b.last.upcase
+            new_name_tail.unshift a.pop
+            b.pop
+          end
+          new_name = new_name_head
+          new_name << [a.join(' '), b.join(' ')].delete_if{|x| x.empty?}.join(' / ')
+          new_name += new_name_tail
+          new_name = new_name.join(' ')
           puts "[.] sig name join: #{new_name}" if args[:verbose]
           sigs[sig.re].name = new_name
           return
@@ -192,19 +271,27 @@ class PEdump
               sig.size = a.size
             end.map do |x|
               case x
-              when '??'
+              when /\A\?\?\Z/
+                '.'
+              when /\A.\?/,/\?.\Z/
+                puts "[?] #{x.inspect} -> \"??\" in #{sig.name}"
                 '.'
               when /\A[a-f0-9]{2}\Z/i
                 x = x.to_i(16).chr
                 args[:raw] ? x : Regexp::escape(x)
-              else raise "unknown re element: #{x.inspect} in #{sig.inspect}"
+              else
+                puts "[?] unknown re element: #{x.inspect} in #{sig.inspect}" if args[:verbose]
+                "BAD_RE"
+                break
               end
             end
           if sig.name[/-+>/]
             a = sig.name.split(/-+>/,2).map(&:strip)
             sig.name = "#{a[0]} (#{a[1]})"
           end
+          sig.re.pop while sig.re.last == '??'
         end
+        sigs.delete_if{ |sig| !sig.re || sig.re.index('BAD_RE') }
         return sigs if args[:raw]
 
         optimize sigs if args[:optimize]
