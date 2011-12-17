@@ -157,57 +157,14 @@ class PEdump
           end
           return if d.all?(&:empty?) # no different words
 
-          # [["(main", "CRT", "Startup)"], ["(_mainCRTStartup)"]]]
-          if d[0].size == 1 && d[1].size > 0
-            return if d[1].all?{ |x| d[0][0][x.tr('()_','')] }
-          elsif d[1].size == 1 && d[0].size > 0
-            return if d[0].all?{ |x| d[1][0][x.tr('()_','')] }
-          end
-
-          if d.map(&:size) == [1, 1] && false
-            old_name = sigs[sig.re].name
-            d.flatten!
-
-            # keep old name if it already contains diff substring
-            # example: "nbuild v1.0 [soft] / soft"
-            return if old_name[d[0]]
-
-            # ignore difference is only in punctuations, dashes, etc
-            return if d.map{ |x| x.delete('~()[]-').upcase }.uniq.size == 1
-
-            # MS FORTRAN Library 1901 / 19??
-            return if d[1] == '19??'
-
-            new_name = old_name.
-              sub('->',' ->').
-              split.map do |word|
-                if word == d[1]
-                  if d[1][d[0]]
-                    d[1]            # d[0] is a substring of d[1] => keep d[1]
-                  elsif d[0][d[1]]
-                    d[0]            # d[1] is a substring of d[0] => keep d[0]
-                  else
-                    d.sort.join(' / ')
-                  end
-                else
-                  word
-                end
-              end.join(' ')
-            raise "cannot join #{new_name.inspect}, #{d.inspect}" if new_name == old_name
-            puts "[.] sig name join: #{new_name}" if args[:verbose]
-
-            sigs[sig.re].name = new_name
-            return
-          else
-            # [["v1.14/v1.20"], ["v1.14,", "v1.20"]]]
-            # [["EXEShield", "v0.3b/v0.3", "v0.6"], ["Shield", "v0.3b,", "v0.3"]]]
-            2.times do |i|
-              return if d[i].all? do |x|
-                x = x.downcase.delete(',-').sub(/tm$/,'')
-                d[1-i].any? do |y|
-                  y = y.downcase.delete(',-').sub(/tm$/,'')
-                  y[x]
-                end
+          # [["v1.14/v1.20"], ["v1.14,", "v1.20"]]]
+          # [["EXEShield", "v0.3b/v0.3", "v0.6"], ["Shield", "v0.3b,", "v0.3"]]]
+          2.times do |i|
+            return if d[i].all? do |x|
+              x = x.downcase.delete(',-').sub(/tm$/,'')
+              d[1-i].any? do |y|
+                y = y.downcase.delete(',-').sub(/tm$/,'')
+                y[x]
               end
             end
           end
