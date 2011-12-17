@@ -2,6 +2,7 @@
 tmp
 samples/*.exe
 samples/*.mui
+samples/*.dll
 
 # rcov generated
 coverage
