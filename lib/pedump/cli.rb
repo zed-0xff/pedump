@@ -268,7 +268,7 @@ class PEdump::CLI
       when :pe
         @pedump.pe.ifh.TimeDateStamp = @pedump.pe.ifh.TimeDateStamp.to_i
         data = @pedump.pe.signature + (@pedump.pe.ifh.try(:pack)||'') + (@pedump.pe.ioh.try(:pack)||'')
-        @pedump.pe.ifh.TimeDateStamp = Time.at(@pedump.pe.ifh.TimeDateStamp)
+        @pedump.pe.ifh.TimeDateStamp = Time.at(@pedump.pe.ifh.TimeDateStamp).utc
       when :resources
         return dump_resources(data)
       when :strings
@@ -352,7 +352,7 @@ class PEdump::CLI
           printf "%30s: %24s\n", k.to_s.sub('Major',''), "#{v}.#{data[k.to_s.sub('Major','Minor')]}"
         when /\AMinor.*Version\Z/
         when /TimeDateStamp/
-          printf "%30s: %24s\n", k, Time.at(v).strftime('"%Y-%m-%d %H:%M:%S"')
+          printf "%30s: %24s\n", k, Time.at(v).utc.strftime('"%Y-%m-%d %H:%M:%S"')
         else
           comment = ''
           if COMMENTS[k]
@@ -485,7 +485,7 @@ class PEdump::CLI
     printf "# module %s\n# flags=0x%x  ts=%s  version=%d.%d  ord_base=%d\n",
       data.name.inspect,
       data.Characteristics.to_i,
-      Time.at(data.TimeDateStamp.to_i).strftime('"%Y-%m-%d %H:%M:%S"'),
+      Time.at(data.TimeDateStamp.to_i).utc.strftime('"%Y-%m-%d %H:%M:%S"'),
       data.MajorVersion, data.MinorVersion,
       data.Base
 

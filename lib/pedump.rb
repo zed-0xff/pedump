@@ -185,7 +185,7 @@ class PEdump
 
     def initialize *args
       super
-      self.TimeDateStamp = Time.at(self.TimeDateStamp)
+      self.TimeDateStamp = Time.at(self.TimeDateStamp).utc
     end
     def flags
       FLAGS.find_all{ |k,v| (self.Characteristics & k) != 0 }.map(&:last)
