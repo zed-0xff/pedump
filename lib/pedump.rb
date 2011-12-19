@@ -226,6 +226,7 @@ class PEdump
         cFORMAT = self.const_get 'FORMAT'
         size ||= cSIZE
         PEdump.logger.warn "[?] unusual size of IMAGE_OPTIONAL_HEADER = #{size} (must be #{usual_size})" if size != usual_size
+        PEdump.logger.warn "[?] #{size-usual_size} spare bytes after IMAGE_OPTIONAL_HEADER" if size > usual_size
         new(*file.read([size,cSIZE].min).to_s.unpack(cFORMAT)).tap do |ioh|
           ioh.DataDirectory = []
 
@@ -240,6 +241,9 @@ class PEdump
             ioh.DataDirectory.last.type = IMAGE_DATA_DIRECTORY::TYPES[idx]
           end
           #ioh.DataDirectory.pop while ioh.DataDirectory.last.empty?
+
+          # skip spare bytes, if any. XXX may contain suspicious data
+          file.seek(size-usual_size, IO::SEEK_CUR) if size > usual_size
         end
       end
     end
@@ -483,6 +487,20 @@ class PEdump
             nToRead.times do
               break if f.eof?
               pe.section_table << IMAGE_SECTION_HEADER.read(f)
+            end
+
+#            if pe.section_table.empty?
+#              pe.section_table << IMAGE_SECTION_HEADER.new("")
+#              logger.warn "[?] no sections, appending empty one"
+#            end
+
+            if pe.section_table.any?
+              # zero all missing values of last section
+              pe.section_table.last.tap do |last_section|
+                last_section.each_pair do |k,v|
+                  last_section[k] = 0 if v.nil?
+                end
+              end
             end
           end
         end
@@ -733,12 +751,27 @@ class PEdump
         return va - s.VirtualAddress + s.PointerToRawData
       end
     end
+
     # not found with regular search. assume any of VirtualSize was 0, and try with RawSize
     sections.each do |s|
       if (s.VirtualAddress...(s.VirtualAddress+s.SizeOfRawData)).include?(va)
         return va - s.VirtualAddress + s.PointerToRawData
       end
     end
+
+    # still not found, bad/zero VirtualSizes & RawSizes ?
+
+    # a special case - PE without sections
+    return va if sections.empty?
+
+    # check if only one section
+    if sections.size == 1 || sections.all?{ |s| s.VirtualAddress.to_i == 0 }
+      s = sections.first
+      return va - s.VirtualAddress + s.PointerToRawData
+    end
+
+    # TODO: not all VirtualAdresses == 0 case
+
     logger.error "[?] can't find file_offset of VA 0x#{va.to_i.to_s(16)}"
     nil
   end
