@@ -543,13 +543,14 @@ class PEdump
     return nil unless file_offset
     f.seek file_offset
     r = []
-    until (t=IMAGE_IMPORT_DESCRIPTOR.read(f)).empty?
+    until (t=IMAGE_IMPORT_DESCRIPTOR.read(f)).Name.to_i == 0
       r << t
     end
+    logger.warn "[?] non-empty last IMAGE_IMPORT_DESCRIPTOR: #{t.inspect}" unless t.empty?
     @imports = r.each do |x|
       if x.Name.to_i != 0 && (va = va2file(x.Name))
         f.seek va
-        x.module_name = f.gets("\x00").chop
+        x.module_name = f.gets("\x00").chomp("\x00")
       end
       [:original_first_thunk, :first_thunk].each do |tbl|
         camel = tbl.capitalize.to_s.gsub(/_./){ |char| char[1..-1].upcase}
