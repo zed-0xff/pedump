@@ -100,6 +100,7 @@ class PEdump
 
       def of_data data
         r = []
+        return r unless data
         each do |packer|
           if (idx=data.index(packer.re)) == 0
             r << Match.new(idx, packer)

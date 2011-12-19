@@ -479,8 +479,10 @@ class PEdump
                 nToRead = 65535
               end
             end
-            pe.section_table = nToRead.times.map do
-              IMAGE_SECTION_HEADER.read(f)
+            pe.section_table = []
+            nToRead.times do
+              break if f.eof?
+              pe.section_table << IMAGE_SECTION_HEADER.read(f)
             end
           end
         end
