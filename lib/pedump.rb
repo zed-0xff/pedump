@@ -471,12 +471,12 @@ class PEdump
               end
             end
 
-            if (nToRead=pe.ifh.NumberOfSections) > 32
+            if (nToRead=pe.ifh.NumberOfSections) > 0xffff
               if @force.is_a?(Numeric) && @force > 1
                 logger.warn "[!] too many sections (#{pe.ifh.NumberOfSections}). forced. reading all"
               else
-                logger.warn "[!] too many sections (#{pe.ifh.NumberOfSections}). not forced, reading first 32"
-                nToRead = 32
+                logger.warn "[!] too many sections (#{pe.ifh.NumberOfSections}). not forced, reading first 65535"
+                nToRead = 65535
               end
             end
             pe.section_table = nToRead.times.map do
