@@ -305,7 +305,7 @@ class PEdump
         return nil unless mz = mz(f)
         dos_stub_offset = mz.header_paragraphs.to_i * 0x10
         dos_stub_size   = mz.lfanew.to_i - dos_stub_offset
-        if dos_stub_offset <= 0
+        if dos_stub_offset < 0
           logger.warn "[?] invalid DOS stub offset #{dos_stub_offset}"
           nil
         elsif f && dos_stub_offset > f.size
@@ -321,6 +321,7 @@ class PEdump
           # no open file, it's ok
           nil
         else
+          return nil if dos_stub_size == MZ::SIZE && dos_stub_offset == 0
           if dos_stub_size > 0x1000
             logger.warn "[?] DOS stub size too big (#{dos_stub_size}), limiting to 0x1000"
             dos_stub_size = 0x1000
