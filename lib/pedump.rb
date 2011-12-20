@@ -467,7 +467,6 @@ class PEdump
       break if t.Name.to_i == 0 # also catches EOF
       r << t
       file_offset += IMAGE_IMPORT_DESCRIPTOR::SIZE
-      break if r.size == 3
     end
 
     logger.warn "[?] non-empty last IMAGE_IMPORT_DESCRIPTOR: #{t.inspect}" unless t.empty?
