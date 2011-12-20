@@ -486,8 +486,8 @@ class PEdump::CLI
       data.name.inspect,
       data.Characteristics.to_i,
       Time.at(data.TimeDateStamp.to_i).utc.strftime('"%Y-%m-%d %H:%M:%S"'),
-      data.MajorVersion, data.MinorVersion,
-      data.Base
+      data.MajorVersion.to_i, data.MinorVersion.to_i,
+      data.Base.to_i
 
     if @options[:verbose] > 0
       [%w'Names', %w'EntryPoints Functions', %w'Ordinals NameOrdinals'].each do |x|
@@ -498,8 +498,8 @@ class PEdump::CLI
     end
 
     printf "# nFuncs=%d  nNames=%d\n",
-      data.NumberOfFunctions,
-      data.NumberOfNames
+      data.NumberOfFunctions.to_i,
+      data.NumberOfNames.to_i
 
     return unless data.name_ordinals.any? || data.entry_points.any? || data.names.any?
 

@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
 require 'logger'
+require 'stringio'
+require 'pedump/composite_io'
+require 'pedump/pe'
 require 'pedump/version'
 
 # pedump.rb by zed_0xff
@@ -134,22 +137,6 @@ class PEdump
     :reserved6,
     :lfanew
   )
-
-  class PE < Struct.new(
-    :signature,            # "PE\x00\x00"
-    :image_file_header,
-    :image_optional_header,
-    :section_table
-  )
-    alias :ifh :image_file_header
-    alias :ioh :image_optional_header
-    def x64?
-      ifh && ifh.Machine == 0x8664
-    end
-    def dll?
-      ifh && ifh.flags.include?('DLL')
-    end
-  end
 
   # http://msdn.microsoft.com/en-us/library/ms809762.aspx
   class IMAGE_FILE_HEADER < create_struct( 'v2V3v2',
@@ -307,6 +294,7 @@ class PEdump
   )
   class IMAGE_SECTION_HEADER
     alias :flags :Characteristics
+    alias :va    :VirtualAddress
     def flags_desc
       r = ''
       f = self.flags.to_i
@@ -455,54 +443,7 @@ class PEdump
           nil
         else
           f.seek pe_offset
-          pe_sig = f.read 4
-          logger.error "[!] 'NE' format is not supported!" if pe_sig == "NE\x00\x00"
-          if pe_sig != "PE\x00\x00"
-            if @force
-              logger.warn  "[?] no PE signature (want: 'PE\\x00\\x00', got: #{pe_sig.inspect})"
-            else
-              logger.error "[?] no PE signature (want: 'PE\\x00\\x00', got: #{pe_sig.inspect}). (not forced)"
-              return nil
-            end
-          end
-          PE.new(pe_sig).tap do |pe|
-            pe.image_file_header = IMAGE_FILE_HEADER.read(f)
-            if pe.ifh.SizeOfOptionalHeader > 0
-              if pe.x64?
-                pe.image_optional_header = IMAGE_OPTIONAL_HEADER64.read(f, pe.ifh.SizeOfOptionalHeader)
-              else
-                pe.image_optional_header = IMAGE_OPTIONAL_HEADER32.read(f, pe.ifh.SizeOfOptionalHeader)
-              end
-            end
-
-            if (nToRead=pe.ifh.NumberOfSections) > 0xffff
-              if @force.is_a?(Numeric) && @force > 1
-                logger.warn "[!] too many sections (#{pe.ifh.NumberOfSections}). forced. reading all"
-              else
-                logger.warn "[!] too many sections (#{pe.ifh.NumberOfSections}). not forced, reading first 65535"
-                nToRead = 65535
-              end
-            end
-            pe.section_table = []
-            nToRead.times do
-              break if f.eof?
-              pe.section_table << IMAGE_SECTION_HEADER.read(f)
-            end
-
-#            if pe.section_table.empty?
-#              pe.section_table << IMAGE_SECTION_HEADER.new("")
-#              logger.warn "[?] no sections, appending empty one"
-#            end
-
-            if pe.section_table.any?
-              # zero all missing values of last section
-              pe.section_table.last.tap do |last_section|
-                last_section.each_pair do |k,v|
-                  last_section[k] = 0 if v.nil?
-                end
-              end
-            end
-          end
+          PE.read f, :force => @force
         end
       end
   end
@@ -637,11 +578,15 @@ class PEdump
     return @exports if @exports
     return nil unless pe(f) && pe(f).ioh && f
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::EXPORT]
-    return [] if !dir || (dir.va == 0 && dir.size == 0)
+    return nil if !dir || (dir.va == 0 && dir.size == 0)
     va = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::EXPORT].va
     file_offset = va2file(va)
     return nil unless file_offset
     f.seek file_offset
+    if f.eof?
+      logger.info "[?] exports info beyond EOF"
+      return nil
+    end
     @exports = IMAGE_EXPORT_DIRECTORY.read(f).tap do |x|
       x.entry_points = []
       x.name_ordinals = []
@@ -778,6 +723,8 @@ class PEdump
     :OffsetToData, :Size, :CodePage, :Reserved
 
   def va2file va
+    return nil if va.nil?
+
     sections.each do |s|
       if (s.VirtualAddress...(s.VirtualAddress+s.VirtualSize)).include?(va)
         return va - s.VirtualAddress + s.PointerToRawData
