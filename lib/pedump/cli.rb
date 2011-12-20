@@ -506,14 +506,15 @@ class PEdump::CLI
     puts
 
     ord2name = {}
-    data.NumberOfNames.times do |i|
-      ord2name[data.name_ordinals[i]] ||= []
-      ord2name[data.name_ordinals[i]] << data.names[i]
+    if data.names && data.names.any?
+      data.NumberOfNames.times do |i|
+        ord2name[data.name_ordinals[i]] ||= []
+        ord2name[data.name_ordinals[i]] << data.names[i]
+      end
     end
 
     printf "%5s %8s  %s\n", "ORD", "ENTRY_VA", "NAME"
-    data.NumberOfFunctions.times do |i|
-      ep = data.entry_points[i]
+    data.entry_points.each_with_index do |ep,i|
       names = ord2name[i+data.Base].try(:join,', ')
       next if ep.to_i == 0 && names.nil?
       printf "%5d %8x  %s\n", i + data.Base, ep, names

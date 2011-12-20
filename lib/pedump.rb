@@ -591,7 +591,12 @@ class PEdump
               ImportedFunction.new(nil,nil,t & (2**(bits-1)-1)) # 0x7fff_ffff(_ffff_ffff)
             elsif va=va2file(t)
               f.seek va
-              ImportedFunction.new(f.read(2).unpack('v').first, f.gets("\x00").chop)
+              if f.eof?
+                logger.warn "[?] import va 0x#{va.to_s(16)} beyond EOF"
+                nil
+              else
+                ImportedFunction.new(f.read(2).unpack('v').first, f.gets("\x00").chop)
+              end
             else
               nil
             end
@@ -643,23 +648,50 @@ class PEdump
       x.names = []
       if x.Name.to_i != 0 && (va = va2file(x.Name))
         f.seek va
-        x.name = f.gets("\x00").chop
+        if f.eof?
+          logger.warn "[?] export va 0x#{va.to_s(16)} beyond EOF"
+          nil
+        else
+          x.name = f.gets("\x00").chomp("\x00")
+        end
       end
       if x.NumberOfFunctions.to_i != 0
         if x.AddressOfFunctions.to_i !=0 && (va = va2file(x.AddressOfFunctions))
           f.seek va
-          x.entry_points = f.read(x.NumberOfFunctions*4).unpack('V*')
+          x.entry_points = []
+          x.NumberOfFunctions.times do
+            if f.eof?
+              logger.warn "[?] got EOF while reading exports entry_points"
+              break
+            end
+            x.entry_points << f.read(4).unpack('V').first
+          end
         end
         if x.AddressOfNameOrdinals.to_i !=0 && (va = va2file(x.AddressOfNameOrdinals))
           f.seek va
-          x.name_ordinals = f.read(x.NumberOfNames*2).unpack('v*').map{ |o| o+x.Base }
+          x.name_ordinals = []
+          x.NumberOfNames.times do
+            if f.eof?
+              logger.warn "[?] got EOF while reading exports name_ordinals"
+              break
+            end
+            x.name_ordinals << f.read(2).unpack('v').first + x.Base
+          end
         end
       end
       if x.NumberOfNames.to_i != 0 && x.AddressOfNames.to_i !=0 && (va = va2file(x.AddressOfNames))
         f.seek va
-        x.names = f.read(x.NumberOfNames*4).unpack('V*').map do |va|
+        x.names = []
+        x.NumberOfNames.times do
+          if f.eof?
+            logger.warn "[?] got EOF while reading exports names"
+            break
+          end
+          x.names << f.read(4).unpack('V').first
+        end
+        x.names.map! do |va|
           f.seek va2file(va)
-          f.gets("\x00").chop
+          f.gets("\x00").to_s.chomp("\x00")
         end
       end
     end
