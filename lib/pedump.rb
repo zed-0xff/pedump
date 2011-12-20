@@ -620,17 +620,12 @@ class PEdump
           return nil
         end
 
-        start_offset = f.tell
-
         klass = @pe.x64? ? IMAGE_TLS_DIRECTORY64 : IMAGE_TLS_DIRECTORY32
+        nEntries = [1,dir.size / klass.const_get('SIZE')].max
         r = []
-        while !f.eof? && (entry = klass.read(f))
-          if entry.AddressOfCallBacks.to_i == 0
-            logger.warn "[?] non-empty TLS terminator: #{entry.inspect}" unless entry.empty?
-            break
-          end
+        nEntries.times do
+          break if f.eof? || !(entry = klass.read(f))
           r << entry
-          break if dir.size > 0 && f.tell >= (start_offset+dir.size)
         end
         r
       end
