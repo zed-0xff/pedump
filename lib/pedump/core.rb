@@ -1,4 +1,5 @@
 require 'logger'
+require 'pedump/version'
 
 class String
   def xor x

@@ -3,7 +3,7 @@ require 'stringio'
 require 'pedump/core'
 require 'pedump/pe'
 require 'pedump/resources'
-require 'pedump/version'
+require 'pedump/version_info'
 require 'pedump/tls'
 
 # pedump.rb by zed_0xff
@@ -441,14 +441,34 @@ class PEdump
     return nil unless pe(f) && pe(f).ioh && f
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::IMPORT]
     return [] if !dir || (dir.va == 0 && dir.size == 0)
-    va = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::IMPORT].va
-    file_offset = va2file(va)
+    file_offset = va2file(dir.va)
     return nil unless file_offset
+
+    # scan TLS first, to catch many fake imports trick from
+    # http://code.google.com/p/corkami/source/browse/trunk/asm/PE/manyimportsW7.asm
+    tls_aoi = nil
+    if (tls = tls(f)) && tls.any?
+      tls_aoi = tls.first.AddressOfIndex.to_i - @pe.ioh.ImageBase.to_i
+      tls_aoi = tls_aoi > 0 ? va2file(tls_aoi) : nil
+    end
+
     f.seek file_offset
     r = []
-    until (t=IMAGE_IMPORT_DESCRIPTOR.read(f)).Name.to_i == 0
+    while true
+      if tls_aoi && tls_aoi == file_offset+16
+        # catched the neat trick! :)
+        # f.tell + 12  =  offset of 'FirstThunk' field from start of IMAGE_IMPORT_DESCRIPTOR structure
+        logger.warn "[!] catched the 'imports terminator in TLS trick'"
+        # http://code.google.com/p/corkami/source/browse/trunk/asm/PE/manyimportsW7.asm
+        break
+      end
+      t=IMAGE_IMPORT_DESCRIPTOR.read(f)
+      break if t.Name.to_i == 0 # also catches EOF
       r << t
+      file_offset += IMAGE_IMPORT_DESCRIPTOR::SIZE
+      break if r.size == 3
     end
+
     logger.warn "[?] non-empty last IMAGE_IMPORT_DESCRIPTOR: #{t.inspect}" unless t.empty?
     @imports = r.each do |x|
       if x.Name.to_i != 0 && (va = va2file(x.Name))
@@ -582,6 +602,38 @@ class PEdump
         end
       end
     end
+  end
+
+  ##############################################################################
+  # TLS
+  ##############################################################################
+
+  def tls f=nil
+    @tls ||= pe(f) && pe(f).ioh && f &&
+      begin
+        dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::TLS]
+        return nil if !dir || dir.va == 0
+        return nil unless file_offset = va2file(dir.va)
+        f.seek file_offset
+        if f.eof?
+          logger.info "[?] TLS info beyond EOF"
+          return nil
+        end
+
+        start_offset = f.tell
+
+        klass = @pe.x64? ? IMAGE_TLS_DIRECTORY64 : IMAGE_TLS_DIRECTORY32
+        r = []
+        while !f.eof? && (entry = klass.read(f))
+          if entry.AddressOfCallBacks.to_i == 0
+            logger.warn "[?] non-empty TLS terminator: #{entry.inspect}" unless entry.empty?
+            break
+          end
+          r << entry
+          break if dir.size > 0 && f.tell >= (start_offset+dir.size)
+        end
+        r
+      end
   end
 
   ##############################################################################

@@ -1,5 +1,6 @@
 require 'pedump'
 require 'pedump/packer'
+require 'pedump/version_info'
 require 'optparse'
 
 unless Object.instance_methods.include?(:try)
@@ -14,7 +15,7 @@ class PEdump::CLI
   attr_accessor :data, :argv
 
   KNOWN_ACTIONS = (
-    %w'mz dos_stub rich pe data_directory sections' +
+    %w'mz dos_stub rich pe data_directory sections tls' +
     %w'strings resources resource_directory imports exports version_info packer web packer_only'
   ).map(&:to_sym)
 
@@ -400,6 +401,8 @@ class PEdump::CLI
         dump_packers data
       when PEdump::VS_VERSIONINFO
         dump_version_info data
+      when PEdump::IMAGE_TLS_DIRECTORY32, PEdump::IMAGE_TLS_DIRECTORY64
+        dump_tls data
       else
         puts "[?] don't know how to dump: #{data.inspect[0,50]}" unless data.empty?
       end
@@ -409,6 +412,20 @@ class PEdump::CLI
       dump_rich_hdr data
     else
       puts "[?] Don't know how to display #{data.inspect[0,50]}... as a table"
+    end
+  end
+
+  def dump_tls data
+    fmt = "%10x %10x %8x  %8x  %8x  %8x\n"
+    printf fmt.tr('x','s'), *%w'RAW_START RAW_END INDEX CALLBKS ZEROFILL FLAGS'
+    data.each do |tls|
+      printf fmt,
+        tls.StartAddressOfRawData,
+        tls.EndAddressOfRawData,
+        tls.AddressOfIndex,
+        tls.AddressOfCallBacks,
+        tls.SizeOfZeroFill,
+        tls.Characteristics
     end
   end
 
