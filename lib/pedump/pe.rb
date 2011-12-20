@@ -1,3 +1,5 @@
+require 'pedump/composite_io'
+
 class PEdump
   class PE < Struct.new(
     :signature,             # "PE\x00\x00"
