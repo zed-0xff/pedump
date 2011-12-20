@@ -3,6 +3,7 @@ tmp
 samples/*.exe
 samples/*.mui
 samples/*.dll
+samples/corkami
 
 # rcov generated
 coverage

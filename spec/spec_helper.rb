@@ -13,7 +13,14 @@ end
 def sample
   @pedump ||=
     begin
-      fname = self.example.full_description.split.first
+      fname =
+        if self.example
+          # called from it(...)
+          self.example.full_description.split.first
+        else
+          # called from before(:all)
+          self.class.metadata[:example_group][:description_args].first
+        end
       fname = File.expand_path(File.dirname(__FILE__) + '/../samples/' + fname)
       File.open(fname,"rb") do |f|
         PEdump.new(fname).dump

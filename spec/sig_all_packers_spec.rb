@@ -7,7 +7,13 @@ describe "PEdump::Packer" do
       data = sig.re.join
       next if data == "This program cannot be run in DOS mo"
       it "should find #{sig.name}" do
-        PEdump::Packer.of(data).map(&:name).should include(sig.name)
+        a = PEdump::Packer.of(data).map(&:name)
+        a.size.should > 0
+
+        a = sig.name.split - a.join(' ').split - ['Exe','PE']
+        a.delete_if{ |x| x[/[vV\.\/()\[\]]/] }
+        p a if a.size > 1
+        a.size.should < 2
       end
     end
   end
