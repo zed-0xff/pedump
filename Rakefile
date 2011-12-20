@@ -25,7 +25,9 @@ Jeweler::Tasks.new do |gem|
   gem.files.include "lib/**/*.rb"
   gem.files.include "data/*.bin"
   gem.files.include "data/*.txt"
-  # dependencies defined in Gemfile
+
+  gem.files.exclude "samples/*", "README.md.tpl"
+  gem.extra_rdoc_files.exclude "README.md.tpl"
 end
 Jeweler::RubygemsDotOrgTasks.new
 

@@ -15,8 +15,7 @@ Gem::Specification.new do |s|
   s.executables = ["pedump"]
   s.extra_rdoc_files = [
     "LICENSE.txt",
-    "README.md",
-    "README.md.tpl"
+    "README.md"
   ]
   s.files = [
     ".document",
@@ -25,7 +24,6 @@ Gem::Specification.new do |s|
     "Gemfile.lock",
     "LICENSE.txt",
     "README.md",
-    "README.md.tpl",
     "Rakefile",
     "VERSION",
     "bin/pedump",
@@ -45,9 +43,6 @@ Gem::Specification.new do |s|
     "lib/pedump/version.rb",
     "lib/pedump/version_info.rb",
     "pedump.gemspec",
-    "samples/calc.7z",
-    "samples/corkami.7z",
-    "samples/zlib.dll",
     "spec/65535sects_spec.rb",
     "spec/composite_io_spec.rb",
     "spec/dllord_spec.rb",
