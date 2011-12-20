@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "pedump"
-  s.version = "0.4.2"
+  s.version = "0.4.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2011-12-19"
+  s.date = "2011-12-20"
   s.description = "dump headers, sections, extract resources of win32 PE exe,dll,etc"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["pedump"]
@@ -35,17 +35,20 @@ Gem::Specification.new do |s|
     "data/userdb.txt",
     "lib/pedump.rb",
     "lib/pedump/cli.rb",
+    "lib/pedump/composite_io.rb",
     "lib/pedump/packer.rb",
+    "lib/pedump/pe.rb",
     "lib/pedump/sig_parser.rb",
     "lib/pedump/version.rb",
     "lib/pedump/version_info.rb",
     "pedump.gemspec",
-    "samples/65535sects.7z",
     "samples/calc.7z",
-    "samples/imports_badterm.exe",
-    "samples/imports_vterm.exe",
+    "samples/corkami.7z",
     "samples/zlib.dll",
     "spec/65535sects_spec.rb",
+    "spec/composite_io_spec.rb",
+    "spec/dllord_spec.rb",
+    "spec/foldedhdr_spec.rb",
     "spec/imports_badterm_spec.rb",
     "spec/imports_vterm_spec.rb",
     "spec/pe_spec.rb",
@@ -53,7 +56,8 @@ Gem::Specification.new do |s|
     "spec/resource_spec.rb",
     "spec/sig_all_packers_spec.rb",
     "spec/sig_spec.rb",
-    "spec/spec_helper.rb"
+    "spec/spec_helper.rb",
+    "spec/virtsectblXP_spec.rb"
   ]
   s.homepage = "http://github.com/zed-0xff/pedump"
   s.licenses = ["MIT"]
