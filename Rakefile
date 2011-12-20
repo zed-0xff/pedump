@@ -98,6 +98,17 @@ namespace :test do
       end
     end
   end
+
+  desc "test on corkami binaries"
+  task :corkami do
+      require './lib/pedump'
+      require './lib/pedump/cli'
+      path = "samples/corkami"
+      `find #{path} -type f`.split("\n").each do |fname|
+        STDERR.puts "\n### #{fname}\n"
+        PEdump::CLI.new(fname).run
+      end
+  end
 end
 
 def check_file url
