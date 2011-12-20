@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "pedump"
-  s.version = "0.4.3"
+  s.version = "0.4.4"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
@@ -36,9 +36,12 @@ Gem::Specification.new do |s|
     "lib/pedump.rb",
     "lib/pedump/cli.rb",
     "lib/pedump/composite_io.rb",
+    "lib/pedump/core.rb",
     "lib/pedump/packer.rb",
     "lib/pedump/pe.rb",
+    "lib/pedump/resources.rb",
     "lib/pedump/sig_parser.rb",
+    "lib/pedump/tls.rb",
     "lib/pedump/version.rb",
     "lib/pedump/version_info.rb",
     "pedump.gemspec",
@@ -51,6 +54,7 @@ Gem::Specification.new do |s|
     "spec/foldedhdr_spec.rb",
     "spec/imports_badterm_spec.rb",
     "spec/imports_vterm_spec.rb",
+    "spec/manyimportsW7_spec.rb",
     "spec/pe_spec.rb",
     "spec/pedump_spec.rb",
     "spec/resource_spec.rb",
