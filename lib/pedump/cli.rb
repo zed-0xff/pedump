@@ -517,7 +517,7 @@ class PEdump::CLI
     data.entry_points.each_with_index do |ep,i|
       names = ord2name[i+data.Base].try(:join,', ')
       next if ep.to_i == 0 && names.nil?
-      printf "%5d %8x  %s\n", i + data.Base, ep, names
+      printf "%5x %8x  %s\n", i + data.Base, ep, names
     end
   end
 
