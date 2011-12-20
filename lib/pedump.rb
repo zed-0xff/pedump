@@ -282,8 +282,8 @@ class PEdump
     @logger = @@logger = l
   end
 
-  def self.dump fname
-    new(fname).dump
+  def self.dump fname, params = {}
+    new(fname, params).dump
   end
 
   def mz f=nil
