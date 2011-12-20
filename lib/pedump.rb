@@ -362,7 +362,7 @@ class PEdump
       end
   end
 
-  def va2file va
+  def va2file va, h={}
     return nil if va.nil?
 
     sections.each do |s|
@@ -391,7 +391,7 @@ class PEdump
 
     # TODO: not all VirtualAdresses == 0 case
 
-    logger.error "[?] can't find file_offset of VA 0x#{va.to_i.to_s(16)}"
+    logger.error "[?] can't find file_offset of VA 0x#{va.to_i.to_s(16)}" unless h[:quiet]
     nil
   end
 
@@ -402,11 +402,12 @@ class PEdump
   end
 
   def _dump_handle h
-    rich_hdr(h)  # includes mz(h)
-    resources(h) # includes pe(h)
-    imports h
+    return unless pe(h) # also calls mz(h)
+    rich_hdr h
+    resources h
+    imports h   # also calls tls(h)
     exports h
-    packer  h
+    packer h
   end
 
   def data_directory f=nil
@@ -488,11 +489,13 @@ class PEdump
         end
         cache = {}
         bits = pe.x64? ? 64 : 32
+        idx = -1
         x[tbl] && x[tbl].map! do |t|
+          idx += 1
           cache[t] ||=
             if t & (2**(bits-1)) > 0                            # 0x8000_0000(_0000_0000)
               ImportedFunction.new(nil,nil,t & (2**(bits-1)-1)) # 0x7fff_ffff(_ffff_ffff)
-            elsif va=va2file(t)
+            elsif va=va2file(t, :quiet => true)
               f.seek va
               if f.eof?
                 logger.warn "[?] import va 0x#{va.to_s(16)} beyond EOF"
@@ -500,18 +503,26 @@ class PEdump
               else
                 ImportedFunction.new(f.read(2).unpack('v').first, f.gets("\x00").chop)
               end
-            else
+            elsif tbl == :original_first_thunk
+              # OriginalFirstThunk entries can not be invalid, show a warning msg
+              logger.warn "[?] invalid VA 0x#{t.to_s(16)} in #{camel}[#{idx}] for #{x.module_name}"
               nil
+            elsif tbl == :first_thunk
+              # FirstThunk entries can be invalid, so `info` msg only
+              logger.info "[?] invalid VA 0x#{t.to_s(16)} in #{camel}[#{idx}] for #{x.module_name}"
+              nil
+            else
+              raise "You are not supposed to be here! O_o"
             end
         end
         x[tbl] && x[tbl].compact!
       end
       if x.original_first_thunk && !x.first_thunk
-        logger.warn "[?] import table: empty FirstThunk of #{x.module_name}"
+        logger.warn "[?] import table: empty FirstThunk for #{x.module_name}"
       elsif !x.original_first_thunk && x.first_thunk
-        logger.warn "[?] import table: empty OriginalFirstThunk of #{x.module_name}"
+        logger.info "[?] import table: empty OriginalFirstThunk for #{x.module_name}"
       elsif x.original_first_thunk != x.first_thunk
-        logger.warn "[?] import table: OriginalFirstThunk != FirstThunk of #{x.module_name}"
+        logger.debug "[?] import table: OriginalFirstThunk != FirstThunk for #{x.module_name}"
       end
     end
   end
