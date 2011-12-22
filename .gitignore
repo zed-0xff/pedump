@@ -1,9 +1,13 @@
 /?.rb
+/*.bin
 tmp
+dump
 samples/*.exe
 samples/*.mui
 samples/*.dll
 samples/corkami
+aspack_unlzx
+
 
 # rcov generated
 coverage
