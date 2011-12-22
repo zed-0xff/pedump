@@ -18,6 +18,9 @@ class PEdump
       ifh && ifh.flags.include?('DLL')
     end
 
+    def pack
+      signature + ifh.pack + ioh.pack
+    end
 
     def self.read f, args = nil
       force = args.is_a?(Hash) && args[:force]

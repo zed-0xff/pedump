@@ -267,9 +267,7 @@ class PEdump::CLI
     dump_opts = {:name => action}
     case action
       when :pe
-        @pedump.pe.ifh.TimeDateStamp = @pedump.pe.ifh.TimeDateStamp.to_i
-        data = @pedump.pe.signature + (@pedump.pe.ifh.try(:pack)||'') + (@pedump.pe.ioh.try(:pack)||'')
-        @pedump.pe.ifh.TimeDateStamp = Time.at(@pedump.pe.ifh.TimeDateStamp).utc
+        data = @pedump.pe.pack
       when :resources
         return dump_resources(data)
       when :strings

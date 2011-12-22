@@ -83,10 +83,10 @@ class PEdump
       0x8000 => 'BYTES_REVERSED_HI'         # The bytes of the word are reversed. This flag is obsolete.
     }
 
-    def initialize *args
-      super
-      self.TimeDateStamp = Time.at(self.TimeDateStamp).utc
-    end
+#    def initialize *args
+#      super
+#      self.TimeDateStamp = Time.at(self.TimeDateStamp).utc
+#    end
     def flags
       FLAGS.find_all{ |k,v| (self.Characteristics & k) != 0 }.map(&:last)
     end
