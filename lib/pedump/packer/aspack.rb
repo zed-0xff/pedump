@@ -96,6 +96,44 @@ class PEdump::Packer::ASPack
     nil
   end
 
+  def decode_e8_e9 data
+    return if @info.FlgE8E9.to_i == 0
+    return if !data || data.size < 6
+    flag = @ep_code[@info.FlgE8E9].ord
+    if flag != 0
+      logger.info "[.] FlgE8E9 = %x" % flag
+      return
+    end
+
+    bCmp = @ep_code[@info.CmpE8E9].ord
+    mode = @ep_code[@info.ModE8E9] == "\x00" ? 0 : 1
+    logger.info "[.] CmpE8E9 = %x, ModE8E9 = %x" % [bCmp, mode]
+    size = data.size - 6
+    offs = 0
+    while size > 0
+      b0 = data[offs]
+      if b0 != "\xE8" && b0 != "\xE9"
+        size-=1; offs+=1
+        next
+      end
+
+      dw = data[offs+1,4].unpack('V').first
+      if mode == 0
+        if (dw & 0xff) != bCmp
+          size-=1; offs+=1
+          next
+        end
+        # dw &= 0xffffff00; dw = ROL(dw, 24)
+        dw >>= 8
+      end
+
+      t = (dw-offs) & 0xffffffff  # keep value in 32 bits
+      #logger.debug "[d] data[%6x] = %8x" % [offs+1, t]
+      data[offs+1,4] = [t].pack('V')
+      offs += 5; size -= [size, 5].min
+    end
+  end
+
   def obj_tbl
     @obj_tbl ||=
       begin
@@ -142,7 +180,7 @@ if __FILE__ == $0
   require 'pp'
   require './lib/pedump/loader'
   ldr = PEdump::Loader.new(aspack.pedump, f)
-  pp ldr
+  #pp ldr
 
   sorted_obj_tbl = aspack.obj_tbl.sort_by{ |x| aspack.pedump.va2file(x.va) }
   sorted_obj_tbl.each_with_index do |obj,idx|
@@ -160,10 +198,11 @@ if __FILE__ == $0
     aspack.logger.debug "[.] va:%7x : %7x -> %7x" % [obj.va, pdata.size, obj.size]
     #fname = "%06x-%06x.bin" % [obj.va, obj.size]
     unpacked_data = aspack.unpack(pdata, pdata.size, obj.size).force_encoding('binary')
+    aspack.decode_e8_e9 unpacked_data
     ldr[obj.va, unpacked_data.size] = unpacked_data
   end
-  pp ldr
-  File.open('dump','wb') do |f|
+  #pp ldr.sections
+  File.open(ARGV[1] || 'dump','wb') do |f|
     ldr.dump(f)
   end
 end

@@ -226,6 +226,10 @@ class PEdump
       r << ' SHARED'      if f & 0x10000000 > 0
       r
     end
+
+    def pack
+      to_a.pack FORMAT.tr('A','a') # pad names with NULL bytes on pack()
+    end
   end
 
   # http://msdn.microsoft.com/en-us/library/windows/desktop/ms680339(v=VS.85).aspx
