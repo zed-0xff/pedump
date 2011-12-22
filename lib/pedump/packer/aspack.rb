@@ -155,6 +155,13 @@ class PEdump::Packer::ASPack
     end
   end
 
+  def update_oep ldr
+    return if @info.OepOfs.to_i == 0
+    rva = @ep_code[@info.OepOfs,4].unpack('V').first
+    logger.info "[.] oep=%6x" % rva
+    ldr.pe_hdr.ioh.AddressOfEntryPoint = rva
+  end
+
   def obj_tbl
     @obj_tbl ||=
       begin
@@ -223,6 +230,7 @@ if __FILE__ == $0
     ldr[obj.va, unpacked_data.size] = unpacked_data
   end
   aspack.rebuild_imports ldr
+  aspack.update_oep ldr
   #pp ldr.sections
   File.open(ARGV[1] || 'dump','wb') do |f|
     ldr.dump(f)
