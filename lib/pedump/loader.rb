@@ -1,4 +1,5 @@
 require 'pedump'
+require 'stringio'
 
 class PEdump::Loader
   attr_accessor :pe_hdr
@@ -58,6 +59,13 @@ class PEdump::Loader
 
   def va2section va
     @sections.find{ |x| x.range.include?(va) }
+  end
+
+  def va2stream va
+    return nil unless section = va2section(va)
+    StringIO.new(section.data).tap do |io|
+      io.seek va-section.va
+    end
   end
 
   def []= va, size, data

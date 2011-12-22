@@ -134,6 +134,27 @@ class PEdump::Packer::ASPack
     end
   end
 
+  def rebuild_imports ldr
+    return if @info.ImpTbl.to_i == 0
+    rva = @ep_code[@info.ImpTbl,4].unpack('V').first
+    logger.info "[.] imports rva=%6x" % rva
+    unless io = ldr.va2stream(rva)
+      logger.error "[!] va2stream(0x%x) FAIL" % rva
+      return
+    end
+
+    size = 0
+    while true
+      iid = PEdump::IMAGE_IMPORT_DESCRIPTOR.read(io)
+      size += PEdump::IMAGE_IMPORT_DESCRIPTOR::SIZE
+      break if iid.Name.to_i == 0
+    end
+    ldr.pe_hdr.ioh.DataDirectory[PEdump::IMAGE_DATA_DIRECTORY::IMPORT].tap do |dd|
+      dd.va = rva
+      dd.size = size
+    end
+  end
+
   def obj_tbl
     @obj_tbl ||=
       begin
@@ -201,6 +222,7 @@ if __FILE__ == $0
     aspack.decode_e8_e9 unpacked_data
     ldr[obj.va, unpacked_data.size] = unpacked_data
   end
+  aspack.rebuild_imports ldr
   #pp ldr.sections
   File.open(ARGV[1] || 'dump','wb') do |f|
     ldr.dump(f)
