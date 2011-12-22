@@ -93,6 +93,8 @@ class PEdump::Packer::ASPack
       return info
     end
 
+    logger.fatal "[!] unknown ASPack version, or not ASPack at all!"
+
     # not found
     nil
   end
@@ -167,17 +169,20 @@ class PEdump::Packer::ASPack
     return if @info.RelTbl.to_i == 0
     rva = @ep_code[@info.RelTbl,4].unpack('V').first
     logger.info "[.] relocs  rva=%6x" % rva
-    unless io = ldr.va2stream(rva)
-      logger.error "[!] va2stream(0x%x) FAIL" % rva
-      return
-    end
 
     size = 0
-    until io.eof?
-      a = io.read(4*2).unpack('V*')
-      break if a.uniq == [0]
-      size += a[1]
-      io.seek(a[1], IO::SEEK_CUR)
+    if rva != 0
+      unless io = ldr.va2stream(rva)
+        logger.error "[!] va2stream(0x%x) FAIL" % rva
+        return
+      end
+
+      until io.eof?
+        a = io.read(4*2).unpack('V*')
+        break if a[0] == 0 || a[1] == 0
+        size += a[1]
+        io.seek(a[1], IO::SEEK_CUR)
+      end
     end
     rva = 0 if size == 0
 
@@ -189,7 +194,7 @@ class PEdump::Packer::ASPack
 
   def rebuild_tls ldr
     dd = ldr.pe_hdr.ioh.DataDirectory[PEdump::IMAGE_DATA_DIRECTORY::TLS]
-    return if dd.empty? # no TLS
+    return if dd.va.to_i == 0 && dd.size.to_i == 0
 
     tls_data = ldr[dd.va, dd.size]
     # search for original TLS data in all unpacked sections
@@ -275,7 +280,7 @@ if __FILE__ == $0
   aspack.rebuild_tls ldr
   aspack.update_oep ldr
   #pp ldr.sections
-  File.open(ARGV[1] || 'dump','wb') do |f|
+  File.open(ARGV[1] || 'unpacked.exe','wb') do |f|
     ldr.dump(f)
   end
 end
