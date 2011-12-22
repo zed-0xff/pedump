@@ -2,7 +2,7 @@ require 'pedump'
 require 'stringio'
 
 class PEdump::Loader
-  attr_accessor :pe_hdr
+  attr_accessor :pe_hdr, :sections
 
   class Section
     attr_accessor :name, :va, :vsize, :data, :hdr
@@ -66,6 +66,19 @@ class PEdump::Loader
     StringIO.new(section.data).tap do |io|
       io.seek va-section.va
     end
+  end
+
+  def [] va, size
+    section = va2section(va)
+    raise "no section for va=0x#{va.to_s 16}" unless section
+    offset = va - section.va
+    raise "negative offset #{offset}" if offset < 0
+    r = section.data[offset,size]
+    if r.size < size
+      # append some empty data
+      r << ("\x00".force_encoding('binary')) * (size - r.size)
+    end
+    r
   end
 
   def []= va, size, data

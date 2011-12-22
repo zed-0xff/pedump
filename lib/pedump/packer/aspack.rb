@@ -11,7 +11,7 @@ class PEdump::Packer::ASPack
 
   # thanks to Dr.Golova for ASPack Unpacker v1.00
 
-  ASPACK_INFO = PEdump.create_struct 'V14',
+  ASPACK_INFO = Struct.new(
     :Crc1Ofs,                      # first checksum offset
     :Crc1Len,                      # first checksum length
     :Crc1Val,                      # first checksum value
@@ -26,6 +26,7 @@ class PEdump::Packer::ASPack
     :RelTbl,                       # offset of relocation table rva
     :ImpTbl,                       # offset of import table rva
     :OepOfs                        # offset of entry point rva
+  )
 
   AspInfos = [
     ASPACK_INFO.new(
@@ -162,6 +163,46 @@ class PEdump::Packer::ASPack
     ldr.pe_hdr.ioh.AddressOfEntryPoint = rva
   end
 
+  def rebuild_relocs ldr
+    return if @info.RelTbl.to_i == 0
+    rva = @ep_code[@info.RelTbl,4].unpack('V').first
+    logger.info "[.] relocs  rva=%6x" % rva
+    unless io = ldr.va2stream(rva)
+      logger.error "[!] va2stream(0x%x) FAIL" % rva
+      return
+    end
+
+    size = 0
+    until io.eof?
+      a = io.read(4*2).unpack('V*')
+      break if a.uniq == [0]
+      size += a[1]
+      io.seek(a[1], IO::SEEK_CUR)
+    end
+    rva = 0 if size == 0
+
+    ldr.pe_hdr.ioh.DataDirectory[PEdump::IMAGE_DATA_DIRECTORY::BASERELOC].tap do |dd|
+      dd.va = rva
+      dd.size = size
+    end
+  end
+
+  def rebuild_tls ldr
+    dd = ldr.pe_hdr.ioh.DataDirectory[PEdump::IMAGE_DATA_DIRECTORY::TLS]
+    return if dd.empty? # no TLS
+
+    tls_data = ldr[dd.va, dd.size]
+    # search for original TLS data in all unpacked sections
+    ldr.sections.each do |section|
+      if section.data.index(tls_data) == 0
+        # found a TLS section
+        dd.va = section.va
+        return
+      end
+    end
+    logger.error "[!] can't find TLS section"
+  end
+
   def obj_tbl
     @obj_tbl ||=
       begin
@@ -230,6 +271,8 @@ if __FILE__ == $0
     ldr[obj.va, unpacked_data.size] = unpacked_data
   end
   aspack.rebuild_imports ldr
+  aspack.rebuild_relocs ldr
+  aspack.rebuild_tls ldr
   aspack.update_oep ldr
   #pp ldr.sections
   File.open(ARGV[1] || 'dump','wb') do |f|
