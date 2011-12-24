@@ -3,6 +3,32 @@ require 'pedump/packer'
 require 'pedump/version_info'
 require 'optparse'
 
+begin
+  require 'shellwords' # from ruby 1.9.3
+rescue LoadError
+  unless ''.respond_to?(:shellescape)
+    class String
+      # File shellwords.rb, line 72
+      def shellescape
+        # An empty argument will be skipped, so return empty quotes.
+        return "''" if self.empty?
+
+        str = self.dup
+
+        # Process as a single byte sequence because not all shell
+        # implementations are multibyte aware.
+        str.gsub!(/([^A-Za-z0-9_\-.,:\/@\n])/, "\\\\\\1")
+
+        # A LF cannot be escaped with a backslash because a backslash + LF
+        # combo is regarded as line continuation and simply ignored.
+        str.gsub!(/\n/, "'\n'")
+
+        str
+      end
+    end
+  end
+end
+
 unless Object.instance_methods.include?(:try)
   class Object
     def try(*x)
@@ -152,18 +178,18 @@ class PEdump::CLI
     fnames.each do |fname|
       if File.directory?(fname)
         if @options[:recursive]
-          dump_packer_only(Dir[File.join(fname,"*")])
+          dump_packer_only(Dir[File.join(fname.shellescape,"*")])
         else
           STDERR.puts "[?] #{fname} is a directory, and recursive flag is not set"
         end
-        next
-      end
-      File.open(fname,'rb') do |f|
-        @pedump = create_pedump fname
-        packers = @pedump.packers(f)
-        pname = Array(packers).first.try(:packer).try(:name)
-        pname ||= "unknown" if @options[:verbose] > 0
-        printf("%-*s %s\n", max_fname_len+1, "#{fname}:", pname) if pname
+      else
+        File.open(fname,'rb') do |f|
+          @pedump = create_pedump fname
+          packers = @pedump.packers(f)
+          pname = Array(packers).first.try(:packer).try(:name)
+          pname ||= "unknown" if @options[:verbose] > 0
+          printf("%-*s %s\n", max_fname_len+1, "#{fname}:", pname) if pname
+        end
       end
     end
   end
