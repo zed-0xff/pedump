@@ -69,19 +69,6 @@ XOR_RE = code2re <<EOC
   E9 1C 00 00 00       #   jmp     loc_40A53C
 EOC
 
-#SUB_XOR_RE = code2re <<EOC
-#  8B 18                #       mov     ebx, [eax]
-#  .{0,6}               #       xor     dh, 11h
-#  81 EB (....)         #       sub     ebx, 4F22789h
-#  81 F3 (....)         #       xor     ebx, 401CC38Eh
-#  .{0,6}               #       mov     dx, 0AE4Eh
-#  81 F3 (....)         #       xor     ebx, 5DA8B7AFh
-#  .{0,6}               #       movsx   ecx, ax
-#  53                   #       push    ebx
-#  .{0,6}               #       mov     ecx, 186577BDh
-#  8F 00                #       pop     dword ptr [eax]
-#EOC
-
 def check_re data, comment = '', re = E8_RE
   if m = data.match(re)
     printf "[=] %-40s %-12s : %8d  %s\n", @fname, comment, m.begin(0), m[1..-1].inspect
@@ -118,21 +105,6 @@ def scan data
     end
     return
   end
-
-  # check dword sub+xor [INCOMPLETE]
-#  if m = data.match(SUB_XOR_RE)
-#    a = m[1..-1].map{|x| x.unpack('V').first}
-#    printf "[^] %-40s %-12s : %8d  %s\n", @fname, '[sub+xor dw]', m.begin(0),
-#      a.map{|x| x.to_s(16)}.join(', ')
-#    4.times do |shift|
-#      re = code2re_dw(E8_CODE,shift) do |dw|
-#        dw = (dw^0x581DA039^0x396D3000)-0x0F9B9683
-#        dw = (dw^a[1]^a[2]) + a[0]
-#      end
-#      return if check_re(data, "[xor dw:#{shift}]", re)
-#    end
-#    return
-#  end
 
   printf "[?] %-40s %-12s\n", @fname, "???"
 end
