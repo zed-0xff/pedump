@@ -1,41 +1,39 @@
 require 'pedump'
 require 'stringio'
+require 'pedump/loader/section'
 
 class PEdump::Loader
   attr_accessor :pe_hdr, :sections
 
-  class Section
-    attr_accessor :name, :va, :vsize, :data, :hdr
+  # shortcuts
+  alias :pe :pe_hdr
+  def ep; @pe_hdr.ioh.AddressOfEntryPoint; end
+  def ep= v; @pe_hdr.ioh.AddressOfEntryPoint=v; end
 
-    def initialize x = nil
-      if x.is_a?(PEdump::IMAGE_SECTION_HEADER)
-        @name, @va, @vsize = x.Name, x.VirtualAddress, x.VirtualSize
-        @hdr = x.dup
-      end
-      @data = ''.force_encoding('binary')
-    end
-
-    def range
-      @va...(@va+@vsize)
-    end
-
-    def inspect
-      "#<Section name=%-10s va=%8x vsize=%8x rawsize=%8x>" % [@name.inspect, @va, @vsize, @data.size]
-    end
-  end
-
+  ########################################################################
+  # constructors
   ########################################################################
 
   def initialize a = nil, f = nil
-    if a.is_a?(PEdump)
+    if a.respond_to?(:read) && a.respond_to?(:seek) && a.respond_to?(:tell)
+      # with IO instance
+      initialize(PEdump.new, a)
+
+    elsif a.is_a?(PEdump)
+      # with PEdump instance
       @mz_hdr   = a.mz(f).dup
       @dos_stub = a.dos_stub(f).dup
       @pe_hdr   = a.pe(f).dup
       load_sections a.sections(f), f
+
     elsif a.is_a?(Array) && a.map(&:class).uniq == [PEdump::IMAGE_SECTION_HEADER]
+      # with array of sections
       load_sections a, f
+
     elsif a.nil? && f.nil?
+      # without parameters
       @sections = []
+
     else
       raise "invalid initializer: #{a.inspect}, #{f.inspect}"
     end
@@ -43,12 +41,15 @@ class PEdump::Loader
 
   def load_sections section_hdrs, f = nil
     if section_hdrs.is_a?(Array) && section_hdrs.map(&:class).uniq == [PEdump::IMAGE_SECTION_HEADER]
-      @sections = section_hdrs.map{ |x| Section.new(x) }
+      @sections = section_hdrs.map{ |x| Section.new(x, :deferred_load_io => f) }
       if f.respond_to?(:seek) && f.respond_to?(:read)
-        section_hdrs.each_with_index do |sect_hdr, idx|
-          f.seek sect_hdr.PointerToRawData
-          @sections[idx].data = f.read(sect_hdr.SizeOfRawData)
-        end
+        #
+        # converted to deferred loading
+        #
+#        section_hdrs.each_with_index do |sect_hdr, idx|
+#          f.seek sect_hdr.PointerToRawData
+#          @sections[idx].data = f.read(sect_hdr.SizeOfRawData)
+#        end
       elsif f
         raise "invalid 2nd arg: #{f.inspect}"
       end
@@ -56,6 +57,10 @@ class PEdump::Loader
       raise "invalid arg: #{section_hdrs.inspect}"
     end
   end
+
+  ########################################################################
+  # VA conversion
+  ########################################################################
 
   def va2section va
     @sections.find{ |x| x.range.include?(va) }
@@ -67,6 +72,10 @@ class PEdump::Loader
       io.seek va-section.va
     end
   end
+
+  ########################################################################
+  # virtual memory read/write
+  ########################################################################
 
   def [] va, size
     section = va2section(va)
@@ -93,6 +102,10 @@ class PEdump::Loader
     end
     section.data[offset, data.size] = data
   end
+
+  ########################################################################
+  # generating PE binary
+  ########################################################################
 
   def section_table
     @sections.map do |section|

@@ -18,7 +18,7 @@ class PEdump
 
   @@logger = nil
 
-  def initialize fname, params = {}
+  def initialize fname=nil, params = {}
     @fname = fname
     @force = params[:force]
     @logger = @@logger = params[:logger] || PEdump::Logger.new(params[:logdev] || STDERR)
