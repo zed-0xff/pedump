@@ -71,6 +71,10 @@ class PEdump::CLI
         @actions << :packer_only
       end
 
+      opts.on '-r', "--recursive", "recurse dirs in packer detect" do
+        @options[:recursive] = true
+      end
+
       opts.on "--all", "Dump all but resource-directory (default)" do
         @actions = DEFAULT_ALL_ACTIONS
       end
@@ -146,6 +150,14 @@ class PEdump::CLI
   def dump_packer_only fnames
     max_fname_len = fnames.map(&:size).max
     fnames.each do |fname|
+      if File.directory?(fname)
+        if @options[:recursive]
+          dump_packer_only(Dir[File.join(fname,"*")])
+        else
+          STDERR.puts "[?] #{fname} is a directory, and recursive flag is not set"
+        end
+        next
+      end
       File.open(fname,'rb') do |f|
         @pedump = create_pedump fname
         packers = @pedump.packers(f)
@@ -692,7 +704,11 @@ class PEdump::CLI
     end
   end
 
-  def hexdump data, h = {}
+  def hexdump *args
+    self.class.hexdump(*args)
+  end
+
+  def self.hexdump data, h = {}
     offset = h[:offset] || 0
     add    = h[:add]    || 0
     size   = h[:size]   || (data.size-offset)
