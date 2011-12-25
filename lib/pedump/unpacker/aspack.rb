@@ -15,9 +15,11 @@ class PEdump::Unpacker::ASPack
 
   def self.code2re code
     idx = -1
+    was_any = false
     Regexp.new(
       code.strip.
       split("\n").map{|line| line.strip.split('    ',2).first}.join("\n").
+      gsub(/\.{2,}/){ |x| x.split('').join(' ') }.
       split.map do |x|
         idx += 1
         case x
@@ -25,11 +27,19 @@ class PEdump::Unpacker::ASPack
           x = x.to_i(16)
           if block_given?
             x = yield(x,idx)
-            x == :any ? '.' : Regexp.escape(x.chr)
+            if x == :any
+              was_any = true
+              '.'
+            else
+              Regexp.escape(x.chr)
+            end
           else
             Regexp.escape(x.chr)
           end
         else
+          if was_any && (x.count('.') > 1 || x[/[+*?{}]/])
+            raise "[!] cannot use :any with more-than-1-char-long #{x.inspect}"
+          end
           x
         end
       end.join, Regexp::MULTILINE
@@ -62,6 +72,8 @@ class PEdump::Unpacker::ASPack
       end.join[shift..-1], Regexp::MULTILINE
     )
   end
+
+  @@xordetect_codes = []
 
   OBJ_TBL_CODE = <<-EOC
     8D B5 (....)            lea     esi, [ebp+442A5Ah]  ; obj_tbl
@@ -120,8 +132,9 @@ class PEdump::Unpacker::ASPack
     EB CE                   jmp     short loc_450130
   EOC
   E8_RE = code2re E8_CODE
+  @@xordetect_codes << E8_CODE
 
-  OEP_RE1 = code2re <<-EOC
+  OEP_CODE1 = <<-EOC
     B8 (....)               mov     eax, 101Ah
     50                      push    eax
     03 85 ....              add     eax, [ebp+444A28h]
@@ -133,8 +146,10 @@ class PEdump::Unpacker::ASPack
     B8 01 00 00 00          mov     eax, 1
     C2 0C 00                retn    0Ch
   EOC
+  OEP_RE1 = code2re OEP_CODE1
+  @@xordetect_codes << OEP_CODE1
 
-  OEP_RE2 = code2re <<-EOC
+  OEP_CODE2 = <<-EOC
     8B 85 (....)            mov     eax, [ebp+442A4Eh]  ; 004150D2
     50                      push    eax
     03 85 ....              add     eax, [ebp+4437E0h]  ; [415e64] = self_base
@@ -146,6 +161,8 @@ class PEdump::Unpacker::ASPack
     B8 01 00 00 00          mov     eax, 1
     C2 0C 00                retn    0Ch
   EOC
+  OEP_RE2 = code2re OEP_CODE2
+  @@xordetect_codes << OEP_CODE2
 
   IMPORTS_CODE1 = <<-EOC
     EB F1                   jmp ...
@@ -162,8 +179,9 @@ class PEdump::Unpacker::ASPack
     85 C0                   test    eax, eax
   EOC
   IMPORTS_RE1 = code2re IMPORTS_CODE1
+  @@xordetect_codes  << IMPORTS_CODE1
 
-  IMPORTS_RE2 = code2re <<-EOC
+  IMPORTS_CODE2 = <<-EOC
     EB F1                   jmp ...
     8B B5 (....)            mov     esi, [ebp+442A4Ah]  ; [0x4150CE] = imports_rva
     8B 95 ....              mov     edx, [ebp+4437E0h]  ; [0x415e64] = image_base
@@ -177,9 +195,8 @@ class PEdump::Unpacker::ASPack
     FF 95 (....)            call    dword ptr [ebp+4438F4h] ; 415f78 = GetModuleHandleA
     85 C0                   test    eax, eax
   EOC
-#    75 07                   jnz     short loc_4153E9
-#    53                      push    ebx
-#    FF 95 (....)            call    dword ptr [ebp+4438F8h] ; 415f7c = LoadLibraryA
+  IMPORTS_RE2 = code2re IMPORTS_CODE2
+  @@xordetect_codes  << IMPORTS_CODE2
 
   XOR_RE = code2re <<-EOC
     81 B2 .... (....)       xor     dword ptr [edx-1C6B33E9h], 0F773AEA7h
@@ -187,6 +204,8 @@ class PEdump::Unpacker::ASPack
   EOC
 
   SECTION_INFO = PEdump.create_struct 'V3', :va, :size, :flags
+
+  ########################################################################
 
   def initialize io, params = {}
     params[:logger] ||= PEdump::Logger.create(params)
@@ -270,34 +289,6 @@ class PEdump::Unpacker::ASPack
     end
   end
 
-#  def _scan_obj_tbl0
-#    re = code2re CODE1
-#    pos = nil
-#    if m = @data.match(re)
-#      logger.debug "[d] CODE1  found at %4x" % m.begin(0)
-#      pos = m.begin(0) - 0xf0
-#    else
-#      return
-#    end
-#
-#    a = @data[pos, 4*4].unpack('V*')
-#    if a[0] == @ldr.sections[0].va && a[1] <= @ldr.sections[0].vsize &&
-#       a[2] == @ldr.sections[1].va && a[3] <= @ldr.sections[0].vsize
-#
-#      r = []
-#      while true
-#        obj = ASP_OBJ.new(*@data[pos, ASP_OBJ::SIZE].unpack(ASP_OBJ::FORMAT))
-#        break if obj.va == 0
-#        r << obj
-#        pos += ASP_OBJ::SIZE
-#      end
-#      r
-#    else
-#      logger.error "[!] %s FAIL at %4x: %s" % [__method__, pos, a.map{|x| x.to_s(16)}.join(', ')]
-#      nil
-#    end
-#  end
-
   def _scan_obj_tbl
     unless @ebp
       logger.warn "[?] %s: EBP undefined, skipping" % __method__
@@ -318,25 +309,6 @@ class PEdump::Unpacker::ASPack
 
     # obj_tbl contains flags if there is a call to VirtualProtect in loader code
     record_size = (@data['VirtualProtect'] && @data[VIRTUALPROTECT_RE]) ? 4*3 : 4*2
-
-#    a = @ldr[va, 4*2*3].unpack('V*'); record_size = nil
-#    if a[0] == @ldr.sections[0].va && a[1] <= @ldr.sections[0].vsize &&
-#       a[2] == @ldr.sections[1].va && a[3] <= @ldr.sections[0].vsize
-#
-#      # va, size
-#      record_size = 4*2
-#    elsif a[0] == @ldr.sections[0].va && a[1] <= @ldr.sections[0].vsize &&
-#          a[3] == @ldr.sections[1].va && a[4] <= @ldr.sections[0].vsize
-#
-#      # va, size, flags
-#      record_size = 4*3
-#    else
-#      logger.error "[!] %s FAIL at %8x: %s" % [__method__, va, a.map{|x| x.to_s(16)}.join(', ')]
-#      @ldr.sections.each do |s|
-#        logger.error "\toriginal:    %-10s %8x%8x" % [s.name, s.va, s.vsize]
-#      end
-#      return nil
-#    end
 
     r = []
     while true
@@ -429,6 +401,24 @@ class PEdump::Unpacker::ASPack
     logger.info "[.] imports RVA = %x" % @imports_rva
   end
 
+  # detects if code is crypted by a dword-xor
+  # @data must be original, not modified!
+  def xordetect
+    h = Hash.new{ |k,v| k[v] = 0 }
+    @@xordetect_codes.each do |code|
+      4.times do |shift|
+        0x100.times do |x1|
+          re = code2re(code){ |x,idx| idx%4 == shift ? x^x1 : :any }
+          @data.scan(re).each do
+            printf "[.] %02x: %6x : %s\n", x1, $~.begin(0), re.inspect
+            h[x1] += 1
+          end
+        end
+      end
+    end
+    p h
+  end
+
   def unpack
     if section = @ldr.va2section(@ldr.ep)
       section.data # force loading, if deferred (optional)
@@ -439,6 +429,8 @@ class PEdump::Unpacker::ASPack
     end
 
     @data = section.data
+
+    xordetect
 
     find_e8e9    # must find e8/e9 before any other b/c it also decrypts @data
     find_imports # must find imports BEFORE OEP, b/c OEP find uses @ebp filled in imports
