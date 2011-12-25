@@ -190,3 +190,19 @@ task :readme do
   Dir.chdir '..'
   File.open('README.md','w'){ |f| f << result }
 end
+
+namespace :console do
+  desc "start console with PEdump::Loader with loaded file"
+  task :load do
+    raise "gimme a fname" unless fname = ENV['fname']
+    require './lib/pedump'
+    require './lib/pedump/loader'
+    require 'pp'
+    File.open(fname,"rb") do |f|
+      @ldr = PEdump::Loader.new f
+      puts "[.] loader is at @ldr"
+      pp @ldr.sections
+      Rake::Task["console"].execute
+    end
+  end
+end
