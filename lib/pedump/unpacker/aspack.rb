@@ -198,11 +198,6 @@ class PEdump::Unpacker::ASPack
   IMPORTS_RE2 = code2re IMPORTS_CODE2
   @@xordetect_codes  << IMPORTS_CODE2
 
-  XOR_RE = code2re <<-EOC
-    81 B2 .... (....)       xor     dword ptr [edx-1C6B33E9h], 0F773AEA7h
-    E9 1C 00 00 00          jmp     loc_40A53C
-  EOC
-
   SECTION_INFO = PEdump.create_struct 'V3', :va, :size, :flags
 
   ########################################################################
@@ -215,15 +210,7 @@ class PEdump::Unpacker::ASPack
     @e8e9_mode = @e8e9_cmp = @e8e9_flag = @ebp = nil
   end
 
-  def check_re data, comment = '', re = E8_RE
-    if m = data.match(re)
-      logger.debug "[.] E8_RE %s found at %4x : %-20s" % [comment, m.begin(0), m[1..-1].inspect]
-      m
-    end
-  end
-
   def _decrypt
-    logger.info "[*] decrypting.."
     @data = @data.dup
     @data.size.times do |j|
       @data[j] = (yield(@data[j].ord,j)&0xff).chr
@@ -231,8 +218,7 @@ class PEdump::Unpacker::ASPack
     @data
   end
 
-  def _decrypt_dw shift
-    logger.info "[*] decrypting.."
+  def _decrypt_dw shift=0
     orig_size = @data.size
     @data = @data.dup
     i = shift
@@ -248,7 +234,14 @@ class PEdump::Unpacker::ASPack
     @data
   end
 
-  def _scan_e8e9
+  def check_re data, comment = '', re = E8_RE
+    if m = data.match(re)
+      logger.debug "[.] E8_RE %s found at %4x : %-20s" % [comment, m.begin(0), m[1..-1].inspect]
+      m
+    end
+  end
+
+  def decrypt
     r=nil
     # check raw
     return r if r=check_re(@data)
@@ -274,20 +267,50 @@ class PEdump::Unpacker::ASPack
       end
     end
 
-    # check dword xor
-    if m = @data.match(XOR_RE)
-      xor = m[1] #.unpack('V').first
-      printf "[^] %-40s %-12s : %8d  %x\n", @fname, '[xor dw]', m.begin(0), xor.unpack('V').first
-      4.times do |octet|
-        re = code2re(E8_CODE){ |x,idx| x^xor[(idx+octet)%4].ord }
-        if r=check_re(@data, "[xor dw:#{octet}]", re)
-          octet = r.begin(0)%4
-          p xor
-          return check_re(_decrypt{|x,idx| x^xor[(idx+octet)%4].ord })
+    h = xordetect
+    if h && h.size == 4
+      h.keys.permutation.each do |xor_bytes|
+        xor_dw = xor_bytes.inject{ |x,y| (x<<8) + y}
+        re = code2re_dw(E8_CODE){ |dw| dw^xor_dw }
+        if r=check_re(@data, "[xor dw:#{xor_dw.to_s(16)}]", re)
+          return check_re(_decrypt_dw(r.begin(0)%4){ |dw| dw^xor_dw })
         end
       end
     end
+
+    # failed
+    false
   end
+
+  # detects if code is crypted by a dword-xor
+  # @data must be original, not modified!
+  def xordetect
+    logger.info "[*] trying to guess DWORD-XOR key..."
+    h = Hash.new{ |k,v| k[v] = 0 }
+    @@xordetect_codes.each do |code|
+      4.times do |shift|
+        0x100.times do |x1|
+          re = code2re(code){ |x,idx| idx%4 == shift ? x^x1 : :any }
+          @data.scan(re).each do
+            logger.debug "[.] %02x: %6x : %s" % [x1, $~.begin(0), re.inspect]
+            h[x1] += 1
+          end
+        end
+      end
+    end
+    case h.size
+    when 0
+      logger.debug "[?] %s: zero hash" % __method__
+    when 1..3
+      logger.info  "[?] %s: not xored, or %d-byte xor key: %s" % [__method__, h.size, h.inspect]
+    when 4
+      logger.info  "[*] %s: FOUND xor key bytes: [%02x %02x %02x %02x]" % [__method__, *h.keys].flatten
+    else
+      logger.info  "[?] %s: %d possible bytes: %s" % [__method__, h.size, h.inspect]
+    end
+    h
+  end
+
 
   def _scan_obj_tbl
     unless @ebp
@@ -330,7 +353,7 @@ class PEdump::Unpacker::ASPack
   ########################################################################
 
   def find_e8e9
-    if m = _scan_e8e9
+    if m = check_re(@data)
       @e8e9_flag, @e8e9_cmp = m[1], m[2]
       logger.debug "[.] E8/E9: flag=%02x, cmp=%02x" % [@e8e9_flag.ord, @e8e9_cmp.ord]
     else
@@ -401,24 +424,6 @@ class PEdump::Unpacker::ASPack
     logger.info "[.] imports RVA = %x" % @imports_rva
   end
 
-  # detects if code is crypted by a dword-xor
-  # @data must be original, not modified!
-  def xordetect
-    h = Hash.new{ |k,v| k[v] = 0 }
-    @@xordetect_codes.each do |code|
-      4.times do |shift|
-        0x100.times do |x1|
-          re = code2re(code){ |x,idx| idx%4 == shift ? x^x1 : :any }
-          @data.scan(re).each do
-            printf "[.] %02x: %6x : %s\n", x1, $~.begin(0), re.inspect
-            h[x1] += 1
-          end
-        end
-      end
-    end
-    p h
-  end
-
   def unpack
     if section = @ldr.va2section(@ldr.ep)
       section.data # force loading, if deferred (optional)
@@ -430,7 +435,8 @@ class PEdump::Unpacker::ASPack
 
     @data = section.data
 
-    xordetect
+    decrypt
+    #xordetect
 
     find_e8e9    # must find e8/e9 before any other b/c it also decrypts @data
     find_imports # must find imports BEFORE OEP, b/c OEP find uses @ebp filled in imports
