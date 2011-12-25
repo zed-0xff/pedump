@@ -53,6 +53,8 @@ class PEdump
               :redish
             when 'ERROR'
               :red
+            when 'WARN'
+              :yellowish
             when 'DEBUG'
               :gray
             end
