@@ -23,7 +23,12 @@ class PEdump::Unpacker::ASPack
         case x
         when /\A[a-f0-9]{2}\Z/i
           x = x.to_i(16)
-          Regexp.escape((block_given? ? yield(x,idx) : x).chr)
+          if block_given?
+            x = yield(x,idx)
+            x == :any ? '.' : Regexp.escape(x.chr)
+          else
+            Regexp.escape(x.chr)
+          end
         else
           x
         end
@@ -31,6 +36,32 @@ class PEdump::Unpacker::ASPack
     )
   end
   def code2re code, &block; self.class.code2re(code, &block); end
+
+  def code2re_dw code, shift=0
+    raise "shift must be in 0..3, got #{shift.inspect}" unless (0..3).include?(shift)
+    Regexp.new(
+      (
+        'X '*shift +
+        code.strip.
+        split("\n").map{|line| line.strip.split('    ',2).first}.join("\n")
+      ).split.each_slice(4).map do |a|
+        a.map! do |x|
+          case x
+          when /\A[a-f0-9]{2}\Z/i
+            x.to_i(16)
+          else
+            x
+          end
+        end
+        dw = a.reverse.inject(0){ |x,y| (x<<8) + (y.is_a?(Numeric) ? y : 0)}
+        dw = yield(dw) << 8
+        a.map do |x|
+          dw >>= 8
+          x.is_a?(Numeric) ? Regexp::escape((dw & 0xff).chr) : x
+        end
+      end.join[shift..-1], Regexp::MULTILINE
+    )
+  end
 
   OBJ_TBL_CODE = <<-EOC
     8D B5 (....)            lea     esi, [ebp+442A5Ah]  ; obj_tbl
@@ -88,7 +119,7 @@ class PEdump::Unpacker::ASPack
     83 E9 05                sub     ecx, 5
     EB CE                   jmp     short loc_450130
   EOC
-  E8_RE = code2re(E8_CODE)
+  E8_RE = code2re E8_CODE
 
   OEP_RE1 = code2re <<-EOC
     B8 (....)               mov     eax, 101Ah
@@ -116,7 +147,8 @@ class PEdump::Unpacker::ASPack
     C2 0C 00                retn    0Ch
   EOC
 
-  IMPORTS_RE1 = code2re <<-EOC
+  IMPORTS_CODE1 = <<-EOC
+    EB F1                   jmp ...
     BE (....)               mov     esi, 55000h       ; immediate imports rva
     8B 95 ....              mov     edx, [ebp+422h]
     03 F2                   add     esi, edx
@@ -129,8 +161,10 @@ class PEdump::Unpacker::ASPack
     FF 95 (....)            call    dword ptr [ebp+0F4Dh]
     85 C0                   test    eax, eax
   EOC
+  IMPORTS_RE1 = code2re IMPORTS_CODE1
 
   IMPORTS_RE2 = code2re <<-EOC
+    EB F1                   jmp ...
     8B B5 (....)            mov     esi, [ebp+442A4Ah]  ; [0x4150CE] = imports_rva
     8B 95 ....              mov     edx, [ebp+4437E0h]  ; [0x415e64] = image_base
     03 F2                   add     esi, edx
@@ -164,19 +198,35 @@ class PEdump::Unpacker::ASPack
 
   def check_re data, comment = '', re = E8_RE
     if m = data.match(re)
-      #printf "[=] %-40s %-12s : %8d  %s\n", @fname, comment, m.begin(0), m[1..-1].inspect
       logger.debug "[.] E8_RE %s found at %4x : %-20s" % [comment, m.begin(0), m[1..-1].inspect]
-#      re = code2re CODE1
-#      if m = data.match(re)
-#        printf "[.] CODE1  found at %4x\n", m.begin(0)
-#        pos = m.begin(0) - 0xf0
-#        printf "[.] OBJTBL %8x %8x\n", *data[pos,8].unpack('V*')
-#      else
-#        puts "[?] no step2"
-#      end
-#      puts
       m
     end
+  end
+
+  def _decrypt
+    logger.info "[*] decrypting.."
+    @data = @data.dup
+    @data.size.times do |j|
+      @data[j] = (yield(@data[j].ord,j)&0xff).chr
+    end
+    @data
+  end
+
+  def _decrypt_dw shift
+    logger.info "[*] decrypting.."
+    orig_size = @data.size
+    @data = @data.dup
+    i = shift
+    while i < @data.size
+      t = @data[i,4]
+      t<<"\x00" while t.size < 4
+      dw = t.unpack('V').first
+      dw = yield(dw)
+      @data[i,4] = [dw].pack('V')
+      i += 4
+    end
+    @data = @data[0,orig_size] if @data.size != orig_size
+    @data
   end
 
   def _scan_e8e9
@@ -186,26 +236,37 @@ class PEdump::Unpacker::ASPack
 
     (1..255).each do |i|
       # check byte add
-      return r if r=check_re(@data, "[add b,#{i}]", code2re(E8_CODE){ |x| (x+i)&0xff })
+      if check_re(@data, "[add b,#{i}]", code2re(E8_CODE){ |x| (x+i)&0xff })
+        return check_re(_decrypt{|x| x-i})
+      end
+
       # check byte xor
-      return r if r=check_re(@data, "[xor b,#{i}]", code2re(E8_CODE){ |x| x^i })
+      if check_re(@data, "[xor b,#{i}]", code2re(E8_CODE){ |x| x^i })
+        return check_re(_decrypt{|x| x^i})
+      end
     end
 
-    # check dword add
-    4.times do |octet|
-      re = code2re(E8_CODE){ |x,idx| (idx%4) == octet ? ((x+1)&0xff) : x }
-      return r if r=check_re(@data, "[dec dw:#{octet}]", re)
+    # check dword dec
+    4.times do |shift|
+      re = code2re_dw(E8_CODE,shift){ |dw| dw+1 }
+      if r=check_re(@data, "[dec dw:#{shift}]", re)
+        shift = (r.begin(0)-shift)%4
+        return check_re(_decrypt_dw(shift){ |x| x-1 })
+      end
     end
 
-    # check dword xor [INCOMPLETE]
+    # check dword xor
     if m = @data.match(XOR_RE)
       xor = m[1] #.unpack('V').first
       printf "[^] %-40s %-12s : %8d  %x\n", @fname, '[xor dw]', m.begin(0), xor.unpack('V').first
       4.times do |octet|
         re = code2re(E8_CODE){ |x,idx| x^xor[(idx+octet)%4].ord }
-        return r if r=check_re(@data, "[xor dw:#{octet}]", re)
+        if r=check_re(@data, "[xor dw:#{octet}]", re)
+          octet = r.begin(0)%4
+          p xor
+          return check_re(_decrypt{|x,idx| x^xor[(idx+octet)%4].ord })
+        end
       end
-      return
     end
   end
 
@@ -238,6 +299,11 @@ class PEdump::Unpacker::ASPack
 #  end
 
   def _scan_obj_tbl
+    unless @ebp
+      logger.warn "[?] %s: EBP undefined, skipping" % __method__
+      return
+    end
+
     re = code2re OBJ_TBL_CODE
     va = nil
     if m = @data.match(re)
@@ -374,8 +440,8 @@ class PEdump::Unpacker::ASPack
 
     @data = section.data
 
+    find_e8e9    # must find e8/e9 before any other b/c it also decrypts @data
     find_imports # must find imports BEFORE OEP, b/c OEP find uses @ebp filled in imports
-    find_e8e9
     find_obj_tbl
     find_oep
   end
@@ -396,10 +462,10 @@ if __FILE__ == $0
     @fname = fname
     File.open(fname,"rb") do |f|
       pedump = PEdump.new :log_level => Logger::DEBUG
-      next unless packer = pedump.packer(f).first
+      next unless packer = Array(pedump.packer(f)).first
       next unless packer.name =~ /aspack/i
 
-      puts "\n=== #{fname}"
+      puts "\n=== #{fname}".green
 
       f.rewind
       unpacker = PEdump::Unpacker::ASPack.new(f, :log_level => Logger::DEBUG)
