@@ -21,7 +21,7 @@ class PEdump
   def initialize fname=nil, params = {}
     @fname = fname
     @force = params[:force]
-    @logger = @@logger = params[:logger] || PEdump::Logger.new(params[:logdev] || STDERR)
+    @logger = @@logger = Logger.create(params)
   end
 
   # http://www.delorie.com/djgpp/doc/exe/

@@ -1,5 +1,6 @@
 require 'logger'
 require 'pedump/version'
+require 'pedump/logger'
 
 class String
   def xor x
@@ -30,21 +31,6 @@ class File
 end
 
 class PEdump
-  class Logger < ::Logger
-    def initialize *args
-      super
-      @formatter = proc do |severity,_,_,msg|
-        # quick and dirty way to remove duplicate messages
-        if @prevmsg == msg && severity != 'DEBUG' && severity != 'INFO'
-          ''
-        else
-          @prevmsg = msg
-          "#{msg}\n"
-        end
-      end
-      @level = Logger::WARN
-    end
-  end
 
   module Readable
     def read file, size = nil
