@@ -5,6 +5,8 @@ require 'pedump/cli'
 
 # TODO: RelTbl
 # TODO: FlgE8E9
+# TODO: restore section flags, if any
+# TODO: autocompile unlzx
 
 module PEdump::Unpacker; end
 
@@ -44,24 +46,33 @@ class PEdump::Unpacker::ASPack
     8B 46 04                mov     eax, [esi+4]
   EOC
 
-  CODE1 = <<-EOC
-    8B 44 24 10             mov     eax, [esp+arg_C]
-    81 EC 54 03 00 00       sub     esp, 354h
-    8D 4C 24 04             lea     ecx, [esp+354h+var_350]
+  VIRTUALPROTECT_RE = code2re <<-EOC
     50                      push    eax
-    E8 A8 03 00 00          call    sub_465A28
-    8B 8C 24 5C 03 00 00    mov     ecx, [esp+354h+arg_4]
-    8B 94 24 58 03 00 00    mov     edx, [esp+354h+arg_0]
-    51                      push    ecx
-    52                      push    edx
-    8D 4C 24 0C             lea     ecx, [esp+35Ch+var_350]
-    E8 0D 04 00 00          call    sub_465AA6
-    84 C0                   test    al, al
-    75 0A                   jnz     short loc_4656A7
-    83 C8 FF                or      eax, 0FFFFFFFFh
-    81 C4 54 03 00 00       add     esp, 354h
-    C3                      retn
+    FF .{2,5}               call    dword ptr [ebp+6Ah] ; VirtualProtect
+    59                      pop     ecx
+    AD                      lodsd
+    AD                      lodsd
+    89 47 24                mov     [edi+24h], eax
   EOC
+
+#  CODE1 = <<-EOC
+#    8B 44 24 10             mov     eax, [esp+arg_C]
+#    81 EC 54 03 00 00       sub     esp, 354h
+#    8D 4C 24 04             lea     ecx, [esp+354h+var_350]
+#    50                      push    eax
+#    E8 A8 03 00 00          call    sub_465A28
+#    8B 8C 24 5C 03 00 00    mov     ecx, [esp+354h+arg_4]
+#    8B 94 24 58 03 00 00    mov     edx, [esp+354h+arg_0]
+#    51                      push    ecx
+#    52                      push    edx
+#    8D 4C 24 0C             lea     ecx, [esp+35Ch+var_350]
+#    E8 0D 04 00 00          call    sub_465AA6
+#    84 C0                   test    al, al
+#    75 0A                   jnz     short loc_4656A7
+#    83 C8 FF                or      eax, 0FFFFFFFFh
+#    81 C4 54 03 00 00       add     esp, 354h
+#    C3                      retn
+#  EOC
 
   E8_CODE = <<-EOC
     8B 06                   mov     eax, [esi]
@@ -198,33 +209,33 @@ class PEdump::Unpacker::ASPack
     end
   end
 
-  def _scan_obj_tbl0
-    re = code2re CODE1
-    pos = nil
-    if m = @data.match(re)
-      logger.debug "[d] CODE1  found at %4x" % m.begin(0)
-      pos = m.begin(0) - 0xf0
-    else
-      return
-    end
-
-    a = @data[pos, 4*4].unpack('V*')
-    if a[0] == @ldr.sections[0].va && a[1] <= @ldr.sections[0].vsize &&
-       a[2] == @ldr.sections[1].va && a[3] <= @ldr.sections[0].vsize
-
-      r = []
-      while true
-        obj = ASP_OBJ.new(*@data[pos, ASP_OBJ::SIZE].unpack(ASP_OBJ::FORMAT))
-        break if obj.va == 0
-        r << obj
-        pos += ASP_OBJ::SIZE
-      end
-      r
-    else
-      logger.error "[!] %s FAIL at %4x: %s" % [__method__, pos, a.map{|x| x.to_s(16)}.join(', ')]
-      nil
-    end
-  end
+#  def _scan_obj_tbl0
+#    re = code2re CODE1
+#    pos = nil
+#    if m = @data.match(re)
+#      logger.debug "[d] CODE1  found at %4x" % m.begin(0)
+#      pos = m.begin(0) - 0xf0
+#    else
+#      return
+#    end
+#
+#    a = @data[pos, 4*4].unpack('V*')
+#    if a[0] == @ldr.sections[0].va && a[1] <= @ldr.sections[0].vsize &&
+#       a[2] == @ldr.sections[1].va && a[3] <= @ldr.sections[0].vsize
+#
+#      r = []
+#      while true
+#        obj = ASP_OBJ.new(*@data[pos, ASP_OBJ::SIZE].unpack(ASP_OBJ::FORMAT))
+#        break if obj.va == 0
+#        r << obj
+#        pos += ASP_OBJ::SIZE
+#      end
+#      r
+#    else
+#      logger.error "[!] %s FAIL at %4x: %s" % [__method__, pos, a.map{|x| x.to_s(16)}.join(', ')]
+#      nil
+#    end
+#  end
 
   def _scan_obj_tbl
     re = code2re OBJ_TBL_CODE
@@ -239,28 +250,41 @@ class PEdump::Unpacker::ASPack
       return
     end
 
-    a = @ldr[va, 4*6].unpack('V*'); record_size = nil
-    if a[0] == @ldr.sections[0].va && a[1] <= @ldr.sections[0].vsize &&
-       a[2] == @ldr.sections[1].va && a[3] <= @ldr.sections[0].vsize
+    # obj_tbl contains flags if there is a call to VirtualProtect in loader code
+    record_size = (@data['VirtualProtect'] && @data[VIRTUALPROTECT_RE]) ? 4*3 : 4*2
 
-      # va, size
-      record_size = 4*2
-    elsif a[0] == @ldr.sections[0].va && a[1] <= @ldr.sections[0].vsize &&
-          a[3] == @ldr.sections[1].va && a[4] <= @ldr.sections[0].vsize
-
-      # va, size, flags
-      record_size = 4*3
-    else
-      logger.error "[!] %s FAIL at %4x: %s" % [__method__, va, a.map{|x| x.to_s(16)}.join(', ')]
-      return nil
-    end
+#    a = @ldr[va, 4*2*3].unpack('V*'); record_size = nil
+#    if a[0] == @ldr.sections[0].va && a[1] <= @ldr.sections[0].vsize &&
+#       a[2] == @ldr.sections[1].va && a[3] <= @ldr.sections[0].vsize
+#
+#      # va, size
+#      record_size = 4*2
+#    elsif a[0] == @ldr.sections[0].va && a[1] <= @ldr.sections[0].vsize &&
+#          a[3] == @ldr.sections[1].va && a[4] <= @ldr.sections[0].vsize
+#
+#      # va, size, flags
+#      record_size = 4*3
+#    else
+#      logger.error "[!] %s FAIL at %8x: %s" % [__method__, va, a.map{|x| x.to_s(16)}.join(', ')]
+#      @ldr.sections.each do |s|
+#        logger.error "\toriginal:    %-10s %8x%8x" % [s.name, s.va, s.vsize]
+#      end
+#      return nil
+#    end
 
     r = []
     while true
       obj = SECTION_INFO.new(*@ldr[va, record_size].unpack(SECTION_INFO::FORMAT))
       break if obj.va == 0
-      r << obj
+      unless @ldr.va2section(obj.va)
+        logger.error "[!] can't get section for obj %4x : %4x" % [obj.va, obj.size]
+      end
       va += record_size
+      r << obj
+      if r.size > 0x200
+        logger.error "[!] stopped obj_tbl parsing. too many sections!"
+        break
+      end
     end
     r
   end
