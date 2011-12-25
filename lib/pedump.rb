@@ -440,9 +440,23 @@ class PEdump
     :original_first_thunk,
     :first_thunk
 
-  ImportedFunction = Struct.new(:hint, :name, :ordinal)
+  class ImportedFunction < Struct.new(:hint, :name, :ordinal, :va)
+#    def == x
+#      self.hint == x.hint && self.name == x.name && self.ordinal == x.ordinal
+#    end
+#    def <=> x
+#      self.to_a[0..-2] <=> x.to_a[0..-2]
+#    end
 
-  def imports f=nil
+    # magic to be able to easy merge :first_thunk & :original_first_thunk arrays
+    # (keeping va different)
+    def hash
+      self.to_a[0..-2].hash
+    end
+    def eql? x
+      self.hint == x.hint && self.name == x.name && self.ordinal == x.ordinal
+    end
+  end
     return @imports if @imports
     return nil unless pe(f) && pe(f).ioh && f
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::IMPORT]
@@ -476,14 +490,14 @@ class PEdump
 
     logger.warn "[?] non-empty last IMAGE_IMPORT_DESCRIPTOR: #{t.inspect}" unless t.empty?
     @imports = r.each do |x|
-      if x.Name.to_i != 0 && (va = va2file(x.Name))
-        f.seek va
+      if x.Name.to_i != 0 && (ofs = va2file(x.Name))
+        f.seek ofs
         x.module_name = f.gets("\x00").chomp("\x00")
       end
       [:original_first_thunk, :first_thunk].each do |tbl|
         camel = tbl.capitalize.to_s.gsub(/_./){ |char| char[1..-1].upcase}
-        if x[camel].to_i != 0 && (va = va2file(x[camel]))
-          f.seek va
+        if x[camel].to_i != 0 && (ofs = va2file(x[camel]))
+          f.seek ofs
           x[tbl] ||= []
           if pe.x64?
             x[tbl] << t while (t = f.read(8).unpack('Q').first) != 0
@@ -496,16 +510,22 @@ class PEdump
         idx = -1
         x[tbl] && x[tbl].map! do |t|
           idx += 1
+          va = x[camel].to_i + idx*4
           cache[t] ||=
-            if t & (2**(bits-1)) > 0                            # 0x8000_0000(_0000_0000)
-              ImportedFunction.new(nil,nil,t & (2**(bits-1)-1)) # 0x7fff_ffff(_ffff_ffff)
-            elsif va=va2file(t, :quiet => true)
-              f.seek va
+            if t & (2**(bits-1)) > 0                               # 0x8000_0000(_0000_0000)
+              ImportedFunction.new(nil,nil,t & (2**(bits-1)-1),va) # 0x7fff_ffff(_ffff_ffff)
+            elsif ofs=va2file(t, :quiet => true)
+              f.seek ofs
               if f.eof?
-                logger.warn "[?] import va 0x#{va.to_s(16)} beyond EOF"
+                logger.warn "[?] import ofs 0x#{ofs.to_s(16)} beyond EOF"
                 nil
               else
-                ImportedFunction.new(f.read(2).unpack('v').first, f.gets("\x00").chop)
+                ImportedFunction.new(
+                  f.read(2).unpack('v').first,
+                  f.gets("\x00").chomp("\x00"),
+                  nil,
+                  va
+                )
               end
             elsif tbl == :original_first_thunk
               # OriginalFirstThunk entries can not be invalid, show a warning msg
@@ -525,8 +545,11 @@ class PEdump
         logger.warn "[?] import table: empty FirstThunk for #{x.module_name}"
       elsif !x.original_first_thunk && x.first_thunk
         logger.info "[?] import table: empty OriginalFirstThunk for #{x.module_name}"
-      elsif x.original_first_thunk != x.first_thunk
-        logger.debug "[?] import table: OriginalFirstThunk != FirstThunk for #{x.module_name}"
+      elsif logger.debug?
+        # compare all but VAs
+        if x.original_first_thunk != x.first_thunk
+          logger.debug "[?] import table: OriginalFirstThunk != FirstThunk for #{x.module_name}"
+        end
       end
     end
   end
