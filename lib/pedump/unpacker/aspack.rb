@@ -290,7 +290,7 @@ class PEdump::Unpacker::ASPack
     @@xordetect_codes.each do |code|
       4.times do |shift|
         0x100.times do |x1|
-          re = code2re(code){ |x,idx| idx%4 == shift ? x^x1 : :any }
+          re = code2re(code.tr('()','')){ |x,idx| idx%4 == shift ? x^x1 : :any }
           @data.scan(re).each do
             logger.debug "[.] %02x: %6x : %s" % [x1, $~.begin(0), re.inspect]
             h[x1] += 1
