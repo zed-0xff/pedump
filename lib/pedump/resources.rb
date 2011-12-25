@@ -1,6 +1,6 @@
 class PEdump
 
-  def resource_directory f=nil
+  def resource_directory f=@io
     @resource_directory ||= _read_resource_directory_tree(f)
   end
 
@@ -181,7 +181,7 @@ class PEdump
 
   STRING = Struct.new(:id, :lang, :value)
 
-  def strings f=nil
+  def strings f=@io
     r = []
     Array(resources(f)).find_all{ |x| x.type == 'STRING'}.each do |res|
       res.data.each_with_index do |string,idx|
@@ -319,7 +319,7 @@ class PEdump
     end
   end
 
-  def _scan_resources f=nil, dir=nil
+  def _scan_resources f=@io, dir=nil
     dir ||= resource_directory(f)
     return nil unless dir
     dir.entries.map do |entry|

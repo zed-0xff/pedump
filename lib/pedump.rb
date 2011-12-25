@@ -12,14 +12,18 @@ require 'pedump/tls'
 #   http://github.com/zed-0xff
 
 class PEdump
-  attr_accessor :fname, :logger, :force
+  attr_accessor :fname, :logger, :force, :io
 
   VERSION = Version::STRING
 
   @@logger = nil
 
-  def initialize fname=nil, params = {}
-    @fname = fname
+  def initialize io = nil, params = {}
+    if io.is_a?(Hash)
+      @io, params = nil, io
+    else
+      @io = io
+    end
     @force = params[:force]
     @logger = @@logger = Logger.create(params)
   end
@@ -290,7 +294,7 @@ class PEdump
     new(fname, params).dump
   end
 
-  def mz f=nil
+  def mz f=@io
     @mz ||= f && MZ.read(f).tap do |mz|
       if mz.signature != 'MZ' && mz.signature != 'ZM'
         if @force
@@ -303,7 +307,7 @@ class PEdump
     end
   end
 
-  def dos_stub f=nil
+  def dos_stub f=@io
     @dos_stub ||=
       begin
         return nil unless mz = mz(f)
@@ -343,13 +347,13 @@ class PEdump
       end
   end
 
-  def rich_hdr f=nil
+  def rich_hdr f=@io
     dos_stub(f) && @rich_hdr
   end
   alias :rich_header :rich_hdr
   alias :rich        :rich_hdr
 
-  def pe f=nil
+  def pe f=@io
     @pe ||=
       begin
         pe_offset = mz(f) && mz(f).lfanew
@@ -400,8 +404,14 @@ class PEdump
   end
 
   # OPTIONAL: assigns @mz, @rich_hdr, @pe, etc
-  def dump f=nil
-    f ? _dump_handle(f) : File.open(@fname,'rb'){ |f| _dump_handle(f) }
+  def dump f=@io
+    if f.is_a?(String)
+      File.open(f,'rb'){ |f| _dump_handle(f) }
+    elsif f.is_a?(::IO)
+      _dump_handle f
+    elsif @io
+      _dump_handle @io
+    end
     self
   end
 
@@ -414,11 +424,11 @@ class PEdump
     packer h
   end
 
-  def data_directory f=nil
+  def data_directory f=@io
     pe(f) && pe.ioh && pe.ioh.DataDirectory
   end
 
-  def sections f=nil
+  def sections f=@io
     pe(f) && pe.section_table
   end
   alias :section_table :sections
@@ -457,6 +467,8 @@ class PEdump
       self.hint == x.hint && self.name == x.name && self.ordinal == x.ordinal
     end
   end
+
+  def imports f=@io
     return @imports if @imports
     return nil unless pe(f) && pe(f).ioh && f
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::IMPORT]
@@ -574,7 +586,7 @@ class PEdump
     # manual:
     :name, :entry_points, :names, :name_ordinals
 
-  def exports f=nil
+  def exports f=@io
     return @exports if @exports
     return nil unless pe(f) && pe(f).ioh && f
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::EXPORT]
@@ -591,18 +603,18 @@ class PEdump
       x.entry_points = []
       x.name_ordinals = []
       x.names = []
-      if x.Name.to_i != 0 && (va = va2file(x.Name))
-        f.seek va
+      if x.Name.to_i != 0 && (ofs = va2file(x.Name))
+        f.seek ofs
         if f.eof?
-          logger.warn "[?] export va 0x#{va.to_s(16)} beyond EOF"
+          logger.warn "[?] export ofs 0x#{ofs.to_s(16)} beyond EOF"
           nil
         else
           x.name = f.gets("\x00").chomp("\x00")
         end
       end
       if x.NumberOfFunctions.to_i != 0
-        if x.AddressOfFunctions.to_i !=0 && (va = va2file(x.AddressOfFunctions))
-          f.seek va
+        if x.AddressOfFunctions.to_i !=0 && (ofs = va2file(x.AddressOfFunctions))
+          f.seek ofs
           x.entry_points = []
           x.NumberOfFunctions.times do
             if f.eof?
@@ -612,8 +624,8 @@ class PEdump
             x.entry_points << f.read(4).unpack('V').first
           end
         end
-        if x.AddressOfNameOrdinals.to_i !=0 && (va = va2file(x.AddressOfNameOrdinals))
-          f.seek va
+        if x.AddressOfNameOrdinals.to_i !=0 && (ofs = va2file(x.AddressOfNameOrdinals))
+          f.seek ofs
           x.name_ordinals = []
           x.NumberOfNames.times do
             if f.eof?
@@ -624,8 +636,8 @@ class PEdump
           end
         end
       end
-      if x.NumberOfNames.to_i != 0 && x.AddressOfNames.to_i !=0 && (va = va2file(x.AddressOfNames))
-        f.seek va
+      if x.NumberOfNames.to_i != 0 && x.AddressOfNames.to_i !=0 && (ofs = va2file(x.AddressOfNames))
+        f.seek ofs
         x.names = []
         x.NumberOfNames.times do
           if f.eof?
@@ -646,7 +658,7 @@ class PEdump
   # TLS
   ##############################################################################
 
-  def tls f=nil
+  def tls f=@io
     @tls ||= pe(f) && pe(f).ioh && f &&
       begin
         dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::TLS]
@@ -673,11 +685,11 @@ class PEdump
   # resources
   ##############################################################################
 
-  def resources f=nil
+  def resources f=@io
     @resources ||= _scan_resources(f)
   end
 
-  def version_info f=nil
+  def version_info f=@io
     resources(f) && resources(f).find_all{ |res| res.type == 'VERSION' }.map(&:data).flatten
   end
 

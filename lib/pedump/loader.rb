@@ -3,7 +3,7 @@ require 'stringio'
 require 'pedump/loader/section'
 
 class PEdump::Loader
-  attr_accessor :pe_hdr, :sections
+  attr_accessor :mz_hdr, :dos_stub, :pe_hdr, :sections, :pedump
 
   # shortcuts
   alias :pe :pe_hdr
@@ -14,28 +14,13 @@ class PEdump::Loader
   # constructors
   ########################################################################
 
-  def initialize a = nil, f = nil
-    if a.respond_to?(:read) && a.respond_to?(:seek) && a.respond_to?(:tell)
-      # with IO instance
-      initialize(PEdump.new, a)
-
-    elsif a.is_a?(PEdump)
-      # with PEdump instance
-      @mz_hdr   = a.mz(f).dup
-      @dos_stub = a.dos_stub(f).dup
-      @pe_hdr   = a.pe(f).dup
-      load_sections a.sections(f), f
-
-    elsif a.is_a?(Array) && a.map(&:class).uniq == [PEdump::IMAGE_SECTION_HEADER]
-      # with array of sections
-      load_sections a, f
-
-    elsif a.nil? && f.nil?
-      # without parameters
-      @sections = []
-
-    else
-      raise "invalid initializer: #{a.inspect}, #{f.inspect}"
+  def initialize io = nil, pedump_params = {}
+    @pedump = PEdump.new(io, pedump_params)
+    if io
+      @mz_hdr     = @pedump.mz
+      @dos_stub   = @pedump.dos_stub
+      @pe_hdr     = @pedump.pe
+      load_sections @pedump.sections, io
     end
   end
 

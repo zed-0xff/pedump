@@ -386,7 +386,8 @@ if __FILE__ == $0
 
   require 'pp'
   require './lib/pedump/loader'
-  ldr = PEdump::Loader.new(aspack.pedump, f)
+  f.rewind
+  ldr = PEdump::Loader.new(f)
   #pp ldr
 
   sorted_obj_tbl = aspack.obj_tbl.sort_by{ |x| aspack.pedump.va2file(x.va) }
