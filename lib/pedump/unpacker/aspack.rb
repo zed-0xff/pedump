@@ -47,14 +47,15 @@ class PEdump::Unpacker::ASPack
   end
   def code2re code, &block; self.class.code2re(code, &block); end
 
-  def code2re_dw code, shift=0
+  def code2re_dw code, shift=0, mode=nil
     raise "shift must be in 0..3, got #{shift.inspect}" unless (0..3).include?(shift)
     Regexp.new(
       (
         'X '*shift +
         code.strip.
         split("\n").map{|line| line.strip.split('    ',2).first}.join("\n")
-      ).split.each_slice(4).map do |a|
+      ).gsub(/\.{2,}/){ |x| x.split('').join(' ') }.
+      split.each_slice(4).map do |a|
         a.map! do |x|
           case x
           when /\A[a-f0-9]{2}\Z/i
@@ -64,10 +65,43 @@ class PEdump::Unpacker::ASPack
           end
         end
         dw = a.reverse.inject(0){ |x,y| (x<<8) + (y.is_a?(Numeric) ? y : 0)}
-        dw = yield(dw) << 8
-        a.map do |x|
-          dw >>= 8
-          x.is_a?(Numeric) ? Regexp::escape((dw & 0xff).chr) : x
+        dw = yield(dw)
+        if dw.is_a?(Array)
+          # value + mask, mask = number of exact bytes in dw
+          (dw[1]..[3,a.size-1].min).each{ |i| a[i] = '.' }
+          dw = dw[0]
+        end
+        dw <<= 8
+
+        if mode == :add
+          # ADD mode
+          if a.all?{ |x| x.is_a?(Numeric)}
+            # all bytes are known
+            a.map do |x|
+              dw >>= 8
+              Regexp::escape((dw & 0xff).chr)
+            end
+          else
+            # some bytes are masked
+            # => ALL bytes after FIRST MASKED byte should be masked too
+            # due to carry flag when doing ADD or SUB
+            was_mask = false
+            a.map do |x|
+              dw >>= 8
+              if x.is_a?(Numeric)
+                was_mask ? '.' : Regexp::escape((dw & 0xff).chr)
+              else
+                was_mask = true
+                x
+              end
+            end
+          end
+        else
+          # generic mode, applicable for XOR
+          a.map do |x|
+            dw >>= 8
+            x.is_a?(Numeric) ? Regexp::escape((dw & 0xff).chr) : x
+          end
         end
       end.join[shift..-1], Regexp::MULTILINE
     )
@@ -221,7 +255,7 @@ class PEdump::Unpacker::ASPack
   def _decrypt_dw shift=0
     orig_size = @data.size
     @data = @data.dup
-    i = shift
+    i = shift                  # FIXME: first 'shift' bytes of data is not decrypted!
     while i < @data.size
       t = @data[i,4]
       t<<"\x00" while t.size < 4
@@ -267,13 +301,24 @@ class PEdump::Unpacker::ASPack
       end
     end
 
+    # detect dword xor
     h = xordetect
     if h && h.size == 4
       h.keys.permutation.each do |xor_bytes|
         xor_dw = xor_bytes.inject{ |x,y| (x<<8) + y}
         re = code2re_dw(E8_CODE){ |dw| dw^xor_dw }
-        if r=check_re(@data, "[xor dw:#{xor_dw.to_s(16)}]", re)
+        if r=check_re(@data, "[xor dw,#{xor_dw.to_s(16)}]", re)
           return check_re(_decrypt_dw(r.begin(0)%4){ |dw| dw^xor_dw })
+        end
+      end
+    end
+
+    # detect dword add
+    if add_dw = add_detect
+      4.times do |shift|
+        re = code2re_dw(E8_CODE,shift, :add){ |dw| dw-add_dw }
+        if r=check_re(@data, "[add dw:#{shift},#{add_dw.to_s(16)}]", re)
+          return check_re(_decrypt_dw((r.begin(0)+shift)%4){ |dw| dw+add_dw })
         end
       end
     end
@@ -285,14 +330,14 @@ class PEdump::Unpacker::ASPack
   # detects if code is crypted by a dword-xor
   # @data must be original, not modified!
   def xordetect
-    logger.info "[*] trying to guess DWORD-XOR key..."
+    logger.info "[*] guessing DWORD-XOR key..."
     h = Hash.new{ |k,v| k[v] = 0 }
     @@xordetect_codes.each do |code|
       4.times do |shift|
         0x100.times do |x1|
           re = code2re(code.tr('()','')){ |x,idx| idx%4 == shift ? x^x1 : :any }
           @data.scan(re).each do
-            logger.debug "[.] %02x: %6x : %s" % [x1, $~.begin(0), re.inspect]
+            logger.debug "[.] %02x: %2d : %s" % [x1, ($~.begin(0)+shift)%4, re.inspect]
             h[x1] += 1
           end
         end
@@ -300,7 +345,7 @@ class PEdump::Unpacker::ASPack
     end
     case h.size
     when 0
-      logger.debug "[?] %s: zero hash" % __method__
+      logger.debug "[?] %s: no matches" % __method__
     when 1..3
       logger.info  "[?] %s: not xored, or %d-byte xor key: %s" % [__method__, h.size, h.inspect]
     when 4
@@ -311,6 +356,46 @@ class PEdump::Unpacker::ASPack
     h
   end
 
+  def add_detect known_bytes = [], step = 1
+    s = known_bytes.map{ |x| "%02x" % x}.join(' ')
+    logger.info "[*] guessing DWORD-ADD key... [#{s}]"
+    h = Hash.new{ |k,v| k[v] = 0 }
+    dec = known_bytes.reverse.inject(0){ |x,y| (x<<8) + y}
+    @@xordetect_codes.each do |code|
+      4.times do |shift|
+        0x100.times do |x1|
+          #re = code2re_dw(code.tr('()',''),shift){ |x,idx| idx%4 == shift ? ((x-x1)&0xff) : :any }
+          re = code2re_dw(code.tr('()',''),shift) do |x|
+            [x-dec-(x1<<(known_bytes.size*8)), known_bytes.size+1]
+          end
+          @data.scan(re).each do
+            logger.debug "[.] %02x: %2d : %s" % [x1, ($~.begin(0)+shift)%4, re.inspect[0,75]]
+            h[x1] += 1
+          end
+        end
+      end
+    end
+    if h.any?
+      known_bytes << h.sort_by(&:last).last[0] # most frequent byte
+    end
+    if known_bytes.size == step && step < 4
+      add_detect known_bytes, step+1
+    else
+      kb = known_bytes
+      case kb.size
+      when 0
+        logger.debug "[?] %s: no matches" % __method__
+      when 1..3
+        logger.info  "[?] %s: not 'add' or %d-byte key: %s" % [__method__, kb.size, kb.inspect]
+      when 4
+        logger.info  "[*] %s: FOUND 'add' key bytes: [%02x %02x %02x %02x]" % [__method__, *kb].flatten
+        return known_bytes.reverse.inject(0){ |x,y| (x<<8) + y}
+      else
+        logger.info  "[?] %s: %d possible bytes: %s" % [__method__, kb.size, kb.inspect]
+      end
+      return nil
+    end
+  end
 
   def _scan_obj_tbl
     unless @ebp
