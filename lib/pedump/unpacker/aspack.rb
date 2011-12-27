@@ -163,7 +163,7 @@ class PEdump::Unpacker::ASPack
     83 C3 05                add     ebx, 5
     83 C6 04                add     esi, 4
     83 E9 05                sub     ecx, 5
-    EB CE                   jmp     short loc_450130
+    EB                      jmp     short loc_450130
   EOC
   E8_RE = code2re E8_CODE
   @@xordetect_codes << E8_CODE
@@ -521,7 +521,6 @@ class PEdump::Unpacker::ASPack
     @data = section.data
 
     decrypt
-    #xordetect
 
     find_e8e9    # must find e8/e9 before any other b/c it also decrypts @data
     find_imports # must find imports BEFORE OEP, b/c OEP find uses @ebp filled in imports
@@ -548,10 +547,12 @@ if __FILE__ == $0
       next unless packer = Array(pedump.packer(f)).first
       next unless packer.name =~ /aspack/i
 
-      puts "\n=== #{fname}".green
+      STDERR.puts "\n=== #{fname}".green
 
       f.rewind
-      unpacker = PEdump::Unpacker::ASPack.new(f, :log_level => Logger::DEBUG)
+      unpacker = PEdump::Unpacker::ASPack.new(f,
+                                              :log_level => Logger::DEBUG,
+                                              :color => true)
       unpacker.unpack
     end
   end
