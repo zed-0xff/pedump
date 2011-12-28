@@ -4,7 +4,6 @@ require 'pedump/loader'
 require 'pedump/cli'
 
 # TODO: RelTbl
-# TODO: FlgE8E9
 # TODO: restore section flags, if any
 # TODO: autocompile unlzx
 
@@ -12,6 +11,18 @@ module PEdump::Unpacker; end
 
 class PEdump::Unpacker::ASPack
   attr_accessor :logger
+
+  ########################################################################
+
+  def initialize io, params = {}
+    params[:logger] ||= PEdump::Logger.create(params)
+    @logger = params[:logger]
+    @ldr = PEdump::Loader.new(io, params)
+
+    @e8e9_mode = @e8e9_cmp = @e8e9_flag = @ebp = nil
+  end
+
+  ########################################################################
 
   def self.code2re code
     idx = -1
@@ -168,6 +179,43 @@ class PEdump::Unpacker::ASPack
   E8_RE = code2re E8_CODE
   @@xordetect_codes << E8_CODE
 
+  E8_FLAG_RE_IMM1 = code2re <<-EOC
+    B3 (.)                  mov     bl, ?
+    80 FB 00                cmp     bl, 0
+    75 .                    jnz     short loc_465163
+    FE 85 ....              inc     byte ptr [ebp+0ECh]
+    8B 3E                   mov     edi, [esi]
+    03 BD ....              add     edi, [ebp+422h]
+    FF 37                   push    dword ptr [edi]
+    C6 07 C3                mov     byte ptr [edi], 0C3h
+    FF D7                   call    edi
+    8F 07                   pop     dword ptr [edi]
+  EOC
+
+  E8_FLAG_RE_IMM2 = code2re <<-EOC
+    B3 (.)                  mov     bl, 0
+    80 FB 00                cmp     bl, 0
+    75 .                    jnz     short loc_4C6155
+    FE 85 ....              inc     byte ptr [ebp+0EFh]
+    50                      push    eax
+    51                      push    ecx
+    56                      push    esi
+    53                      push    ebx
+    8B C8                   mov     ecx, eax
+  EOC
+
+  E8_FLAG_RE_EBP = code2re <<-EOC
+    80 BD (....) 00         cmp     byte ptr [ebp+443A11h], 0
+    75 .                    jnz     short loc_465163
+    FE 85 ....              inc     byte ptr [ebp+0ECh]
+    8B 3E                   mov     edi, [esi]
+    03 BD ....              add     edi, [ebp+422h]
+    FF 37                   push    dword ptr [edi]
+    C6 07 C3                mov     byte ptr [edi], 0C3h
+    FF D7                   call    edi
+    8F 07                   pop     dword ptr [edi]
+  EOC
+
   OEP_CODE1 = <<-EOC
     B8 (....)               mov     eax, 101Ah
     50                      push    eax
@@ -235,14 +283,6 @@ class PEdump::Unpacker::ASPack
   SECTION_INFO = PEdump.create_struct 'V3', :va, :size, :flags
 
   ########################################################################
-
-  def initialize io, params = {}
-    params[:logger] ||= PEdump::Logger.create(params)
-    @logger = params[:logger]
-    @ldr = PEdump::Loader.new(io, params)
-
-    @e8e9_mode = @e8e9_cmp = @e8e9_flag = @ebp = nil
-  end
 
   def _decrypt
     @data = @data.dup
@@ -438,12 +478,23 @@ class PEdump::Unpacker::ASPack
   ########################################################################
 
   def find_e8e9
-    if m = check_re(@data)
-      @e8e9_flag, @e8e9_cmp = m[1], m[2]
-      logger.debug "[.] E8/E9: flag=%02x, cmp=%02x" % [@e8e9_flag.ord, @e8e9_cmp.ord]
+    if m = @data.match(E8_RE)
+      @e8e9_mode, @e8e9_cmp = m[1].ord, m[2].ord
     else
       logger.error "[!] can't find E8/E9 patch sub! unpacked code may be invalid!"
     end
+
+    if m = (@data.match(E8_FLAG_RE_IMM1) || @data.match(E8_FLAG_RE_IMM2))
+      @e8e9_flag = m[1].ord
+    elsif m = @data.match(E8_FLAG_RE_EBP)
+      offset = m[1].unpack('V').first
+      @e8e9_flag = @ldr[(@ebp + offset) & 0xffff_ffff, 1].ord
+    else
+      logger.error "[!] can't find E8/E9 flag! unpacked code may be invalid!"
+      raise
+    end
+
+    logger.debug "[.] E8/E9: flag=%s, mode=%s, cmp=%s" % [@e8e9_flag||'???', @e8e9_mode, @e8e9_cmp]
   end
 
   def find_obj_tbl
@@ -520,10 +571,10 @@ class PEdump::Unpacker::ASPack
 
     @data = section.data
 
-    decrypt
+    decrypt      # must be called before any other finds
 
-    find_e8e9    # must find e8/e9 before any other b/c it also decrypts @data
-    find_imports # must find imports BEFORE OEP, b/c OEP find uses @ebp filled in imports
+    find_imports # also fills @ebp for other finds
+    find_e8e9
     find_obj_tbl
     find_oep
   end
