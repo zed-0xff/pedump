@@ -17,6 +17,8 @@ class PEdump::Loader
     def name;  @hdr.Name; end
     def va  ;  @hdr.VirtualAddress; end
     def vsize; @hdr.VirtualSize; end
+    def flags; @hdr.Characteristics; end
+    def flags= f; @hdr.Characteristics= f; end
 
     def data
       if @data.empty? && @deferred_load_io && @deferred_load_pos && @deferred_load_size.to_i > 0

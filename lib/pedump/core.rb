@@ -33,9 +33,17 @@ end
 class PEdump
 
   module Readable
-    def read file, size = nil
+    # src can be IO or String, or anything that responds to :read or :unpack
+    def read src, size = nil
       size ||= const_get 'SIZE'
-      data = file.read(size).to_s
+      data =
+        if src.respond_to?(:read)
+          src.read(size).to_s
+        elsif src.respond_to?(:unpack)
+          src
+        else
+          raise "[?] don't know how to read from #{src.inspect}"
+        end
       if data.size < size && PEdump.logger
         PEdump.logger.error "[!] #{self.to_s} want #{size} bytes, got #{data.size}"
       end
@@ -53,7 +61,7 @@ class PEdump
           case f
           when /[aAC]/ then 1
           when 'v' then 2
-          when 'V' then 4
+          when 'V','l' then 4
           when 'Q' then 8
           else raise "unknown fmt #{f.inspect}"
           end

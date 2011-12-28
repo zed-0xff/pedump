@@ -3,10 +3,6 @@
 require 'pedump/loader'
 require 'pedump/cli'
 
-# TODO: RelTbl
-# TODO: restore section flags, if any
-# TODO: autocompile unlzx
-
 module PEdump::Unpacker; end
 
 class PEdump::Unpacker::ASPack
@@ -18,9 +14,15 @@ class PEdump::Unpacker::ASPack
     params[:logger] ||= PEdump::Logger.create(params)
     @logger = params[:logger]
     @ldr = PEdump::Loader.new(io, params)
+    @io = io
 
     @e8e9_mode = @e8e9_cmp = @e8e9_flag = @ebp = nil
   end
+
+  ########################################################################
+
+  DATA_ROOT = File.dirname(File.dirname(File.dirname(File.dirname(__FILE__))))
+  UNLZX     = File.join(DATA_ROOT, "misc", "aspack", "aspack_unlzx")
 
   ########################################################################
 
@@ -280,7 +282,19 @@ class PEdump::Unpacker::ASPack
   IMPORTS_RE2 = code2re IMPORTS_CODE2
   @@xordetect_codes  << IMPORTS_CODE2
 
-  SECTION_INFO = PEdump.create_struct 'V3', :va, :size, :flags
+  RELOCS_RE = code2re <<-EOC
+    2B D0                   sub     edx, eax
+    74 79                   jz      short exit_relocs_loop
+    8B C2                   mov     eax, edx
+    C1 E8 10                shr     eax, 10h
+    33 DB                   xor     ebx, ebx
+    8B B5 (....)            mov     esi, [ebp+539h]         ; relocs_rva
+    03 B5 ....              add     esi, [ebp+422h]         ; image_base
+    83 3E 00                cmp     dword ptr [esi], 0
+    74                      jz      short exit_relocs_loop
+  EOC
+
+  SECTION_INFO = PEdump.create_struct 'VlV', :va, :size, :flags
 
   ########################################################################
 
@@ -458,6 +472,10 @@ class PEdump::Unpacker::ASPack
     # obj_tbl contains flags if there is a call to VirtualProtect in loader code
     record_size = (@data['VirtualProtect'] && @data[VIRTUALPROTECT_RE]) ? 4*3 : 4*2
 
+#    @ldr[va-0x3c,0x3c].unpack('V*').each do |x|
+#      printf("%8x\n",x);
+#    end
+
     r = []
     while true
       obj = SECTION_INFO.new(*@ldr[va, record_size].unpack(SECTION_INFO::FORMAT))
@@ -502,9 +520,11 @@ class PEdump::Unpacker::ASPack
       if logger.level <= ::Logger::INFO
         @obj_tbl.each do |obj|
           if obj.flags
-            logger.info "[.] ASP::SECTION va: %8x  size: %8x  flags: %8x" % [obj.va, obj.size, obj.flags]
+            logger.info "[.] ASP::SECTION va: %8x  size: %8x  flags: %8x" % [
+              obj.va, obj.size&0xffff_ffff, obj.flags]
           else
-            logger.info "[.] ASP::SECTION va: %8x  size: %8x" % [obj.va, obj.size]
+            logger.info "[.] ASP::SECTION va: %8x  size: %8x" % [
+              obj.va, obj.size&0xffff_ffff]
           end
         end
       end
@@ -560,6 +580,75 @@ class PEdump::Unpacker::ASPack
     logger.info "[.] imports RVA = %x" % @imports_rva
   end
 
+  def find_relocs
+    @relocs_rva = nil
+    if m = @data.match(RELOCS_RE)
+      a = m[1..-1].map{|x| x.unpack('V').first }
+    else
+      logger.error "[!] cannot find imports"
+      raise
+      return
+    end
+    @relocs_rva ||= @ldr[(@ebp + a[0]) & 0xffff_ffff, 4].unpack('V').first
+    logger.info "[.] relocs RVA = %x" % @relocs_rva
+  end
+
+  def compile_unlzx
+    logger.info "[*] compiling #{File.basename(UNLZX)} .."
+    system "gcc -o #{UNLZX} #{UNLZX}.c"
+    unless File.file?(UNLZX) && File.executable?(UNLZX)
+      logger.fatal "[!] %s compile failed, please compile it yourself at %s" % [
+        File.basename(UNLZX), File.dirname(UNLZX)
+      ]
+      raise "no aspack_unlzx binary"
+    end
+  end
+
+  ########################################################################
+
+  def rebuild_imports
+    return unless @imports_rva
+
+    va = @imports_rva
+    sz = PEdump::IMAGE_IMPORT_DESCRIPTOR::SIZE
+    while true
+      iid = PEdump::IMAGE_IMPORT_DESCRIPTOR.read(@ldr[va,sz])
+      va += sz
+      break if iid.Name.to_i == 0
+    end
+    @ldr.pe_hdr.ioh.DataDirectory[PEdump::IMAGE_DATA_DIRECTORY::IMPORT].tap do |dd|
+      dd.va = @imports_rva
+      dd.size = va-@imports_rva
+    end
+  end
+
+  def rebuild_relocs
+    return if @relocs_rva.to_i == 0
+
+    va = @relocs_rva
+    while true
+      a = @ldr[va,4*2].to_s.unpack('V*')
+      break if a[0] == 0 || a[1] == 0
+      va += a[1]
+    end
+
+    @ldr.pe_hdr.ioh.DataDirectory[PEdump::IMAGE_DATA_DIRECTORY::BASERELOC].tap do |dd|
+      dd.va = @relocs_rva
+      dd.size = va-@relocs_rva
+    end
+  end
+
+  def unpack_section data, packed_size, unpacked_size
+    compile_unlzx unless File.file?(UNLZX) && File.executable?(UNLZX)
+    data = IO.popen("#{UNLZX} #{packed_size.to_i} #{unpacked_size.to_i}","r+") do |f|
+      f.write data
+      f.close_write
+      f.read
+    end
+    raise $?.inspect unless $?.success?
+    data
+  end
+
   def unpack
     if section = @ldr.va2section(@ldr.ep)
       section.data # force loading, if deferred (optional)
@@ -577,6 +666,39 @@ class PEdump::Unpacker::ASPack
     find_e8e9
     find_obj_tbl
     find_oep
+    find_relocs
+
+    ###
+
+    sorted_obj_tbl = @obj_tbl.sort_by{ |x| @ldr.pedump.va2file(x.va) }
+    sorted_obj_tbl.each_with_index do |obj,idx|
+      # restore section flags, if any
+      @ldr.va2section(obj.va).flags = obj.flags if obj.flags
+
+      next if obj.size < 0 # empty section
+      #file_offset = @ldr.pedump.va2file(obj.va)
+      #@io.seek file_offset
+      packed_size =
+        if idx == sorted_obj_tbl.size - 1
+          # last obj
+          obj.size
+        else
+          # subtract this file_offset from next object file_offset
+          @ldr.pedump.va2file(sorted_obj_tbl[idx+1].va) - @ldr.pedump.va2file(obj.va)
+        end
+      #packed_data = @io.read packed_size
+      packed_data = @ldr[obj.va, packed_size]
+      unpacked_data = unpack_section(packed_data, packed_data.size, obj.size).force_encoding('binary')
+      # TODO: decode e8/e9
+      @ldr[obj.va, unpacked_data.size] = unpacked_data
+      logger.debug "[.] %8x: %8x -> %8x" % [obj.va, packed_size, unpacked_data.size]
+    end
+
+    rebuild_imports
+    rebuild_relocs
+
+    @ldr.pe_hdr.ioh.AddressOfEntryPoint = @oep.to_i
+    @ldr
   end
 end
 
@@ -604,7 +726,12 @@ if __FILE__ == $0
       unpacker = PEdump::Unpacker::ASPack.new(f,
                                               :log_level => Logger::DEBUG,
                                               :color => true)
-      unpacker.unpack
+      if l = unpacker.unpack
+        # returns PEdump::Loader with unpacked data
+        File.open("unpacked.exe","wb") do |f|
+          l.dump(f)
+        end
+      end
     end
   end
 end
