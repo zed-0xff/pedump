@@ -609,16 +609,44 @@ class PEdump::Unpacker::ASPack
   def rebuild_imports
     return unless @imports_rva
 
+    iids = []
+
     va = @imports_rva
     sz = PEdump::IMAGE_IMPORT_DESCRIPTOR::SIZE
     while true
       iid = PEdump::IMAGE_IMPORT_DESCRIPTOR.read(@ldr[va,sz])
-      va += sz
       break if iid.Name.to_i == 0
+
+      [:original_first_thunk, :first_thunk].each do |tbl|
+        camel = tbl.capitalize.to_s.gsub(/_./){ |char| char[1..-1].upcase}
+        iid[tbl] ||= []
+        if (va1 = iid[camel].to_i) != 0
+          while true
+            # intentionally include zero terminator in table to count IAT size
+            t = @ldr[va1,4].unpack('V').first
+            iid[tbl] << t
+            break if t == 0
+            va1 += 4
+          end
+        end
+      end
+      va += sz
+      iids << iid
     end
     @ldr.pe_hdr.ioh.DataDirectory[PEdump::IMAGE_DATA_DIRECTORY::IMPORT].tap do |dd|
-      dd.va = @imports_rva
+      dd.va   = @imports_rva
       dd.size = va-@imports_rva
+    end
+    if iids.any?
+      iids.sort_by!(&:FirstThunk)
+      @ldr.pe_hdr.ioh.DataDirectory[PEdump::IMAGE_DATA_DIRECTORY::IAT].tap do |dd|
+        # Points to the beginning of the first Import Address Table (IAT).
+        dd.va   = iids.first.FirstThunk
+        # The Size field indicates the total size of all the IATs.
+        dd.size = iids.last.FirstThunk - iids.first.FirstThunk + iids.last.first_thunk.size*4
+        # ... to temporarily mark the IATs as read-write during import resolution.
+        # http://msdn.microsoft.com/en-us/magazine/bb985997.aspx
+      end
     end
   end
 
