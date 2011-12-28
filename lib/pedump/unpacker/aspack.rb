@@ -615,6 +615,7 @@ class PEdump::Unpacker::ASPack
     sz = PEdump::IMAGE_IMPORT_DESCRIPTOR::SIZE
     while true
       iid = PEdump::IMAGE_IMPORT_DESCRIPTOR.read(@ldr[va,sz])
+      va += sz # increase ptr before breaking, req'd 4 saving total import table size in data dir
       break if iid.Name.to_i == 0
 
       [:original_first_thunk, :first_thunk].each do |tbl|
@@ -630,7 +631,6 @@ class PEdump::Unpacker::ASPack
           end
         end
       end
-      va += sz
       iids << iid
     end
     @ldr.pe_hdr.ioh.DataDirectory[PEdump::IMAGE_DATA_DIRECTORY::IMPORT].tap do |dd|
