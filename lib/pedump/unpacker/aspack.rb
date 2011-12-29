@@ -666,6 +666,29 @@ class PEdump::Unpacker::ASPack
     end
   end
 
+  def rebuild_tls h = {}
+    dd = @ldr.pe_hdr.ioh.DataDirectory[PEdump::IMAGE_DATA_DIRECTORY::TLS]
+    return if dd.va.to_i == 0 || dd.size.to_i == 0
+
+    case h[:step]
+    when 1 # store @tls_data
+      @tls_data = @ldr[dd.va, dd.size]
+    when 2 # search in unpacked sections
+      return unless @tls_data if h[:step] == 2
+      # search for original TLS data in all unpacked sections
+      @ldr.sections.each do |section|
+        if offset = section.data.index(@tls_data)
+          # found a TLS section
+          dd.va = section.va + offset
+          return
+        end
+      end
+      logger.error "[!] can't find TLS section"
+    else
+      raise "invalid step"
+    end
+  end
+
   def unpack_section data, packed_size, unpacked_size
     compile_unlzx unless File.file?(UNLZX) && File.executable?(UNLZX)
     data = IO.popen("#{UNLZX} #{packed_size.to_i} #{unpacked_size.to_i}","r+") do |f|
@@ -729,6 +752,7 @@ class PEdump::Unpacker::ASPack
 
     ###
 
+    rebuild_tls :step => 1
     sorted_obj_tbl = @obj_tbl.sort_by{ |x| @ldr.pedump.va2file(x.va) }
     sorted_obj_tbl.each_with_index do |obj,idx|
       # restore section flags, if any
@@ -756,6 +780,7 @@ class PEdump::Unpacker::ASPack
 
     rebuild_imports
     rebuild_relocs
+    rebuild_tls :step => 2
 
     @ldr.pe_hdr.ioh.AddressOfEntryPoint = @oep.to_i
     @ldr
