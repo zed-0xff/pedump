@@ -212,32 +212,6 @@ task :cmp do
   raise "gimme a f1" unless f1 = ENV['f1']
   raise "gimme a f2" unless f2 = ENV['f2']
   require './lib/pedump'
-  require './lib/pedump/loader'
-  h1 = File.open(f1,"rb")
-  h2 = File.open(f2,"rb")
-  l1 = PEdump::Loader.new h1
-  l2 = PEdump::Loader.new h2
-  l1.sections.each_with_index do |s1,idx|
-    s2 = l2.sections[idx]
-    if !s2
-      printf "[!] extra section %-12s in %s\n".red, s1.name.inspect, f1
-    elsif s1.data == s2.data
-      printf "[.] %10s == %-10s\n".green, s1.name, s2.name
-    else
-      printf "[!] %10s != %-10s\n".red, s1.name, s2.name
-      handles = [s1,s2].map{ |x| StringIO.new(x.data) }
-      ndiff = 0
-      while !handles.any?(&:eof)
-        bytes = handles.map(&:readbyte)
-        if bytes.uniq.size > 1
-          ndiff += 1
-          printf "%08x:"+" %02x"*handles.size+"\n", handles[0].pos-1, *bytes
-          if ndiff >= 5
-            puts "..."
-            break
-          end
-        end
-      end
-    end
-  end
+  require './lib/pedump/comparer'
+  PEdump::Comparer.cmp(f1,f2)
 end
