@@ -294,6 +294,14 @@ class PEdump
     new(fname, params).dump
   end
 
+  def self.quiet
+    oldlevel = @@logger.level
+    @@logger.level = ::Logger::FATAL
+    yield
+  ensure
+    @@logger.level = oldlevel
+  end
+
   def mz f=@io
     @mz ||= f && MZ.read(f).tap do |mz|
       if mz.signature != 'MZ' && mz.signature != 'ZM'

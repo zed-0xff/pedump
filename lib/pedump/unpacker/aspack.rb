@@ -576,7 +576,7 @@ class PEdump::Unpacker::ASPack
     logger.debug "[d] assume EBP = %x" % @ebp
 
     # @imports_rva may already be filled by IMPORTS_RE1
-    @imports_rva ||= @ldr[(@ebp + a[0]) & 0xffff_ffff, 4].unpack('V').first
+    @imports_rva ||= @data[(@ebp + a[0] - @section.va) & 0xffff_ffff, 4].unpack('V').first
     logger.info "[.] imports RVA = %x" % @imports_rva
   end
 
@@ -711,15 +711,13 @@ class PEdump::Unpacker::ASPack
   ########################################################################
 
   def unpack
-    if section = @ldr.va2section(@ldr.ep)
-      section.data # force loading, if deferred (optional)
-      logger.debug "[.] EP section: #{section.inspect}"
+    if @section = @ldr.va2section(@ldr.ep)
+      @data = @section.data
+      logger.debug "[.] EP section: #{@section.inspect}"
     else
       logger.fatal "[!] cannot determine EP section"
       return
     end
-
-    @data = section.data
 
     decrypt      # must be called before any other finds
 
@@ -750,7 +748,8 @@ class PEdump::Unpacker::ASPack
       #packed_data = @io.read packed_size
       packed_data = @ldr[obj.va, packed_size]
       unpacked_data = unpack_section(packed_data, packed_data.size, obj.size).force_encoding('binary')
-      decode_e8e9 unpacked_data
+      # decode e8/e9 only on 1st section?
+      decode_e8e9(unpacked_data) if obj == @obj_tbl.first
       @ldr[obj.va, unpacked_data.size] = unpacked_data
       logger.debug "[.] %8x: %8x -> %8x" % [obj.va, packed_size, unpacked_data.size]
     end

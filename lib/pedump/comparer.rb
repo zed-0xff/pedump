@@ -9,7 +9,7 @@ class PEdump::Comparer
   attr_accessor :verbose
   attr_accessor :ignored_data_dirs, :ignored_sections
 
-  METHODS = [:sections, :data_dirs, :imports, :resources]
+  METHODS = [:sections, :data_dirs, :imports, :resources, :pe_hdr]
 
   def initialize ldr1, ldr2
     @ldr1,@ldr2 = ldr1,ldr2
@@ -23,6 +23,11 @@ class PEdump::Comparer
 
   def diff
     METHODS.map{ |m| send("cmp_#{m}") ? nil : m }.compact
+  end
+
+  def cmp_pe_hdr
+    @ldr1.pe.ioh.AddressOfEntryPoint == @ldr2.pe.ioh.AddressOfEntryPoint &&
+    @ldr1.pe.ioh.ImageBase           == @ldr2.pe.ioh.ImageBase
   end
 
   def cmp_resources

@@ -1,6 +1,7 @@
 class PEdump::Loader
   class Section
     attr_accessor :hdr
+    attr_writer :data
 
     EMPTY_DATA = ''.force_encoding('binary')
 
@@ -27,8 +28,10 @@ class PEdump::Loader
           @deferred_load_io.seek @deferred_load_pos
           @data = @deferred_load_io.binmode.read(@deferred_load_size) || EMPTY_DATA.dup
         ensure
-          @deferred_load_io.seek old_pos
-          @deferred_load_io = nil # prevent read only on 1st access to data
+          if @deferred_load_io && old_pos
+            @deferred_load_io.seek old_pos
+            @deferred_load_io = nil # prevent read only on 1st access to data
+          end
         end
       end
       @data
