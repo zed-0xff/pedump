@@ -677,6 +677,39 @@ class PEdump::Unpacker::ASPack
     data
   end
 
+  def decode_e8e9 data
+    return if !data || data.size < 6
+    return if [@e8e9_flag, @e8e9_mode, @e8e9_cmp].any?(&:nil?)
+    return if @e8e9_flag != 0
+
+    size = data.size - 6
+    offs = 0
+    while size > 0
+      b0 = data[offs]
+      if b0 != "\xE8" && b0 != "\xE9"
+        size-=1; offs+=1
+        next
+      end
+
+      dw = data[offs+1,4].unpack('V').first
+      if @e8e9_mode == 0
+        if (dw & 0xff) != @e8e9_cmp
+          size-=1; offs+=1
+          next
+        end
+        # dw &= 0xffffff00; dw = ROL(dw, 24)
+        dw >>= 8
+      end
+
+      t = (dw-offs) & 0xffffffff  # keep value in 32 bits
+      #logger.debug "[d] data[%6x] = %8x" % [offs+1, t]
+      data[offs+1,4] = [t].pack('V')
+      offs += 5; size -= [size, 5].min
+    end
+  end
+
+  ########################################################################
+
   def unpack
     if section = @ldr.va2section(@ldr.ep)
       section.data # force loading, if deferred (optional)
@@ -717,7 +750,7 @@ class PEdump::Unpacker::ASPack
       #packed_data = @io.read packed_size
       packed_data = @ldr[obj.va, packed_size]
       unpacked_data = unpack_section(packed_data, packed_data.size, obj.size).force_encoding('binary')
-      # TODO: decode e8/e9
+      decode_e8e9 unpacked_data
       @ldr[obj.va, unpacked_data.size] = unpacked_data
       logger.debug "[.] %8x: %8x -> %8x" % [obj.va, packed_size, unpacked_data.size]
     end
