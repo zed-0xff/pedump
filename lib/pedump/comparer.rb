@@ -124,7 +124,7 @@ class PEdump::Comparer
 
     # each arg is a PEdump::Loader
     def _cmp ldr1, ldr2
-      new(ldr1, ldr2).cmp
+      new(ldr1, ldr2).equal?
     end
 
     def cmp_ios *ios

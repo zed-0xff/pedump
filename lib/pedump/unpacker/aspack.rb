@@ -661,7 +661,7 @@ class PEdump::Unpacker::ASPack
     end
 
     @ldr.pe_hdr.ioh.DataDirectory[PEdump::IMAGE_DATA_DIRECTORY::BASERELOC].tap do |dd|
-      dd.va = @relocs_rva
+      dd.va   = @relocs_rva
       dd.size = va-@relocs_rva
     end
   end
