@@ -5,6 +5,7 @@
 *.id?
 *.nam
 *.til
+*.o
 tmp
 dump
 samples/*.exe
@@ -12,6 +13,7 @@ samples/*.mui
 samples/*.dll
 samples/corkami
 aspack_unlzx
+unpacked.*
 
 
 # rcov generated
