@@ -705,7 +705,7 @@ class PEdump
   # packer / compiler detection
   ##############################################################################
 
-  def packer f = nil
+  def packer f=@io
     @packer ||= pe(f) && @pe.ioh &&
       begin
         if !(va=@pe.ioh.AddressOfEntryPoint)
