@@ -11,7 +11,7 @@ describe PEdump::Unpacker do
     PEdump::Unpacker.find("#{root}/samples/calc.asp212.exe").should == PEdump::Unpacker::ASPack
   end
 
-  it "find nothing" do
+  it "finds nothing" do
     PEdump::Unpacker.find("#{root}/samples/calc.exe").should be_nil
   end
 end
