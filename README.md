@@ -43,6 +43,7 @@ Usage
             --pe
             --data-directory
         -S, --sections
+            --tls
         -s, --strings
         -R, --resources
             --resource-directory
@@ -53,6 +54,7 @@ Usage
             --deep                       packer deep scan, significantly slower
         -P, --packer-only                packer/compiler detect only,
                                          mimics 'file' command output
+        -r, --recursive                  recurse dirs in packer detect
             --all                        Dump all but resource-directory (default)
             --va2file VA                 Convert RVA to file offset
         -W, --web                        Uploads files to a http://pedump.me
@@ -126,7 +128,7 @@ Usage
     # IMAGE_FILE_HEADER:
                            Machine:        332         0x14c  x86
                   NumberOfSections:          4             4
-                     TimeDateStamp:    "2008-09-14 11:28:52"
+                     TimeDateStamp:    "2008-09-14 07:28:52"
               PointerToSymbolTable:          0             0
                    NumberOfSymbols:          0             0
               SizeOfOptionalHeader:        224          0xe0
@@ -315,7 +317,7 @@ Usage
     === EXPORTS ===
     
     # module "zlib.dll"
-    # flags=0x0  ts="1996-05-07 12:46:46"  version=0.0  ord_base=1
+    # flags=0x0  ts="1996-05-07 08:46:46"  version=0.0  ord_base=1
     # nFuncs=27  nNames=27
     
       ORD ENTRY_VA  NAME
@@ -328,24 +330,24 @@ Usage
         7     37f0  deflateInit2_
         8     37c0  deflateInit_
         9     3bc0  deflateParams
-       10     3b40  deflateReset
-       11     3a40  deflateSetDictionary
-       12     7510  gzclose
-       13     6f00  gzdopen
-       14     75a0  gzerror
-       15     73f0  gzflush
-       16     6c50  gzopen
-       17     7190  gzread
-       18     7350  gzwrite
-       19     4e50  inflate
-       20     4cc0  inflateEnd
-       21     4d20  inflateInit2_
-       22     4e30  inflateInit_
-       23     4c70  inflateReset
-       24     5260  inflateSetDictionary
-       25     52f0  inflateSync
-       26     4bd0  uncompress
-       27     e340  zlib_version
+        a     3b40  deflateReset
+        b     3a40  deflateSetDictionary
+        c     7510  gzclose
+        d     6f00  gzdopen
+        e     75a0  gzerror
+        f     73f0  gzflush
+       10     6c50  gzopen
+       11     7190  gzread
+       12     7350  gzwrite
+       13     4e50  inflate
+       14     4cc0  inflateEnd
+       15     4d20  inflateInit2_
+       16     4e30  inflateInit_
+       17     4c70  inflateReset
+       18     5260  inflateSetDictionary
+       19     52f0  inflateSync
+       1a     4bd0  uncompress
+       1b     e340  zlib_version
 
 ### VS_VERSIONINFO parsing
 
