@@ -116,16 +116,21 @@ class PEdump
     :Value          # A zero-terminated string. See the szKey member description for more information
   )
     def self.read f, size = SIZE
+      pos = f.tell
       super.tap do |x|
         x.szKey   = ''
         x.szKey << f.read(2) until x.szKey[-2..-1] == "\x00\x00" || f.eof?
         x.Padding = f.tell%4 > 0 ? f.read(4 - f.tell%4) : nil
-        x.Value   = f.read(x.wValueLength*2)
+
+        value_len = [x.wValueLength*2, x.wLength - (f.tell-pos)].min
+        value_len = 0 if value_len < 0
+
+        x.Value   = f.read(value_len)
         if f.tell%4 > 0
           f.read(4-f.tell%4) # undoc padding?
         end
-        x.szKey.force_encoding('UTF-16LE').encode!('UTF-8').sub!(/\u0000$/,'') rescue nil
-        x.Value.force_encoding('UTF-16LE').encode!('UTF-8').sub!(/\u0000$/,'') rescue nil
+        x.szKey.force_encoding('UTF-16LE').encode!('UTF-8').sub!(/\u0000+$/,'') rescue nil
+        x.Value.force_encoding('UTF-16LE').encode!('UTF-8').sub!(/\u0000+$/,'') rescue nil
       end
     end
   end
