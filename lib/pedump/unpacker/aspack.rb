@@ -33,7 +33,13 @@ class PEdump::Unpacker::ASPack
   ########################################################################
 
   DATA_ROOT = File.dirname(File.dirname(File.dirname(File.dirname(__FILE__))))
-  UNLZX     = File.join(DATA_ROOT, "misc", "aspack", "aspack_unlzx")
+  UNLZX_SRC = File.join(DATA_ROOT, "misc", "aspack", "aspack_unlzx.c")
+  UNLZXes   = [
+    # default path for RVM
+    File.join(DATA_ROOT, "misc", "aspack", "aspack_unlzx"),
+    # XXX path for normal linux installs
+    File.expand_path("~/.pedump_unlzx")
+  ]
 
   ########################################################################
 
@@ -604,17 +610,6 @@ class PEdump::Unpacker::ASPack
     logger.info "[.] relocs RVA = %x" % @relocs_rva
   end
 
-  def compile_unlzx
-    logger.info "[*] compiling #{File.basename(UNLZX)} .."
-    system "gcc -o #{UNLZX} #{UNLZX}.c"
-    unless File.file?(UNLZX) && File.executable?(UNLZX)
-      logger.fatal "[!] %s compile failed, please compile it yourself at %s" % [
-        File.basename(UNLZX), File.dirname(UNLZX)
-      ]
-      raise "no aspack_unlzx binary"
-    end
-  end
-
   ########################################################################
 
   def rebuild_imports
@@ -700,9 +695,33 @@ class PEdump::Unpacker::ASPack
     end
   end
 
+  def compile_unlzx dest
+    logger.info "[*] compiling #{File.basename(dest)} .."
+    system("gcc", UNLZX_SRC, "-o", dest)
+    unless File.file?(dest) && File.executable?(dest)
+      logger.fatal "[!] %s compile failed, please compile it yourself at %s" % [
+        File.basename(dest), File.dirname(dest)
+      ]
+    end
+  end
+
+  def unlzx_pathname
+    UNLZXes.each do |unlzx|
+      return unlzx if File.file?(unlzx) && File.executable?(unlzx)
+    end
+
+    # nothing found, try to compile
+    UNLZXes.each do |unlzx|
+      compile_unlzx unlzx
+      return unlzx if File.file?(unlzx) && File.executable?(unlzx)
+    end
+
+    # all compiles failed
+    raise "no aspack_unlzx binary"
+  end
+
   def unpack_section data, packed_size, unpacked_size
-    compile_unlzx unless File.file?(UNLZX) && File.executable?(UNLZX)
-    data = IO.popen("#{UNLZX} #{packed_size.to_i} #{unpacked_size.to_i}","r+") do |f|
+    data = IO.popen("#{unlzx_pathname} #{packed_size.to_i} #{unpacked_size.to_i}","r+") do |f|
       f.write data
       f.close_write
       f.read
