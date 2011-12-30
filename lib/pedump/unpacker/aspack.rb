@@ -6,9 +6,20 @@ require 'pedump/cli'
 module PEdump::Unpacker; end
 
 class PEdump::Unpacker::ASPack
-  attr_accessor :logger
+
+  def self.unpack src_fname, dst_fname, log = ''
+    File.open(src_fname, "rb") do |f|
+      if ldr = new(f).unpack
+        File.open(dst_fname,"wb"){ |fo| ldr.dump(fo) }
+        return ldr   # looks like 'true'
+      else
+        return false
+      end
+    end
+  end
 
   ########################################################################
+  attr_accessor :logger
 
   def initialize io, params = {}
     params[:logger] ||= PEdump::Logger.create(params)
