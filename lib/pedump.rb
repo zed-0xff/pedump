@@ -512,7 +512,7 @@ class PEdump
     @imports = r.each do |x|
       if x.Name.to_i != 0 && (ofs = va2file(x.Name))
         f.seek ofs
-        x.module_name = f.gets("\x00").chomp("\x00")
+        x.module_name = f.gets("\x00").to_s.chomp("\x00")
       end
       [:original_first_thunk, :first_thunk].each do |tbl|
         camel = tbl.capitalize.to_s.gsub(/_./){ |char| char[1..-1].upcase}

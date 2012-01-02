@@ -456,12 +456,12 @@ class PEdump::CLI
     printf fmt.tr('x','s'), *%w'RAW_START RAW_END INDEX CALLBKS ZEROFILL FLAGS'
     data.each do |tls|
       printf fmt,
-        tls.StartAddressOfRawData,
-        tls.EndAddressOfRawData,
-        tls.AddressOfIndex,
-        tls.AddressOfCallBacks,
-        tls.SizeOfZeroFill,
-        tls.Characteristics
+        tls.StartAddressOfRawData.to_i,
+        tls.EndAddressOfRawData.to_i,
+        tls.AddressOfIndex.to_i,
+        tls.AddressOfCallBacks.to_i,
+        tls.SizeOfZeroFill.to_i,
+        tls.Characteristics.to_i
     end
   end
 
