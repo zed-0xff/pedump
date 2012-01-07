@@ -5,6 +5,7 @@ require 'pedump/pe'
 require 'pedump/resources'
 require 'pedump/version_info'
 require 'pedump/tls'
+require 'pedump/security'
 
 # pedump.rb by zed_0xff
 #

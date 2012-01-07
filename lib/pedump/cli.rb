@@ -41,7 +41,7 @@ class PEdump::CLI
   attr_accessor :data, :argv
 
   KNOWN_ACTIONS = (
-    %w'mz dos_stub rich pe data_directory sections tls' +
+    %w'mz dos_stub rich pe data_directory sections tls security' +
     %w'strings resources resource_directory imports exports version_info packer web packer_only'
   ).map(&:to_sym)
 
@@ -439,6 +439,8 @@ class PEdump::CLI
         dump_version_info data
       when PEdump::IMAGE_TLS_DIRECTORY32, PEdump::IMAGE_TLS_DIRECTORY64
         dump_tls data
+      when PEdump::WIN_CERTIFICATE
+        dump_security data
       else
         puts "[?] don't know how to dump: #{data.inspect[0,50]}" unless data.empty?
       end
@@ -448,6 +450,20 @@ class PEdump::CLI
       dump_rich_hdr data
     else
       puts "[?] Don't know how to display #{data.inspect[0,50]}... as a table"
+    end
+  end
+
+  def dump_security data
+    return unless data
+    data.each do |win_cert|
+      if win_cert.data.respond_to?(:certificates)
+        win_cert.data.certificates.each do |cert|
+          puts cert.to_text
+          puts
+        end
+      else
+        @pedump.logger.error "[?] no certificates in #{win_cert.class}"
+      end
     end
   end
 
