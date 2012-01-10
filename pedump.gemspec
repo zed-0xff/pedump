@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2012-01-07"
+  s.date = "2012-01-10"
   s.description = "dump headers, sections, extract resources of win32 PE exe,dll,etc"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["pedump"]
