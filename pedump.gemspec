@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "pedump"
-  s.version = "0.4.6"
+  s.version = "0.4.7"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2012-01-02"
+  s.date = "2012-01-07"
   s.description = "dump headers, sections, extract resources of win32 PE exe,dll,etc"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["pedump"]
@@ -42,6 +42,7 @@ Gem::Specification.new do |s|
     "lib/pedump/packer.rb",
     "lib/pedump/pe.rb",
     "lib/pedump/resources.rb",
+    "lib/pedump/security.rb",
     "lib/pedump/sig_parser.rb",
     "lib/pedump/tls.rb",
     "lib/pedump/unpacker.rb",
