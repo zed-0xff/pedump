@@ -16,11 +16,11 @@ describe 'corkami/imports_vterm.exe' do
     @imports.map(&:class).uniq.should == [PEdump::IMAGE_IMPORT_DESCRIPTOR]
   end
 
-  it "should have all entries thunks equal" do
-    @imports.each do |iid|
-      iid.first_thunk.should == iid.original_first_thunk
-    end
-  end
+#  it "should have all entries thunks equal" do
+#    @imports.each do |iid|
+#      iid.first_thunk.should == iid.original_first_thunk
+#    end
+#  end
 
   describe "1st image_import_descriptor" do
     it "should be from kernel32.dll" do
