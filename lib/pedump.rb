@@ -6,6 +6,7 @@ require 'pedump/resources'
 require 'pedump/version_info'
 require 'pedump/tls'
 require 'pedump/security'
+require 'pedump/packer'
 
 # pedump.rb by zed_0xff
 #
@@ -709,23 +710,11 @@ class PEdump
   def packer f=@io
     @packer ||= pe(f) && @pe.ioh &&
       begin
-        if !(va=@pe.ioh.AddressOfEntryPoint)
-          logger.error "[?] can't find EntryPoint RVA"
-          nil
-        elsif va == 0 && @pe.dll?
-          logger.debug "[.] it's a DLL with no EntryPoint"
-          nil
-        elsif !(ofs = va2file(va))
-          logger.error "[?] can't find EntryPoint RVA (0x#{va.to_s(16)}) file offset"
+        if PEdump::Packer.all.size == 0
+          logger.error "[?] no packer definitions found"
           nil
         else
-          require 'pedump/packer'
-          if PEdump::Packer.all.size == 0
-            logger.error "[?] no packer definitions found"
-            nil
-          else
-            Packer.of f, :ep_offset => ofs
-          end
+          Packer.of f, :pedump => self
         end
       end
   end

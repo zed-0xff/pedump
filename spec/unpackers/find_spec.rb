@@ -7,6 +7,10 @@ describe PEdump::Unpacker do
     PEdump::Unpacker.find("#{root}/samples/calc_upx.exe").should == PEdump::Unpacker::UPX
   end
 
+  it "finds ARM UPX" do
+    PEdump::Unpacker.find("#{root}/samples/arm_upx.exe").should == PEdump::Unpacker::UPX
+  end
+
   it "finds ASPack" do
     PEdump::Unpacker.find("#{root}/samples/calc.asp212.exe").should == PEdump::Unpacker::ASPack
   end

@@ -12,6 +12,13 @@ class PEdump
       end
     end
 
+    class Guess < Match
+      def initialize name
+        self.offset = 0
+        self.packer = Packer.new(name, nil, nil, 0)
+      end
+    end
+
     class << self
       def all
         @@all ||=
@@ -47,10 +54,42 @@ class PEdump
       end
 
       def of data, h = {}
-        if data.respond_to?(:read) && data.respond_to?(:seek) && h[:ep_offset]
+        if data.respond_to?(:read) && data.respond_to?(:seek) && h[:pedump]
+          of_pedump data, h
+        elsif data.respond_to?(:read) && data.respond_to?(:seek) && h[:ep_offset]
           of_pe_file data, h
         else
           of_data data
+        end
+      end
+
+      # try to determine packer of FILE f, h[:pedump] is a PEdump instance
+      def of_pedump f, h
+        pedump = h[:pedump]
+        pe = pedump.pe
+        if !(va=pe.ioh.AddressOfEntryPoint)
+          pedump.logger.error "[?] can't find EntryPoint RVA"
+          nil
+        elsif va == 0 && pe.dll?
+          pedump.logger.debug "[.] it's a DLL with no EntryPoint"
+          nil
+        elsif !(ofs = pedump.va2file(va))
+          pedump.logger.error "[?] can't find EntryPoint RVA (0x#{va.to_s(16)}) file offset"
+          nil
+        else
+          r = of_pe_file(f, h.merge({:ep_offset => ofs}))
+          return r if r && r.any?
+
+          # nothing found, try to guess by pe section names
+          if pedump.sections
+            if pedump.sections.any?{ |s| s.Name.to_s =~ /upx/i }
+              return [Guess.new('UPX?')]
+            end
+            if pedump.sections.any?{ |s| s.Name.to_s =~ /aspack/i }
+              return [Guess.new('ASPack?')]
+            end
+          end
+          nil
         end
       end
 
