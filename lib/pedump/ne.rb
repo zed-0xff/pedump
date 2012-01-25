@@ -34,7 +34,18 @@ class PEdump
 
     attr_accessor :io, :offset
 
+    DEFAULT_CP = 1252
+
+    def self.cp
+      @@cp || DEFAULT_CP
+    end
+
+    def self.cp= cp
+      @@cp = cp
+    end
+
     def self.read io, *args
+      self.cp = DEFAULT_CP
       offset = io.tell
       super.tap do |x|
         x.io, x.offset = io, offset
@@ -68,8 +79,10 @@ class PEdump
             return nil
           else
             # read only if type_id is non-zero,
-            g.children = g.count.times.map do
-              ResourceInfo.read io
+            g.children = []
+            g.count.times do
+              break if io.eof?
+              g.children << ResourceInfo.read(io)
             end
           end
         end
@@ -84,7 +97,7 @@ class PEdump
 
     class Resource < PEdump::Resource
       # NE strings use 8-bit characters
-      def parse f
+      def parse f, h={}
         self.data = []
         case type
         when 'STRING'
@@ -102,7 +115,7 @@ class PEdump
               end
             data <<
               begin
-                t.force_encoding('CP1250').encode!('UTF-8')
+                t.force_encoding("CP#{h[:cp]}").encode!('UTF-8')
               rescue
                 t.force_encoding('ASCII')
               end
@@ -111,7 +124,7 @@ class PEdump
           f.seek file_offset
           data << PEdump::NE::VS_VERSIONINFO.read(f)
         else
-          super
+          super(f)
         end
       end
     end
@@ -120,7 +133,7 @@ class PEdump
       if id & 0x8000 == 0
         # offset to name
         io.seek id + res_base
-        namesize = io.getc.ord
+        namesize = (io.getc || 0.chr).ord
         io.read(namesize)
       else
         # numerical id
@@ -129,24 +142,54 @@ class PEdump
     end
 
     def resource_directory io=@io
-      res_base = ne_rsrctab+@offset
-      io.seek res_base
-      res_shift = io.read(2).unpack('v').first
-      PEdump.logger.info "[.] res_shift = %d" % res_shift
-      r = []
-      while g = ResourceGroup.read(io)
-        r << g
-        g.type = (g.type_id & 0x8000 != 0) && PEdump::ROOT_RES_NAMES[g.type_id & 0x7fff]
-        g.type ||= _id2string( g.type_id, io, res_base)
-      end
-      r.each do |g|
-        g.children.each do |res|
-          res.name = _id2string(res.name_offset, io, res_base)
-          res.offset <<= res_shift
-          res.size   <<= res_shift
+      @resource_directory ||=
+        begin
+          res_base = ne_rsrctab+@offset
+          io.seek res_base
+          res_shift = io.read(2).unpack('v').first
+          unless (0..16).include?(res_shift)
+            PEdump.logger.error "[!] invalid res_shift = %d" % res_shift
+            return []
+          end
+          PEdump.logger.info "[.] res_shift = %d" % res_shift
+          r = []
+          while !io.eof? && (g = ResourceGroup.read(io))
+            r << g
+          end
+          r.each do |g|
+            g.type = (g.type_id & 0x8000 != 0) && PEdump::ROOT_RES_NAMES[g.type_id & 0x7fff]
+            g.type ||= _id2string( g.type_id, io, res_base)
+            g.children.each do |res|
+              res.name = _id2string(res.name_offset, io, res_base)
+              res.offset ||= 0
+              res.offset <<= res_shift
+              res.size   ||= 0
+              res.size   <<= res_shift
+            end
+          end
+          r
+        end
+    end
+
+    def _detect_codepage a, io=@io
+      a.find_all{ |res| res.type == 'VERSION' }.each do |res|
+        res.parse(io)
+        res.data.each do |vi|
+          if vi.respond_to?(:Children) && vi.Children.respond_to?(:each)
+            # vi is PEdump::NE::VS_VERSIONINFO
+            vi.Children.each do |vfi|
+              if vfi.is_a?(PEdump::NE::VarFileInfo) && vfi.Children.is_a?(PEdump::NE::Var)
+                var = vfi.Children
+                # var is PEdump::NE::Var
+                if var.respond_to?(:Value) && var.Value.is_a?(Array) && var.Value.size == 2
+                  return var.Value.last
+                end
+              end
+            end
+          end
         end
       end
-      r
+      nil
     end
 
     def resources io=@io
@@ -160,10 +203,26 @@ class PEdump
           r.name = res.name
           r.file_offset = res.offset
           r.reserved = res.reserved
-          r.parse(io)
         end
       end
+
+      # try to detect codepage
+      cp = _detect_codepage(a, io)
+      if cp
+        PEdump::NE.cp = cp # XXX HACK
+        PEdump.logger.info "[.] detect_codepage: #{cp.inspect}"
+      else
+        cp = DEFAULT_CP
+        PEdump.logger.info "[.] detect_codepage failed, using default #{cp}"
+      end
+
+      a.each{ |r| r.parse(io, :cp => cp) }
       a
+    end
+
+    def imports io=@io
+      io.seek @offset+ne_imptab
+      p io.read(0x20)
     end
   end
 
