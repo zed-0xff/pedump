@@ -498,26 +498,26 @@ class PEdump::CLI
       puts "# VS_FIXEDFILEINFO:"
 
       if @options[:verbose] > 0 || vi.Value.dwSignature != 0xfeef04bd
-        printf(fmt, "Signature", "0x#{vi.Value.dwSignature.to_s(16)}")
+        printf(fmt, "Signature", "0x#{vi.Value.dwSignature.to_i.to_s(16)}")
       end
 
       printf fmt, 'FileVersion', [
-        vi.Value.dwFileVersionMS >> 16,
-        vi.Value.dwFileVersionMS &  0xffff,
-        vi.Value.dwFileVersionLS >> 16,
-        vi.Value.dwFileVersionLS &  0xffff
+        vi.Value.dwFileVersionMS.to_i >> 16,
+        vi.Value.dwFileVersionMS.to_i &  0xffff,
+        vi.Value.dwFileVersionLS.to_i >> 16,
+        vi.Value.dwFileVersionLS.to_i &  0xffff
       ].join('.')
 
       printf fmt, 'ProductVersion', [
-        vi.Value.dwProductVersionMS >> 16,
-        vi.Value.dwProductVersionMS &  0xffff,
-        vi.Value.dwProductVersionLS >> 16,
-        vi.Value.dwProductVersionLS &  0xffff
+        vi.Value.dwProductVersionMS.to_i >> 16,
+        vi.Value.dwProductVersionMS.to_i &  0xffff,
+        vi.Value.dwProductVersionLS.to_i >> 16,
+        vi.Value.dwProductVersionLS.to_i &  0xffff
       ].join('.')
 
       vi.Value.each_pair do |k,v|
         next if k[/[ML]S$/] || k == :valid || k == :dwSignature
-        printf fmt, k.to_s.sub(/^dw/,''), v > 9 ? "0x#{v.to_s(16)}" : v
+        printf fmt, k.to_s.sub(/^dw/,''), v.to_i > 9 ? "0x#{v.to_s(16)}" : v
       end
 
       vi.Children.each do |file_info|
