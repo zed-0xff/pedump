@@ -1,7 +1,12 @@
 class PEdump
 
   def resource_directory f=@io
-    @resource_directory ||= _read_resource_directory_tree(f)
+    @resource_directory ||=
+      if pe(f)
+        _read_resource_directory_tree(f)
+      elsif ne(f)
+        ne(f).resource_directory(f)
+      end
   end
 
   def _read_resource_directory_tree f
