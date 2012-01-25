@@ -7,6 +7,8 @@ require 'pedump/version_info'
 require 'pedump/tls'
 require 'pedump/security'
 require 'pedump/packer'
+require 'pedump/ne'
+require 'pedump/ne/version_info'
 
 # pedump.rb by zed_0xff
 #
@@ -363,23 +365,6 @@ class PEdump
   alias :rich_header :rich_hdr
   alias :rich        :rich_hdr
 
-  def pe f=@io
-    @pe ||=
-      begin
-        pe_offset = mz(f) && mz(f).lfanew
-        if pe_offset.nil?
-          logger.fatal "[!] NULL PE offset (e_lfanew). cannot continue."
-          nil
-        elsif pe_offset > f.size
-          logger.fatal "[!] PE offset beyond EOF. cannot continue."
-          nil
-        else
-          f.seek pe_offset
-          PE.read f, :force => @force
-        end
-      end
-  end
-
   def va2file va, h={}
     return nil if va.nil?
 
@@ -696,7 +681,12 @@ class PEdump
   ##############################################################################
 
   def resources f=@io
-    @resources ||= _scan_resources(f)
+    @resources ||=
+      if pe(f)
+        _scan_pe_resources(f)
+      elsif ne(f)
+        ne(f).resources(f)
+      end
   end
 
   def version_info f=@io

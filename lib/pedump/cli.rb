@@ -41,7 +41,7 @@ class PEdump::CLI
   attr_accessor :data, :argv
 
   KNOWN_ACTIONS = (
-    %w'mz dos_stub rich pe data_directory sections tls security' +
+    %w'mz dos_stub rich pe ne data_directory sections tls security' +
     %w'strings resources resource_directory imports exports version_info packer web packer_only'
   ).map(&:to_sym)
 
@@ -435,7 +435,7 @@ class PEdump::CLI
         dump_imports data
       when PEdump::Packer::Match
         dump_packers data
-      when PEdump::VS_VERSIONINFO
+      when PEdump::VS_VERSIONINFO, PEdump::NE::VS_VERSIONINFO
         dump_version_info data
       when PEdump::IMAGE_TLS_DIRECTORY32, PEdump::IMAGE_TLS_DIRECTORY64
         dump_tls data
@@ -522,14 +522,14 @@ class PEdump::CLI
 
       vi.Children.each do |file_info|
         case file_info
-        when PEdump::StringFileInfo
+        when PEdump::StringFileInfo, PEdump::NE::StringFileInfo
           file_info.Children.each do |string_table|
             puts "\n# StringTable #{string_table.szKey}:"
             string_table.Children.each do |string|
               printf fmt, string.szKey, string.Value.inspect
             end
           end
-        when PEdump::VarFileInfo
+        when PEdump::VarFileInfo, PEdump::NE::VarFileInfo
           puts
           printf fmt, "VarFileInfo", '[ 0x' + file_info.Children.Value.map{|v| v.to_s(16)}.join(", 0x") + ' ]'
         else
@@ -612,7 +612,7 @@ class PEdump::CLI
     prev_lang = nil
     data.sort_by{|s| [s.lang, s.id] }.each do |s|
       #puts if prev_lang && prev_lang != s.lang
-      printf "%5d %5x  %4x  %s\n", s.id, s.id, s.lang, s.value.inspect
+      printf "%5d %5x  %4s  %s\n", s.id, s.id, s.lang && s.lang.to_s(16), s.value.inspect
       prev_lang = s.lang
     end
   end
@@ -699,11 +699,15 @@ class PEdump::CLI
     printf fmt.join.tr('dx','s'), *keys.map(&:to_s).map(&:upcase)
     data.each do |res|
       fmt.each_with_index do |f,i|
-        v = res.send(keys[i])
-        if f['x']
-          printf f.tr('x','s'), v.to_i < 10 ? v.to_s : "0x#{v.to_s(16)}"
+        if v = res.send(keys[i])
+          if f['x']
+            printf f.tr('x','s'), v.to_i < 10 ? v.to_s : "0x#{v.to_s(16)}"
+          else
+            printf f, v
+          end
         else
-          printf f, v
+          # NULL value
+          printf f.tr('xd','s'), ''
         end
       end
     end

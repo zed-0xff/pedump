@@ -154,7 +154,6 @@ class PEdump
         end
         # XXX: check if readed strings summary length is less than resource data length
       when 'VERSION'
-        require 'pedump/version_info'
         f.seek file_offset
         data << PEdump::VS_VERSIONINFO.read(f)
       end
@@ -319,7 +318,7 @@ class PEdump
     end
   end
 
-  def _scan_resources f=@io, dir=nil
+  def _scan_pe_resources f=@io, dir=nil
     dir ||= resource_directory(f)
     return nil unless dir
     dir.entries.map do |entry|
@@ -333,12 +332,12 @@ class PEdump
               else
                 entry.name
               end
-            _scan_resources(f,entry.data).each do |res|
+            _scan_pe_resources(f,entry.data).each do |res|
               res.type = entry_type
               res.parse f
             end
           else
-            _scan_resources(f,entry.data).each do |res|
+            _scan_pe_resources(f,entry.data).each do |res|
               res.name = res.name == "##{res.lang}" ? entry.name : "#{entry.name} / #{res.name}"
               res.id ||= entry.Name if entry.Name.is_a?(Numeric) && entry.Name < 0x8000_0000
             end

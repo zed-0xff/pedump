@@ -27,12 +27,12 @@ class PEdump
 
       pe_offset = f.tell
       pe_sig = f.read 4
-      logger.error "[!] 'NE' format is not supported!" if pe_sig == "NE\x00\x00"
+      #logger.error "[!] 'NE' format is not supported!" if pe_sig == "NE\x00\x00"
       if pe_sig != "PE\x00\x00"
         if force
           logger.warn  "[?] no PE signature (want: 'PE\\x00\\x00', got: #{pe_sig.inspect})"
         else
-          logger.error "[?] no PE signature (want: 'PE\\x00\\x00', got: #{pe_sig.inspect}). (not forced)"
+          logger.debug "[?] no PE signature (want: 'PE\\x00\\x00', got: #{pe_sig.inspect}). (not forced)"
           return nil
         end
       end
@@ -91,4 +91,22 @@ class PEdump
 
     def self.logger; PEdump.logger; end
   end
+
+  def pe f=@io
+    @pe ||=
+      begin
+        pe_offset = mz(f) && mz(f).lfanew
+        if pe_offset.nil?
+          logger.fatal "[!] NULL PE offset (e_lfanew). cannot continue."
+          nil
+        elsif pe_offset > f.size
+          logger.fatal "[!] PE offset beyond EOF. cannot continue."
+          nil
+        else
+          f.seek pe_offset
+          PE.read f, :force => @force
+        end
+      end
+  end
+
 end

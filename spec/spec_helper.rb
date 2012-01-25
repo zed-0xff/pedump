@@ -23,7 +23,11 @@ def sample
         end
       fname = File.expand_path(File.dirname(__FILE__) + '/../samples/' + fname)
       File.open(fname,"rb") do |f|
-        PEdump.new(fname).dump
+        if block_given?
+          yield PEdump.new(f)
+        else
+          PEdump.new(f).dump
+        end
       end
     end
 end
