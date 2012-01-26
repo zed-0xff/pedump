@@ -431,7 +431,7 @@ class PEdump::CLI
         dump_resources data
       when PEdump::STRING
         dump_strings data
-      when PEdump::IMAGE_IMPORT_DESCRIPTOR
+      when PEdump::IMAGE_IMPORT_DESCRIPTOR, PEdump::ImportedFunction
         dump_imports data
       when PEdump::Packer::Match
         dump_packers data
@@ -593,16 +593,26 @@ class PEdump::CLI
   def dump_imports data
     fmt = "%-15s %5s %5s  %s\n"
     printf fmt, "MODULE_NAME", "HINT", "ORD", "FUNCTION_NAME"
-    data.each do |iid|
-      # image import descriptor
-      (Array(iid.original_first_thunk) + Array(iid.first_thunk)).uniq.each do |f|
-        next unless f
-        # imported function
+    data.each do |x|
+      case x
+      when PEdump::IMAGE_IMPORT_DESCRIPTOR
+        (Array(x.original_first_thunk) + Array(x.first_thunk)).uniq.each do |f|
+          next unless f
+          # imported function
+          printf fmt,
+            x.module_name,
+            f.hint ? f.hint.to_s(16) : '',
+            f.ordinal ? f.ordinal.to_s(16) : '',
+            f.name
+        end
+      when PEdump::ImportedFunction
         printf fmt,
-          iid.module_name,
-          f.hint ? f.hint.to_s(16) : '',
-          f.ordinal ? f.ordinal.to_s(16) : '',
-          f.name
+          x.module_name,
+          x.hint ? x.hint.to_s(16) : '',
+          x.ordinal ? x.ordinal.to_s(16) : '',
+          x.name
+      else
+        raise "invalid #{x.inspect}"
       end
     end
   end

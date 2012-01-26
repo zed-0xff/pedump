@@ -445,7 +445,7 @@ class PEdump
     :original_first_thunk,
     :first_thunk
 
-  class ImportedFunction < Struct.new(:hint, :name, :ordinal, :va)
+  class ImportedFunction < Struct.new(:hint, :name, :ordinal, :va, :module_name)
 #    def == x
 #      self.hint == x.hint && self.name == x.name && self.ordinal == x.ordinal
 #    end
@@ -464,6 +464,14 @@ class PEdump
   end
 
   def imports f=@io
+    if pe(f)
+      pe_imports(f)
+    elsif ne(f)
+      ne(f).imports
+    end
+  end
+
+  def pe_imports f=@io
     return @imports if @imports
     return nil unless pe(f) && pe(f).ioh && f
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::IMPORT]

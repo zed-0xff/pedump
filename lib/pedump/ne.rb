@@ -55,16 +55,46 @@ class PEdump
     class Segment < PEdump.create_struct 'v4',
       :offset, :size, :flags, :min_alloc_size,
       # manual:
-      :file_offset
+      :file_offset, :relocs
+
+      FLAG_CODE      = 0
+      FLAG_DATA      = 1
+      FLAG_RELOCINFO = 0x100
+    end
+
+    class Reloc < PEdump.create_struct 'CCvvv',
+      :source, :type,
+      :offset,           # offset of the relocation item within the segment
+
+      # If the relocation type is imported ordinal,
+      # the fifth and sixth bytes specify an index to a module's reference table and
+      # the seventh and eighth bytes specify a function ordinal value.
+
+      # If the relocation type is imported name,
+      # the fifth and sixth bytes specify an index to a module's reference table and
+      # the seventh and eighth bytes specify an offset to an imported-name table.
+
+      :module_idx,
+      :func_idx
+
+      TYPE_IMPORTORDINAL = 1
+      TYPE_IMPORTNAME    = 2
     end
 
     def segments io=@io
-      io.seek ne_segtab+@offset
-      ne_cseg.times.map do
-        Segment.read(io).tap do |seg|
-          seg.file_offset = seg.offset << ne_align
+      @segments ||= io &&
+        begin
+          io.seek ne_segtab+@offset
+          ne_cseg.times.map{ Segment.read(io) }.each do |seg|
+            seg.file_offset = seg.offset << ne_align
+            seg.relocs = []
+            if (seg.flags & Segment::FLAG_RELOCINFO) != 0
+              io.seek seg.file_offset + seg.size
+              nRelocs = io.read(2).unpack('v').first
+              seg.relocs = nRelocs.times.map{ Reloc.read(io) }
+            end
+          end
         end
-      end
     end
 
     class ResourceGroup < PEdump.create_struct 'vvV',
@@ -221,8 +251,48 @@ class PEdump
     end
 
     def imports io=@io
-      io.seek @offset+ne_imptab
-      p io.read(0x20)
+      @imports ||=
+        begin
+          io.seek @offset+ne_modtab
+          modules = io.read(2*ne_cmod).unpack('v*')
+          modules.map! do |ofs|
+            io.seek @offset+ne_imptab+ofs
+            namelen = io.getc.ord
+            io.read(namelen)
+          end
+
+          r = []
+          segments(io).each do |seg|
+            seg.relocs.each do |rel|
+              if rel.type == Reloc::TYPE_IMPORTORDINAL
+                r << (f = PEdump::ImportedFunction.new)
+                f.module_name = modules[rel.module_idx-1]
+                f.ordinal = rel.func_idx
+              elsif rel.type == Reloc::TYPE_IMPORTNAME
+                r << (f = PEdump::ImportedFunction.new)
+                f.module_name = modules[rel.module_idx-1]
+                io.seek @offset+ne_imptab+rel.func_idx
+                namelen = io.getc.ord
+                f.name = io.read(namelen)
+              end
+            end
+          end
+          r
+        end
+    end
+
+    ExportedFunction = Struct.new :name, :ord, :file_offset
+
+    # first string with ordinal 0 is a module name
+    def exports io=@io
+      io.seek @offset+ne_restab
+      r = []
+      while !io.eof && (namelen = io.getc.ord) > 0
+        r << ExportedFunction.new(io.read(namelen), io.read(2).unpack('v').first)
+      end
+#      require 'pp'
+#      pp r
+      r
     end
   end
 
