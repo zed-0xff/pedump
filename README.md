@@ -3,12 +3,20 @@ pedump
 
 Description
 -----------
-A pure ruby implementation of win32 PE binary files dumper, including:
+A pure ruby implementation of win32 PE binary files dumper.
 
- * MZ Header
+Supported formats:
+
+ * DOS MZ EXE
+ * win16 NE
+ * win32 PE
+ * win64 PE
+
+Can dump:
+
+ * MZ/NE/PE Header
  * DOS stub
  * ['Rich' Header](http://ntcore.com/files/richsign.htm)
- * PE Header
  * Data Directory
  * Sections
  * Resources
@@ -41,9 +49,11 @@ Usage
             --dos-stub
             --rich
             --pe
+            --ne
             --data-directory
         -S, --sections
             --tls
+            --security
         -s, --strings
         -R, --resources
             --resource-directory
@@ -289,26 +299,7 @@ Usage
     KERNEL32.dll      21f        TlsAlloc
     KERNEL32.dll      220        TlsFree
     KERNEL32.dll      1fd        SetLastError
-    KERNEL32.dll      221        TlsGetValue
-    KERNEL32.dll       62        ExitProcess
-    KERNEL32.dll      1b8        ReadFile
-    KERNEL32.dll       16        CloseHandle
-    KERNEL32.dll      24f        WriteFile
-    KERNEL32.dll       83        FlushFileBuffers
-    KERNEL32.dll       e9        GetModuleFileNameA
-    KERNEL32.dll       98        GetCPInfo
-    KERNEL32.dll       92        GetACP
-    KERNEL32.dll       f6        GetOEMCP
-    KERNEL32.dll       8b        FreeEnvironmentStringsA
-    KERNEL32.dll       d0        GetEnvironmentStrings
-    KERNEL32.dll       8c        FreeEnvironmentStringsW
-    KERNEL32.dll       d2        GetEnvironmentStringsW
-    KERNEL32.dll      242        WideCharToMultiByte
-    KERNEL32.dll       2b        CreateFileA
-    KERNEL32.dll      1f8        SetFilePointer
-    KERNEL32.dll      206        SetStdHandle
-    KERNEL32.dll      178        LoadLibraryA
-    KERNEL32.dll      1ef        SetEndOfFile
+    ...
 
 ### Exports
 

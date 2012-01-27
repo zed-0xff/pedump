@@ -3,12 +3,20 @@ pedump
 
 Description
 -----------
-A pure ruby implementation of win32 PE binary files dumper, including:
+A pure ruby implementation of win32 PE binary files dumper.
 
- * MZ Header
+Supported formats:
+
+ * DOS MZ EXE
+ * win16 NE
+ * win32 PE
+ * win64 PE
+
+Can dump:
+
+ * MZ/NE/PE Header
  * DOS stub
  * ['Rich' Header](http://ntcore.com/files/richsign.htm)
- * PE Header
  * Data Directory
  * Sections
  * Resources
