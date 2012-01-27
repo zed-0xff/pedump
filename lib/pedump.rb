@@ -433,19 +433,11 @@ class PEdump
   alias :section_table :sections
 
   def ne?
-    if @pe
-      false
-    elsif @ne
-      true
-    else
-      if pe
-        false
-      elsif ne
-        true
-      else
-        false
-      end
-    end
+    @pe ? false : (@ne ? true : (pe ? false : (ne ? true : false)))
+  end
+
+  def pe?
+    @pe ? true  : (@ne ? false : (pe ? true : false ))
   end
 
   ##############################################################################

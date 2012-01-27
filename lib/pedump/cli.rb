@@ -744,7 +744,7 @@ class PEdump::CLI
     fmt = "%2x %6x %6x %9x %9x %6x  %s\n"
     printf fmt.tr('x','s'), *%w'# OFFSET SIZE MIN_ALLOC FILE_OFFS FLAGS', ''
     data.each_with_index do |seg,idx|
-      printf fmt, idx, seg.offset, seg.size, seg.min_alloc_size, seg.file_offset, seg.flags,
+      printf fmt, idx+1, seg.offset, seg.size, seg.min_alloc_size, seg.file_offset, seg.flags,
         seg.flags_desc
     end
   end
