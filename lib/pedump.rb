@@ -428,6 +428,22 @@ class PEdump
   end
   alias :section_table :sections
 
+  def ne?
+    if @pe
+      false
+    elsif @ne
+      true
+    else
+      if pe
+        false
+      elsif ne
+        true
+      else
+        false
+      end
+    end
+  end
+
   ##############################################################################
   # imports
   ##############################################################################
@@ -587,9 +603,20 @@ class PEdump
     :AddressOfNames,
     :AddressOfNameOrdinals,
     # manual:
-    :name, :entry_points, :names, :name_ordinals
+    :name, :entry_points, :names, :name_ordinals, :functions,
+    :description # NE only
+
+  ExportedFunction = Struct.new :name, :ord, :va, :file_offset
 
   def exports f=@io
+    if pe(f)
+      pe_exports(f)
+    elsif ne(f)
+      ne(f).exports
+    end
+  end
+
+  def pe_exports f=@io
     return @exports if @exports
     return nil unless pe(f) && pe(f).ioh && f
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::EXPORT]
@@ -653,6 +680,21 @@ class PEdump
           f.seek va2file(va)
           f.gets("\x00").to_s.chomp("\x00")
         end
+      end
+
+      ord2name = {}
+      if x.names && x.names.any?
+        x.NumberOfNames.times do |i|
+          ord2name[x.name_ordinals[i]] ||= []
+          ord2name[x.name_ordinals[i]] << x.names[i]
+        end
+      end
+
+      x.functions = []
+      x.entry_points.each_with_index do |ep,i|
+        names = ord2name[i+x.Base].try(:join,', ')
+        next if ep.to_i == 0 && names.nil?
+        x.functions << ExportedFunction.new(names, i+x.Base, ep)
       end
     end
   end

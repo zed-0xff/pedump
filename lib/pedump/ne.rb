@@ -281,18 +281,97 @@ class PEdump
         end
     end
 
-    ExportedFunction = Struct.new :name, :ord, :file_offset
-
     # first string with ordinal 0 is a module name
     def exports io=@io
+      exp_dir = IMAGE_EXPORT_DIRECTORY.new
+      exp_dir.functions = []
+
       io.seek @offset+ne_restab
-      r = []
       while !io.eof && (namelen = io.getc.ord) > 0
-        r << ExportedFunction.new(io.read(namelen), io.read(2).unpack('v').first)
+        exp_dir.functions << ExportedFunction.new( io.read(namelen), io.read(2).unpack('v').first, 0 )
       end
-#      require 'pp'
-#      pp r
-      r
+      exp_dir.name = exp_dir.functions.shift.name if exp_dir.functions.any?
+
+      a = []
+      io.seek ne_nrestab
+      while !io.eof && (namelen = io.getc.ord) > 0
+        a << ExportedFunction.new( io.read(namelen), io.read(2).unpack('v').first, 0 )
+      end
+      exp_dir.description = a.shift.name if a.any?
+      exp_dir.functions += a
+
+      exp_dir.functions.each do |f|
+        f.va = entrypoints[f.ord]
+      end
+
+      exp_dir
+    end
+
+    # The entry-table data is organized by bundle, each of which begins with a 2-byte header.
+    # The first byte of the header specifies the number of entries in the bundle ( 0 = end of the table).
+    # The second byte specifies whether the corresponding segment is movable or fixed.
+    #   0xFF = the segment is movable.
+    #   0xFE = the entry does not refer to a segment but refers to a constant defined within the module.
+    #   else it is a segment index.
+
+    class Bundle < PEdump.create_struct 'CC', :num_entries, :seg_idx,
+      :entries # manual
+
+      FixedEntry   = PEdump.create_struct 'Cv',   :flag, :offset
+      MovableEntry = PEdump.create_struct 'CvCv', :flag, :int3F, :seg_idx, :offset
+
+      def movable?
+        seg_idx == 0xff
+      end
+
+      def self.read io
+        super.tap do |bundle|
+          return nil if bundle.num_entries == 0
+          if bundle.num_entries == 0
+            @@eob ||= 0
+            @@eob += 1
+            return nil if @@eob == 2
+          end
+          bundle.entries = bundle.seg_idx == 0 ? [] :
+            if bundle.movable?
+              bundle.num_entries.times.map{ MovableEntry.read(io) }
+            else
+              bundle.num_entries.times.map{ FixedEntry.read(io) }
+            end
+        end
+      end
+    end
+
+    def bundles io=@io
+      io.seek @offset+ne_enttab
+      bundles = []
+      while bundle = Bundle.read(io)
+        bundles << bundle
+      end
+      bundles
+    end
+
+    def entrypoints io=@io
+      @entrypoints ||=
+        begin
+          r = [0] # entrypoint indexes are 1-based
+          bundles(io).each do |b|
+            if b.entries.empty?
+              b.num_entries.times{ r<<0 }
+            else
+              b.entries.each do |e|
+                if e.is_a?(Bundle::MovableEntry)
+                  r << (e.seg_idx<<16) + e.offset
+                elsif e.is_a?(Bundle::FixedEntry)
+                  r << (b.seg_idx<<16) + e.offset
+                else
+                  raise "invalid ep #{e.inspect}"
+                end
+              end
+            end
+          end
+          r
+        end
     end
   end
 

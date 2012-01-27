@@ -551,42 +551,42 @@ class PEdump::CLI
   end
 
   def dump_exports data
-    printf "# module %s\n# flags=0x%x  ts=%s  version=%d.%d  ord_base=%d\n",
-      data.name.inspect,
-      data.Characteristics.to_i,
-      Time.at(data.TimeDateStamp.to_i).utc.strftime('"%Y-%m-%d %H:%M:%S"'),
-      data.MajorVersion.to_i, data.MinorVersion.to_i,
-      data.Base.to_i
+    printf "# module %s\n", data.name.inspect
+    printf "# description %s\n", data.description.inspect if data.description
+
+    if data.Characteristics || data.TimeDateStamp || data.MajorVersion || data.MinorVersion || data.Base
+      printf "# flags=0x%x  ts=%s  version=%d.%d  ord_base=%d\n",
+        data.Characteristics.to_i,
+        Time.at(data.TimeDateStamp.to_i).utc.strftime('"%Y-%m-%d %H:%M:%S"'),
+        data.MajorVersion.to_i, data.MinorVersion.to_i,
+        data.Base.to_i
+    end
 
     if @options[:verbose] > 0
       [%w'Names', %w'EntryPoints Functions', %w'Ordinals NameOrdinals'].each do |x|
         va  = data["AddressOf"+x.last]
         ofs = @pedump.va2file(va) || '?'
-        printf "# %-12s rva=0x%08x  file_offset=%8s\n", x.first, va, ofs
+        printf("# %-12s rva=0x%08x  file_offset=%8s\n", x.first, va, ofs) if va
       end
     end
 
-    printf "# nFuncs=%d  nNames=%d\n",
-      data.NumberOfFunctions.to_i,
-      data.NumberOfNames.to_i
-
-    return unless data.name_ordinals.any? || data.entry_points.any? || data.names.any?
-
-    puts
-
-    ord2name = {}
-    if data.names && data.names.any?
-      data.NumberOfNames.times do |i|
-        ord2name[data.name_ordinals[i]] ||= []
-        ord2name[data.name_ordinals[i]] << data.names[i]
-      end
+    if data.NumberOfFunctions || data.NumberOfNames
+      printf "# nFuncs=%d  nNames=%d\n", data.NumberOfFunctions.to_i, data.NumberOfNames.to_i
     end
 
-    printf "%5s %8s  %s\n", "ORD", "ENTRY_VA", "NAME"
-    data.entry_points.each_with_index do |ep,i|
-      names = ord2name[i+data.Base].try(:join,', ')
-      next if ep.to_i == 0 && names.nil?
-      printf "%5x %8x  %s\n", i + data.Base, ep, names
+    if data.functions && data.functions.any?
+      puts
+      if @pedump.ne?
+        printf "%5s %9s  %s\n", "ORD", "SEG:OFFS", "NAME"
+        data.functions.each do |f|
+          printf "%5x %4x:%04x  %s\n", f.ord, f.va>>16, f.va&0xffff, f.name
+        end
+      else
+        printf "%5s %8s  %s\n", "ORD", "ENTRY_VA", "NAME"
+        data.functions.each do |f|
+          printf "%5x %8x  %s\n", f.ord, f.va, f.name
+        end
+      end
     end
   end
 
