@@ -424,7 +424,11 @@ class PEdump
   end
 
   def sections f=@io
-    pe(f) && pe.section_table
+    if pe(f)
+      pe.section_table
+    elsif ne(f)
+      ne.segments
+    end
   end
   alias :section_table :sections
 

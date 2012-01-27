@@ -57,9 +57,33 @@ class PEdump
       # manual:
       :file_offset, :relocs
 
-      FLAG_CODE      = 0
-      FLAG_DATA      = 1
       FLAG_RELOCINFO = 0x100
+
+      def data?
+        flags & 1 == 1
+      end
+
+      def code?
+        !data?
+      end
+
+      def flags_desc
+        r = code? ? 'CODE' : 'DATA'
+        r << ' ALLOC' if flags & 2 != 0
+        r << ' LOADED' if flags & 4 != 0
+        r << ((flags & 0x10 != 0) ? ' MOVABLE' : ' FIXED')
+        r << ((flags & 0x20 != 0) ? ' PURE' : '')
+        r << ((flags & 0x40 != 0) ? ' PRELOAD' : '')
+        if code?
+          r << ((flags & 0x80 != 0) ? ' EXECUTEONLY' : '')
+        else
+          r << ((flags & 0x80 != 0) ? ' READONLY' : '')
+        end
+        r << ((flags & FLAG_RELOCINFO != 0) ? ' RELOCINFO' : '')
+        r << ((flags & 0x200 != 0) ? ' DBGINFO' : '')
+        r << ((flags & 0x1000 != 0) ? ' DISCARD' : '')
+        r
+      end
     end
 
     class Reloc < PEdump.create_struct 'CCvvv',

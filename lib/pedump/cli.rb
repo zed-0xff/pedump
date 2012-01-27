@@ -441,6 +441,8 @@ class PEdump::CLI
         dump_tls data
       when PEdump::WIN_CERTIFICATE
         dump_security data
+      when PEdump::NE::Segment
+        dump_ne_segments data
       else
         puts "[?] don't know how to dump: #{data.inspect[0,50]}" unless data.empty?
       end
@@ -737,6 +739,16 @@ class PEdump::CLI
         s.flags.to_i,               s.flags_desc
     end
   end
+
+  def dump_ne_segments data
+    fmt = "%2x %6x %6x %9x %9x %6x  %s\n"
+    printf fmt.tr('x','s'), *%w'# OFFSET SIZE MIN_ALLOC FILE_OFFS FLAGS', ''
+    data.each_with_index do |seg,idx|
+      printf fmt, idx, seg.offset, seg.size, seg.min_alloc_size, seg.file_offset, seg.flags,
+        seg.flags_desc
+    end
+  end
+
 
   def dump_data_dir data
     data.each do |row|
