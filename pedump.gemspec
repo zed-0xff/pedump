@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "pedump"
-  s.version = "0.4.8"
+  s.version = "0.4.9"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2012-01-12"
+  s.date = "2012-01-27"
   s.description = "dump headers, sections, extract resources of win32 PE exe,dll,etc"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["pedump"]
@@ -39,6 +39,8 @@ Gem::Specification.new do |s|
     "lib/pedump/loader.rb",
     "lib/pedump/loader/section.rb",
     "lib/pedump/logger.rb",
+    "lib/pedump/ne.rb",
+    "lib/pedump/ne/version_info.rb",
     "lib/pedump/packer.rb",
     "lib/pedump/pe.rb",
     "lib/pedump/resources.rb",
@@ -54,6 +56,7 @@ Gem::Specification.new do |s|
     "misc/aspack/aspack_unlzx.c",
     "misc/aspack/lzxdec.c",
     "misc/aspack/lzxdec.h",
+    "misc/nedump.c",
     "pedump.gemspec",
     "spec/65535sects_spec.rb",
     "spec/composite_io_spec.rb",
@@ -62,6 +65,7 @@ Gem::Specification.new do |s|
     "spec/imports_badterm_spec.rb",
     "spec/imports_vterm_spec.rb",
     "spec/manyimportsW7_spec.rb",
+    "spec/ne_spec.rb",
     "spec/packer_spec.rb",
     "spec/pe_spec.rb",
     "spec/pedump_spec.rb",
