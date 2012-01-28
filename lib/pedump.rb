@@ -468,10 +468,11 @@ class PEdump
     # magic to be able to easy merge :first_thunk & :original_first_thunk arrays
     # (keeping va different)
     def hash
-      self.to_a[0..-2].hash
+      [hint,name,ordinal,module_name].hash
     end
     def eql? x
-      self.hint == x.hint && self.name == x.name && self.ordinal == x.ordinal
+      self.hint == x.hint && self.name == x.name && self.ordinal == x.ordinal &&
+        self.module_name == x.module_name
     end
   end
 
