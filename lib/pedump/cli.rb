@@ -211,7 +211,7 @@ class PEdump::CLI
       @file.send *args
     end
     def respond_to? *args
-      @file.respond_to?(*args) || super(*args)
+      @file.respond_to?(args.first) || super(*args)
     end
   end
 
