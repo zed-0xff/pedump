@@ -519,7 +519,12 @@ class PEdump
     logger.warn "[?] non-empty last IMAGE_IMPORT_DESCRIPTOR: #{t.inspect}" unless t.empty?
     @imports = r.each do |x|
       if x.Name.to_i != 0 && (ofs = va2file(x.Name))
+        begin
         f.seek ofs
+        rescue
+          logger.warn "[?] cannot seek to #{ofs} (VA=0x#{x.Name.to_i.to_s(16)} for reading imports, skipped"
+          next
+        end
         x.module_name = f.gets("\x00").to_s.chomp("\x00")
       end
       [:original_first_thunk, :first_thunk].each do |tbl|

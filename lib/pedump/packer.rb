@@ -99,7 +99,15 @@ class PEdump
         h[:deep] = 1 if h[:deep] == true
         h[:deep] = 0 if h[:deep] == false
 
-        f.seek(h[:ep_offset])             # offset of PE EntryPoint from start of file
+        begin
+          f.seek(h[:ep_offset])             # offset of PE EntryPoint from start of file
+        rescue
+          if h[:pedump] && h[:pedump].logger
+            h[:pedump].logger.warn "[?] failed to seek to EP at #{h[:ep_offset]}, skipping packer detect"
+          end
+          return
+        end
+
         r = Array(of_data(f.read(max_size)))
         return r if r && r.any? && h[:deep] < 2
         r += scan_whole_file(f,
