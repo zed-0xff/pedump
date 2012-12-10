@@ -587,7 +587,7 @@ class PEdump
   ##############################################################################
 
   #http://msdn.microsoft.com/en-us/library/ms809762.aspx
-  IMAGE_EXPORT_DIRECTORY = create_struct 'V2v2V7',
+  IMAGE_EXPORT_DIRECTORY = create_struct 'V2v2V2l2V3',
     :Characteristics,
     :TimeDateStamp,
     :MajorVersion,          # These fields appear to be unused and are set to 0.
@@ -639,7 +639,7 @@ class PEdump
           x.name = f.gets("\x00").chomp("\x00")
         end
       end
-      if x.NumberOfFunctions.to_i != 0
+      if x.NumberOfFunctions.to_i > 0
         if x.AddressOfFunctions.to_i !=0 && (ofs = va2file(x.AddressOfFunctions))
           f.seek ofs
           x.entry_points = []
@@ -663,7 +663,7 @@ class PEdump
           end
         end
       end
-      if x.NumberOfNames.to_i != 0 && x.AddressOfNames.to_i !=0 && (ofs = va2file(x.AddressOfNames))
+      if x.NumberOfNames.to_i > 0 && x.AddressOfNames.to_i !=0 && (ofs = va2file(x.AddressOfNames))
         f.seek ofs
         x.names = []
         x.NumberOfNames.times do
@@ -673,15 +673,31 @@ class PEdump
           end
           x.names << f.read(4).unpack('V').first
         end
-        x.names.map! do |va|
-          f.seek va2file(va)
-          f.gets("\x00").to_s.chomp("\x00")
+        nErrors = 0
+        x.names.size.times do |i|
+          begin
+            f.seek va2file(x.names[i])
+            x.names[i] = f.gets("\x00").to_s.chomp("\x00")
+          rescue
+            nErrors += 1
+            if nErrors > 100
+              logger.warn "[?] too many errors getting export names, stopped on #{i} of #{x.names.size}"
+              x.names = x.names[0,i]
+              break
+            end
+            nil
+          end
         end
       end
 
       ord2name = {}
       if x.names && x.names.any?
-        x.NumberOfNames.times do |i|
+        n = x.NumberOfNames
+        if n > 2048
+          logger.warn "[?] NumberOfNames too big (#{x.NumberOfNames}), limiting to 2048"
+          n = 2048
+        end
+        n.times do |i|
           ord2name[x.name_ordinals[i]] ||= []
           ord2name[x.name_ordinals[i]] << x.names[i]
         end
