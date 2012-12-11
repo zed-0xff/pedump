@@ -395,7 +395,11 @@ class PEdump
 
     # TODO: not all VirtualAdresses == 0 case
 
-    logger.error "[?] can't find file_offset of VA 0x#{va.to_i.to_s(16)}" unless h[:quiet]
+    if h[:quiet]
+      logger.debug "[?] can't find file_offset of VA 0x#{va.to_i.to_s(16)} (quiet=true)"
+    else
+      logger.error "[?] can't find file_offset of VA 0x#{va.to_i.to_s(16)}"
+    end
     nil
   end
 

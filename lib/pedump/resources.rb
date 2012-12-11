@@ -267,7 +267,8 @@ class PEdump
           @@loopchk1 = Hash.new(0)
           @@loopchk2 = Hash.new(0)
           @@loopchk3 = Hash.new(0)
-          @@nErrors  = 0
+          @@nErrors1 = 0
+          @@nErrors2 = 0
         elsif (@@loopchk1[f.tell] += 1) > 1
           PEdump.logger.error "[!] #{self}: loop1 detected at file pos #{f.tell}" if @@loopchk1[f.tell] < 2
           return nil
@@ -289,16 +290,14 @@ class PEdump
           #r.entries.uniq!
           r.entries.each_with_index do |entry,idx|
             entry.name =
-              if entry.Name.to_i & 0x8000_0000 > 0
+              if (entry.Name.to_i & 0x8000_0000 > 0) && f.checked_seek(base + entry.Name & 0x7fff_ffff)
                 # Name is an address of unicode string
-                f.seek base + entry.Name & 0x7fff_ffff
                 nChars = f.read(2).to_s.unpack("v").first.to_i
                 begin
                   f.read(nChars*2).force_encoding('UTF-16LE').encode!('UTF-8')
                 rescue
                   PEdump.logger.error "[!] #{self} failed to read entry name: #{$!}"
-                  @@nErrors += 1
-                  if @@nErrors > MAX_ERRORS
+                  if (@@nErrors1+=1) > MAX_ERRORS
                     PEdump.logger.warn "[?] too many errors getting resource names, stopped on #{idx} of #{r.entries.size}"
                     r.entries = r.entries[0,idx]
                     break
@@ -310,11 +309,18 @@ class PEdump
                 # Name is a numeric id
                 "##{entry.Name}"
               end
-            if entry.OffsetToData && f.checked_seek(base + entry.OffsetToData & 0x7fff_ffff)
-              if (@@loopchk3[f.tell] += 1) > 1
+            if entry.OffsetToData
+              if (@@loopchk3[entry.OffsetToData] += 1) > 1
                 PEdump.logger.error "[!] #{self}: loop3 detected at file pos #{f.tell}" if @@loopchk3[f.tell] < 2
+                if (@@nErrors2+=1) > MAX_ERRORS
+                  PEdump.logger.warn "[?] too many errors getting resource data, stopped on #{idx} of #{r.entries.size}"
+                  r.entries = r.entries[0,idx]
+                  break
+
+                end
                 next
               end
+              next unless f.checked_seek(base + entry.OffsetToData & 0x7fff_ffff)
               entry.data =
                 if entry.OffsetToData & 0x8000_0000 > 0
                   # child is a directory
@@ -334,7 +340,9 @@ class PEdump
   def _scan_pe_resources f=@io, dir=nil
     dir ||= resource_directory(f)
     return nil unless dir
-    dir.entries.map do |entry|
+    @pe_res_errors ||= 0
+    r = []
+    dir.entries.each_with_index do |entry,idx|
       case entry.data
         when IMAGE_RESOURCE_DIRECTORY
           if dir == @resource_directory # root resource directory
@@ -345,32 +353,45 @@ class PEdump
               else
                 entry.name
               end
-            _scan_pe_resources(f,entry.data).each do |res|
+            r += _scan_pe_resources(f,entry.data).each do |res|
               res.type = entry_type
               res.parse f
             end
           else
-            _scan_pe_resources(f,entry.data).each do |res|
+            r += _scan_pe_resources(f,entry.data).each do |res|
               res.name = res.name == "##{res.lang}" ? entry.name : "#{entry.name} / #{res.name}"
               res.id ||= entry.Name if entry.Name.is_a?(Numeric) && entry.Name < 0x8000_0000
             end
           end
         when IMAGE_RESOURCE_DATA_ENTRY
-          Resource.new(
+          file_offset = va2file(entry.data.OffsetToData, :quiet => (@pe_res_errors > MAX_ERRORS))
+          unless file_offset
+            @pe_res_errors += 1
+            if @pe_res_errors > MAX_ERRORS
+              PEdump.logger.warn "[?] too many errors getting resource data, stopped on #{idx} of #{dir.entries.size}"
+              break
+            end
+          end
+          r << Resource.new(
             nil,          # type
             entry.name,
             nil,          # id
             entry.Name,   # lang
             #entry.data.OffsetToData + @resource_data_base,
-            va2file(entry.data.OffsetToData),
+            file_offset,
             entry.data.Size,
             entry.data.CodePage,
             entry.data.Reserved
           )
         else
-          logger.error "[!] invalid resource entry: #{entry.data.inspect}"
-          nil
+          if entry.data
+            logger.error "[!] invalid resource entry: #{entry.data.inspect}"
+          else
+            # show NULL entries only in verbose mode
+            logger.info  "[!] invalid resource entry: #{entry.data.inspect}"
+          end
       end
-    end.flatten.compact
+    end
+    r.flatten.compact
   end
 end
