@@ -8,26 +8,9 @@ require 'pedump'
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
 
 RSpec.configure do |config|
-end
-
-def sample
-  @pedump ||=
-    begin
-      fname =
-        if self.example
-          # called from it(...)
-          self.example.full_description.split.first
-        else
-          # called from before(:all)
-          self.class.metadata[:example_group][:description_args].first
-        end
-      fname = File.expand_path(File.dirname(__FILE__) + '/../samples/' + fname)
-      File.open(fname,"rb") do |f|
-        if block_given?
-          yield PEdump.new(f)
-        else
-          PEdump.new(f).dump
-        end
-      end
+  config.before :suite do
+    Dir[File.join(SAMPLES_DIR,"*.7z")].each do |fname|
+      system "7zr", "x", "-y", "-o#{SAMPLES_DIR}", fname
     end
+  end
 end
