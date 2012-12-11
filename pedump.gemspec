@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "pedump"
-  s.version = "0.4.10"
+  s.version = "0.4.11"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2012-12-10"
+  s.date = "2012-12-11"
   s.description = "dump headers, sections, extract resources of win32 PE exe,dll,etc"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["pedump"]
@@ -59,6 +59,7 @@ Gem::Specification.new do |s|
     "misc/nedump.c",
     "pedump.gemspec",
     "spec/65535sects_spec.rb",
+    "spec/bad_imports_spec.rb",
     "spec/composite_io_spec.rb",
     "spec/dllord_spec.rb",
     "spec/foldedhdr_spec.rb",
