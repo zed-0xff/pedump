@@ -18,7 +18,8 @@ require 'pedump/ne/version_info'
 class PEdump
   attr_accessor :fname, :logger, :force, :io
 
-  VERSION = Version::STRING
+  VERSION    = Version::STRING
+  MAX_ERRORS = 100
 
   @@logger = nil
 
@@ -685,7 +686,7 @@ class PEdump
             x.names[i] = f.gets("\x00").to_s.chomp("\x00")
           rescue
             nErrors += 1
-            if nErrors > 100
+            if nErrors > MAX_ERRORS
               logger.warn "[?] too many errors getting export names, stopped on #{i} of #{x.names.size}"
               x.names = x.names[0,i]
               break

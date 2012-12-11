@@ -267,6 +267,7 @@ class PEdump
           @@loopchk1 = Hash.new(0)
           @@loopchk2 = Hash.new(0)
           @@loopchk3 = Hash.new(0)
+          @@nErrors  = 0
         elsif (@@loopchk1[f.tell] += 1) > 1
           PEdump.logger.error "[!] #{self}: loop1 detected at file pos #{f.tell}" if @@loopchk1[f.tell] < 2
           return nil
@@ -286,7 +287,7 @@ class PEdump
             r.entries << IMAGE_RESOURCE_DIRECTORY_ENTRY.read(f)
           end
           #r.entries.uniq!
-          r.entries.each do |entry|
+          r.entries.each_with_index do |entry,idx|
             entry.name =
               if entry.Name.to_i & 0x8000_0000 > 0
                 # Name is an address of unicode string
@@ -296,6 +297,13 @@ class PEdump
                   f.read(nChars*2).force_encoding('UTF-16LE').encode!('UTF-8')
                 rescue
                   PEdump.logger.error "[!] #{self} failed to read entry name: #{$!}"
+                  @@nErrors += 1
+                  if @@nErrors > MAX_ERRORS
+                    PEdump.logger.warn "[?] too many errors getting resource names, stopped on #{idx} of #{r.entries.size}"
+                    r.entries = r.entries[0,idx]
+                    break
+
+                  end
                   "???"
                 end
               else
