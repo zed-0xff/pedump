@@ -597,14 +597,14 @@ class PEdump
   ##############################################################################
 
   #http://msdn.microsoft.com/en-us/library/ms809762.aspx
-  IMAGE_EXPORT_DIRECTORY = create_struct 'V2v2V2l2V3',
+  IMAGE_EXPORT_DIRECTORY = create_struct 'V2v2V7',
     :Characteristics,
     :TimeDateStamp,
     :MajorVersion,          # These fields appear to be unused and are set to 0.
     :MinorVersion,          # These fields appear to be unused and are set to 0.
     :Name,
     :Base,                  # The starting ordinal number for exported functions
-    :NumberOfFunctions,
+    :NumberOfFunctions,     # UNSIGNED!, perfectly valid when = 0xffff_ffff, see corkami/dllord.dll
     :NumberOfNames,
     :AddressOfFunctions,
     :AddressOfNames,
@@ -715,7 +715,8 @@ class PEdump
 
       x.functions = []
       x.entry_points.each_with_index do |ep,i|
-        names = ord2name[i+x.Base].try(:join,', ')
+        names = ord2name[i+x.Base]
+        names = names.join(', ') if names
         next if ep.to_i == 0 && names.nil?
         x.functions << ExportedFunction.new(names, i+x.Base, ep)
       end
