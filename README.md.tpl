@@ -1,4 +1,4 @@
-pedump
+pedump    [![Build Status](https://secure.travis-ci.org/zed-0xff/pedump.png)](http://secure.travis-ci.org/zed-0xff/pedump)  [![Dependency Status](https://gemnasium.com/zed-0xff/pedump.png)](https://gemnasium.com/zed-0xff/pedump)
 ======
 
 Description

@@ -1,4 +1,4 @@
-pedump
+pedump    [![Build Status](https://secure.travis-ci.org/zed-0xff/pedump.png)](http://secure.travis-ci.org/zed-0xff/pedump)  [![Dependency Status](https://gemnasium.com/zed-0xff/pedump.png)](https://gemnasium.com/zed-0xff/pedump)
 ======
 
 Description
@@ -299,7 +299,26 @@ Usage
     KERNEL32.dll      21f        TlsAlloc
     KERNEL32.dll      220        TlsFree
     KERNEL32.dll      1fd        SetLastError
-    ...
+    KERNEL32.dll      221        TlsGetValue
+    KERNEL32.dll       62        ExitProcess
+    KERNEL32.dll      1b8        ReadFile
+    KERNEL32.dll       16        CloseHandle
+    KERNEL32.dll      24f        WriteFile
+    KERNEL32.dll       83        FlushFileBuffers
+    KERNEL32.dll       e9        GetModuleFileNameA
+    KERNEL32.dll       98        GetCPInfo
+    KERNEL32.dll       92        GetACP
+    KERNEL32.dll       f6        GetOEMCP
+    KERNEL32.dll       8b        FreeEnvironmentStringsA
+    KERNEL32.dll       d0        GetEnvironmentStrings
+    KERNEL32.dll       8c        FreeEnvironmentStringsW
+    KERNEL32.dll       d2        GetEnvironmentStringsW
+    KERNEL32.dll      242        WideCharToMultiByte
+    KERNEL32.dll       2b        CreateFileA
+    KERNEL32.dll      1f8        SetFilePointer
+    KERNEL32.dll      206        SetStdHandle
+    KERNEL32.dll      178        LoadLibraryA
+    KERNEL32.dll      1ef        SetEndOfFile
 
 ### Exports
 
