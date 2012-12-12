@@ -125,7 +125,11 @@ class PEdump::NE
         cp = PEdump::NE.cp # XXX HACK
 
         x.Value   = f.read(value_len).to_s.chomp("\x00")
-        x.Value.force_encoding("CP#{cp}").encode!('UTF-8').sub!(/\u0000$/,'') rescue nil
+        begin
+          x.Value.force_encoding("CP#{cp}").encode!('UTF-8').sub!(/\u0000$/,'')
+        rescue
+          x.Value.force_encoding("CP1250").encode!('UTF-8').sub!(/\u0000$/,'') rescue nil
+        end
         if f.tell%4 > 0
           f.read(4-f.tell%4) # undoc padding?
         end
