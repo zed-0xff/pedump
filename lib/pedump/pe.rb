@@ -38,7 +38,7 @@ class PEdump
       end
       PE.new(pe_sig).tap do |pe|
         pe.image_file_header = IMAGE_FILE_HEADER.read(f)
-        if pe.ifh.SizeOfOptionalHeader > 0
+        if pe.ifh.SizeOfOptionalHeader.to_i > 0
           if pe.x64?
             pe.image_optional_header = IMAGE_OPTIONAL_HEADER64.read(f, pe.ifh.SizeOfOptionalHeader)
           else
@@ -46,7 +46,7 @@ class PEdump
           end
         end
 
-        if (nToRead=pe.ifh.NumberOfSections) > 0xffff
+        if (nToRead=pe.ifh.NumberOfSections.to_i) > 0xffff
           if force.is_a?(Numeric) && force > 1
             logger.warn "[!] too many sections (#{pe.ifh.NumberOfSections}). forced. reading all"
           else
