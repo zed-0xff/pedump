@@ -505,23 +505,26 @@ class PEdump
       tls_aoi = tls_aoi > 0 ? va2file(tls_aoi) : nil
     end
 
-    f.seek file_offset
-    r = []
-    while true
-      if tls_aoi && tls_aoi == file_offset+16
-        # catched the neat trick! :)
-        # f.tell + 12  =  offset of 'FirstThunk' field from start of IMAGE_IMPORT_DESCRIPTOR structure
-        logger.warn "[!] catched the 'imports terminator in TLS trick'"
-        # http://code.google.com/p/corkami/source/browse/trunk/asm/PE/manyimportsW7.asm
-        break
+    r = []; t = nil
+    if f.checked_seek(file_offset)
+      while true
+        if tls_aoi && tls_aoi == file_offset+16
+          # catched the neat trick! :)
+          # f.tell + 12  =  offset of 'FirstThunk' field from start of IMAGE_IMPORT_DESCRIPTOR structure
+          logger.warn "[!] catched the 'imports terminator in TLS trick'"
+          # http://code.google.com/p/corkami/source/browse/trunk/asm/PE/manyimportsW7.asm
+          break
+        end
+        t=IMAGE_IMPORT_DESCRIPTOR.read(f)
+        break if t.Name.to_i == 0 # also catches EOF
+        r << t
+        file_offset += IMAGE_IMPORT_DESCRIPTOR::SIZE
       end
-      t=IMAGE_IMPORT_DESCRIPTOR.read(f)
-      break if t.Name.to_i == 0 # also catches EOF
-      r << t
-      file_offset += IMAGE_IMPORT_DESCRIPTOR::SIZE
+    else
+      logger.warn "[?] imports info beyond EOF"
     end
 
-    logger.warn "[?] non-empty last IMAGE_IMPORT_DESCRIPTOR: #{t.inspect}" unless t.empty?
+    logger.warn "[?] non-empty last IMAGE_IMPORT_DESCRIPTOR: #{t.inspect}" if t && !t.empty?
     @imports = r.each do |x|
       if x.Name.to_i != 0 && (ofs = va2file(x.Name))
         begin
@@ -631,9 +634,8 @@ class PEdump
     va = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::EXPORT].va
     file_offset = va2file(va)
     return nil unless file_offset
-    f.seek file_offset
-    if f.eof?
-      logger.info "[?] exports info beyond EOF"
+    if !f.checked_seek(file_offset) || f.eof?
+      logger.warn "[?] exports info beyond EOF"
       return nil
     end
     @exports = IMAGE_EXPORT_DIRECTORY.read(f).tap do |x|
