@@ -12,6 +12,7 @@ samples/*
 aspack_unlzx
 unpacked.*
 nedump
+dl
 
 # rcov generated
 coverage
