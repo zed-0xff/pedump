@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "pedump"
-  s.version = "0.4.11"
+  s.version = "0.4.12"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2012-12-11"
+  s.date = "2012-12-12"
   s.description = "dump headers, sections, extract resources of win32 PE exe,dll,etc"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["pedump"]
@@ -20,6 +20,7 @@ Gem::Specification.new do |s|
   s.files = [
     ".document",
     ".rspec",
+    ".travis.yml",
     "Gemfile",
     "Gemfile.lock",
     "LICENSE.txt",
@@ -58,8 +59,10 @@ Gem::Specification.new do |s|
     "misc/aspack/lzxdec.h",
     "misc/nedump.c",
     "pedump.gemspec",
+    "samples/bad/68.exe",
     "spec/65535sects_spec.rb",
     "spec/bad_imports_spec.rb",
+    "spec/bad_samples_spec.rb",
     "spec/composite_io_spec.rb",
     "spec/dllord_spec.rb",
     "spec/foldedhdr_spec.rb",
@@ -74,9 +77,11 @@ Gem::Specification.new do |s|
     "spec/sig_all_packers_spec.rb",
     "spec/sig_spec.rb",
     "spec/spec_helper.rb",
+    "spec/support/samples.rb",
     "spec/unpackers/aspack_spec.rb",
     "spec/unpackers/find_spec.rb",
-    "spec/virtsectblXP_spec.rb"
+    "spec/virtsectblXP_spec.rb",
+    "tmp/.keep"
   ]
   s.homepage = "http://github.com/zed-0xff/pedump"
   s.licenses = ["MIT"]
@@ -89,7 +94,7 @@ Gem::Specification.new do |s|
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<multipart-post>, ["~> 1.1.4"])
-      s.add_runtime_dependency(%q<progressbar>, ["~> 0.9.2"])
+      s.add_runtime_dependency(%q<progressbar>, [">= 0"])
       s.add_runtime_dependency(%q<awesome_print>, [">= 0"])
       s.add_development_dependency(%q<rspec>, [">= 0"])
       s.add_development_dependency(%q<bundler>, [">= 0"])
@@ -98,7 +103,7 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<looksee>, [">= 0"])
     else
       s.add_dependency(%q<multipart-post>, ["~> 1.1.4"])
-      s.add_dependency(%q<progressbar>, ["~> 0.9.2"])
+      s.add_dependency(%q<progressbar>, [">= 0"])
       s.add_dependency(%q<awesome_print>, [">= 0"])
       s.add_dependency(%q<rspec>, [">= 0"])
       s.add_dependency(%q<bundler>, [">= 0"])
@@ -108,7 +113,7 @@ Gem::Specification.new do |s|
     end
   else
     s.add_dependency(%q<multipart-post>, ["~> 1.1.4"])
-    s.add_dependency(%q<progressbar>, ["~> 0.9.2"])
+    s.add_dependency(%q<progressbar>, [">= 0"])
     s.add_dependency(%q<awesome_print>, [">= 0"])
     s.add_dependency(%q<rspec>, [">= 0"])
     s.add_dependency(%q<bundler>, [">= 0"])
