@@ -189,7 +189,7 @@ class PEdump
     r = []
     Array(resources(f)).find_all{ |x| x.type == 'STRING'}.each do |res|
       res.data.each_with_index do |string,idx|
-        r << STRING.new( ((res.id-1)<<4) + idx, res.lang, string ) unless string.empty?
+        r << STRING.new( ((res.id.to_i-1)<<4) + idx, res.lang, string ) unless string.empty?
       end
     end
     r
