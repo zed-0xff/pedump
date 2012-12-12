@@ -556,8 +556,7 @@ class PEdump
             if t & (2**(bits-1)) > 0                               # 0x8000_0000(_0000_0000)
               ImportedFunction.new(nil,nil,t & (2**(bits-1)-1),va) # 0x7fff_ffff(_ffff_ffff)
             elsif ofs=va2file(t, :quiet => true)
-              f.seek ofs
-              if f.eof?
+              if !f.checked_seek(ofs) || f.eof?
                 logger.warn "[?] import ofs 0x#{ofs.to_s(16)} beyond EOF"
                 nil
               else
