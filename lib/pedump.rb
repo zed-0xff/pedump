@@ -541,9 +541,9 @@ class PEdump
           f.seek ofs
           x[tbl] ||= []
           if pe.x64?
-            x[tbl] << t while (t = f.read(8).unpack('Q').first) != 0
+            x[tbl] << t while (t = f.read(8).to_s.unpack('Q').first).to_i != 0
           else
-            x[tbl] << t while (t = f.read(4).unpack('V').first) != 0
+            x[tbl] << t while (t = f.read(4).to_s.unpack('V').first).to_i != 0
           end
         end
         cache = {}
