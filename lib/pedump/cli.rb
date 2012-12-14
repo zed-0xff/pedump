@@ -73,8 +73,8 @@ class PEdump::CLI
         @options[:force] ||= 0
         @options[:force] += 1
       end
-      opts.on "-f", "--format FORMAT", [:binary, :c, :dump, :hex, :inspect, :table],
-        "Output format: bin,c,dump,hex,inspect,table","(default: table)" do |v|
+      opts.on "-f", "--format FORMAT", [:binary, :c, :dump, :hex, :inspect, :table, :yaml],
+        "Output format: bin,c,dump,hex,inspect,table,yaml","(default: table)" do |v|
         @options[:format] = v
       end
       KNOWN_ACTIONS.each do |t|
@@ -300,7 +300,7 @@ class PEdump::CLI
 
     puts action_title(action)
 
-    return dump(data) if [:inspect, :table].include?(@options[:format])
+    return dump(data) if [:inspect, :table, :yaml].include?(@options[:format])
 
     dump_opts = {:name => action}
     case action
@@ -347,6 +347,9 @@ class PEdump::CLI
       pp data
     when :table
       dump_table data
+    when :yaml
+      require 'yaml'
+      puts data.to_yaml
     end
   end
 

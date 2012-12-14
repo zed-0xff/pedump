@@ -43,7 +43,7 @@ Usage
                                          (can be used multiple times)
         -F, --force                      Try to dump by all means
                                          (can cause exceptions & heavy wounds)
-        -f, --format FORMAT              Output format: bin,c,dump,hex,inspect,table
+        -f, --format FORMAT              Output format: bin,c,dump,hex,inspect,table,yaml
                                          (default: table)
             --mz
             --dos-stub
