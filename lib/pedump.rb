@@ -371,14 +371,16 @@ class PEdump
 
     sections.each do |s|
       if (s.VirtualAddress...(s.VirtualAddress+s.VirtualSize)).include?(va)
-        return va - s.VirtualAddress + s.PointerToRawData
+        offset = va - s.VirtualAddress
+        return (s.PointerToRawData + offset) if offset < s.SizeOfRawData
       end
     end
 
     # not found with regular search. assume any of VirtualSize was 0, and try with RawSize
     sections.each do |s|
       if (s.VirtualAddress...(s.VirtualAddress+s.SizeOfRawData)).include?(va)
-        return va - s.VirtualAddress + s.PointerToRawData
+        offset = va - s.VirtualAddress
+        return (s.PointerToRawData + offset) if offset < s.SizeOfRawData
       end
     end
 
@@ -390,7 +392,9 @@ class PEdump
     # check if only one section
     if sections.size == 1 || sections.all?{ |s| s.VirtualAddress.to_i == 0 }
       s = sections.first
-      return va - s.VirtualAddress + s.PointerToRawData
+      offset = va - s.VirtualAddress
+      return (s.PointerToRawData + offset) if offset < s.SizeOfRawData
+      #return va - s.VirtualAddress + s.PointerToRawData
     end
 
     # TODO: not all VirtualAdresses == 0 case
@@ -548,16 +552,17 @@ class PEdump
         end
         cache = {}
         bits = pe.x64? ? 64 : 32
+        mask = 2**(bits-1)
         idx = -1
         x[tbl] && x[tbl].map! do |t|
           idx += 1
           va = x[camel].to_i + idx*4
           cache[t] ||=
-            if t & (2**(bits-1)) > 0                               # 0x8000_0000(_0000_0000)
-              ImportedFunction.new(nil,nil,t & (2**(bits-1)-1),va) # 0x7fff_ffff(_ffff_ffff)
+            if t & mask > 0                                 # 0x8000_0000(_0000_0000)
+              ImportedFunction.new(nil,nil,t & (mask-1),va) # 0x7fff_ffff(_ffff_ffff)
             elsif ofs=va2file(t, :quiet => true)
               if !f.checked_seek(ofs) || f.eof?
-                logger.warn "[?] import ofs 0x#{ofs.to_s(16)} beyond EOF"
+                logger.warn "[?] import ofs 0x#{ofs.to_s(16)} VA=0x#{t.to_s(16)} beyond EOF"
                 nil
               else
                 ImportedFunction.new(
