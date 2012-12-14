@@ -1,7 +1,8 @@
 class PEdump
   class CompositeIO
     def initialize(*ios)
-      @ios = ios.flatten
+      @ios    = ios.flatten
+      @starts = ios.map(&:tell) # respect current position of each IO
       @pos = 0
     end
 
@@ -24,6 +25,28 @@ class PEdump
 
     def tell
       @pos
+    end
+
+    def seek pos
+      @pos = pos
+      @ios.each_with_index do |io,idx|
+        if pos > 0
+          sz = io.size-@starts[idx]
+          io.seek( @starts[idx] + (pos < sz ? pos : sz) )
+          pos -= sz
+        else
+          # seek all remaining IOs to 0
+          io.seek @starts[idx]
+        end
+      end
+    end
+
+    def rewind
+      seek(0)
+    end
+
+    def size
+      @ios.map(&:size).inject(&:+)
     end
 
     def eof?
