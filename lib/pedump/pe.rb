@@ -22,8 +22,8 @@ class PEdump
       signature + ifh.pack + ioh.pack
     end
 
-    def self.read f, args = nil
-      force = args.is_a?(Hash) && args[:force]
+    def self.read f, args = {}
+      force = args[:force]
 
       pe_offset = f.tell
       pe_sig = f.read 4
@@ -38,6 +38,7 @@ class PEdump
       end
       PE.new(pe_sig).tap do |pe|
         pe.image_file_header = IMAGE_FILE_HEADER.read(f)
+        ioh_offset = f.tell # offset to IMAGE_OPTIONAL_HEADER
         if pe.ifh.SizeOfOptionalHeader.to_i > 0
           if pe.x64?
             pe.image_optional_header = IMAGE_OPTIONAL_HEADER64.read(f, pe.ifh.SizeOfOptionalHeader)
@@ -54,6 +55,10 @@ class PEdump
             nToRead = 65535
           end
         end
+
+        # The Windows loader expects to find the PE section headers after the optional header. It calculates the address of the first section header by adding SizeOfOptionalHeader to the beginning of the optional header.
+        # // http://www.phreedom.org/research/tinype/
+        f.seek( ioh_offset + pe.ifh.SizeOfOptionalHeader.to_i )
         pe.sections = []
         nToRead.times do
           break if f.eof?
@@ -71,7 +76,7 @@ class PEdump
 
         pe_end = f.tell
         if s=pe.sections.find{ |s| (pe_offset...pe_end).include?(s.va) }
-          if !f.respond_to?(:seek)
+          if args[:pass2]
             # already called with CompositeIO ?
             logger.error "[!] section with va=0x#{s.va.to_s(16)} overwrites PE header! 2nd time?!"
 
@@ -81,7 +86,9 @@ class PEdump
             data = f.read(s.va-pe_offset)
             f.seek s.PointerToRawData
             io = CompositeIO.new(StringIO.new(data), f)
-            return PE.read(io, args)
+            args1 = args.dup
+            args1[:pass2] = true
+            return PE.read(io, args1)
           else
             logger.error "[!] section with va=0x#{s.va.to_s(16)} overwrites PE header! too big to rebuild!"
           end
