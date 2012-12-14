@@ -541,8 +541,7 @@ class PEdump
       end
       [:original_first_thunk, :first_thunk].each do |tbl|
         camel = tbl.capitalize.to_s.gsub(/_./){ |char| char[1..-1].upcase}
-        if x[camel].to_i != 0 && (ofs = va2file(x[camel]))
-          f.seek ofs
+        if x[camel].to_i != 0 && (ofs = va2file(x[camel])) && f.checked_seek(ofs)
           x[tbl] ||= []
           if pe.x64?
             x[tbl] << t while (t = f.read(8).to_s.unpack('Q').first).to_i != 0
