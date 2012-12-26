@@ -14,5 +14,5 @@ group :development do
   gem "jeweler"
 #  gem "rcov", ">= 0"
   gem "what_methods"
-  gem "looksee"
+#  gem "looksee"
 end

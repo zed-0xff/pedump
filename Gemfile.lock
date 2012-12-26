@@ -10,7 +10,6 @@ GEM
       rake
       rdoc
     json (1.7.5)
-    looksee (1.0.3)
     multipart-post (1.1.5)
     progressbar (0.12.0)
     rake (10.0.2)
@@ -33,7 +32,6 @@ DEPENDENCIES
   awesome_print
   bundler
   jeweler
-  looksee
   multipart-post (~> 1.1.4)
   progressbar
   rspec
