@@ -1,0 +1,95 @@
+---
+- !ruby/struct:PEdump::IMAGE_SECTION_HEADER
+  Name: !binary ""
+  VirtualSize: 245760
+  VirtualAddress: 8192
+  SizeOfRawData: 103936
+  PointerToRawData: 8192
+  PointerToRelocations: 0
+  PointerToLinenumbers: 0
+  NumberOfRelocations: 0
+  NumberOfLinenumbers: 0
+  Characteristics: 3758096448
+- !ruby/struct:PEdump::IMAGE_SECTION_HEADER
+  Name: !binary |-
+    LnJzcmM=
+  VirtualSize: 2624
+  VirtualAddress: 253952
+  SizeOfRawData: 1536
+  PointerToRawData: 112128
+  PointerToRelocations: 0
+  PointerToLinenumbers: 0
+  NumberOfRelocations: 0
+  NumberOfLinenumbers: 0
+  Characteristics: 3221225536
+- !ruby/struct:PEdump::IMAGE_SECTION_HEADER
+  Name: !binary |-
+    LmlkYXRh
+  VirtualSize: 8192
+  VirtualAddress: 262144
+  SizeOfRawData: 1024
+  PointerToRawData: 113664
+  PointerToRelocations: 0
+  PointerToLinenumbers: 0
+  NumberOfRelocations: 0
+  NumberOfLinenumbers: 0
+  Characteristics: 3221225536
+- !ruby/struct:PEdump::IMAGE_SECTION_HEADER
+  Name: !binary ""
+  VirtualSize: 1679360
+  VirtualAddress: 270336
+  SizeOfRawData: 512
+  PointerToRawData: 114688
+  PointerToRelocations: 0
+  PointerToLinenumbers: 0
+  NumberOfRelocations: 0
+  NumberOfLinenumbers: 0
+  Characteristics: 3758096448
+- !ruby/struct:PEdump::IMAGE_SECTION_HEADER
+  Name: !binary |-
+    cnVsbm1kdnE=
+  VirtualSize: 1613824
+  VirtualAddress: 1949696
+  SizeOfRawData: 1607680
+  PointerToRawData: 115200
+  PointerToRelocations: 0
+  PointerToLinenumbers: 0
+  NumberOfRelocations: 0
+  NumberOfLinenumbers: 0
+  Characteristics: 3758096448
+- !ruby/struct:PEdump::IMAGE_SECTION_HEADER
+  Name: !binary |-
+    Ym5uYm1jcWY=
+  VirtualSize: 8192
+  VirtualAddress: 3563520
+  SizeOfRawData: 512
+  PointerToRawData: 1722880
+  PointerToRelocations: 0
+  PointerToLinenumbers: 0
+  NumberOfRelocations: 0
+  NumberOfLinenumbers: 0
+  Characteristics: 3758096448
+- !ruby/struct:PEdump::IMAGE_SECTION_HEADER
+  Name: !binary |-
+    Ym5uYm1jcWY=
+  VirtualSize: 8192
+  VirtualAddress: 3571712
+  SizeOfRawData: 3072
+  PointerToRawData: 1723392
+  PointerToRelocations: 0
+  PointerToLinenumbers: 0
+  NumberOfRelocations: 0
+  NumberOfLinenumbers: 0
+  Characteristics: 3758096448
+- !ruby/struct:PEdump::IMAGE_SECTION_HEADER
+  Name: !binary |-
+    LmRhdGEAQXA=
+  VirtualSize: 8192
+  VirtualAddress: 3579904
+  SizeOfRawData: 0
+  PointerToRawData: 1726464
+  PointerToRelocations: 0
+  PointerToLinenumbers: 0
+  NumberOfRelocations: 0
+  NumberOfLinenumbers: 0
+  Characteristics: 3758096448

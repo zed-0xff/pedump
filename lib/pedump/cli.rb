@@ -73,8 +73,8 @@ class PEdump::CLI
         @options[:force] ||= 0
         @options[:force] += 1
       end
-      opts.on "-f", "--format FORMAT", [:binary, :c, :dump, :hex, :inspect, :table],
-        "Output format: bin,c,dump,hex,inspect,table","(default: table)" do |v|
+      opts.on "-f", "--format FORMAT", [:binary, :c, :dump, :hex, :inspect, :table, :yaml],
+        "Output format: bin,c,dump,hex,inspect,table,yaml","(default: table)" do |v|
         @options[:format] = v
       end
       KNOWN_ACTIONS.each do |t|
@@ -223,6 +223,7 @@ class PEdump::CLI
 
     require 'digest/md5'
     require 'open-uri'
+    require 'net/http'
     require 'net/http/post/multipart'
     require 'progressbar'
 
@@ -233,16 +234,19 @@ class PEdump::CLI
     @pedump.logger.info "[.] md5: #{md5}"
     file_url = "#{URL_BASE}/#{md5}/"
 
-    @pedump.logger.info "[.] checking if file already uploaded.."
-    begin
-      if (r=open(file_url).read) == "OK"
+    @pedump.logger.warn "[.] checking if file already uploaded.."
+    Net::HTTP.start('pedump.me') do |http|
+      http.open_timeout = 10
+      http.read_timeout = 10
+      # doing HTTP HEAD is a lot faster than open-uri
+      h = http.head("/#{md5}/")
+      if h.code.to_i == 200 && h.content_type.to_s.strip.downcase == "text/html"
         @pedump.logger.warn "[.] file already uploaded: #{file_url}"
         return
-      else
-        raise "invalid server response: #{r}"
+      elsif h.code.to_i != 404 # 404 means that there's no such file and we're OK to upload
+        @pedump.logger.fatal "[!] invalid server response: \"#{h.code} #{h.msg}\" (#{h.content_type})"
+        exit(1)
       end
-    rescue OpenURI::HTTPError
-      raise unless $!.to_s == "404 Not Found"
     end
 
     f.rewind
@@ -300,7 +304,7 @@ class PEdump::CLI
 
     puts action_title(action)
 
-    return dump(data) if [:inspect, :table].include?(@options[:format])
+    return dump(data) if [:inspect, :table, :yaml].include?(@options[:format])
 
     dump_opts = {:name => action}
     case action
@@ -347,6 +351,9 @@ class PEdump::CLI
       pp data
     when :table
       dump_table data
+    when :yaml
+      require 'yaml'
+      puts data.to_yaml
     end
   end
 

@@ -69,4 +69,54 @@ describe PEdump::CompositeIO do
     io.read 10
     io.eof?.should be_true
   end
+
+  it "seeks" do
+    io = PEdump::CompositeIO.new(
+      StringIO.new('foo1'),
+      StringIO.new('bar2'),
+      StringIO.new('baz')
+    )
+
+    io.seek(5)
+    io.tell.should == 5
+    io.read(4).should == "ar2b"
+
+    io.seek(0)
+    io.tell.should == 0
+    io.read.should == "foo1bar2baz"
+
+    io.seek(1)
+    io.tell.should == 1
+    io.read.should == "oo1bar2baz"
+  end
+
+  it "respects start positions" do
+    ios = [
+      StringIO.new('foo1'),
+      StringIO.new('bar2'),
+      StringIO.new('baz3')
+    ]
+    ios.each_with_index{ |io,idx| io.seek(idx+1) }
+
+    s = "oo1r23"
+
+    io = PEdump::CompositeIO.new(*ios)
+    io.tell.should == 0
+    io.read.should == s
+
+    s.size.times do |pos|
+      io.seek(pos)
+      io.tell.should == pos
+      io.read.should == s[pos..-1]
+    end
+  end
+
+  it "summarizes size" do
+    io = PEdump::CompositeIO.new(
+      StringIO.new('foo1'),
+      StringIO.new('bar2'),
+      StringIO.new('baz')
+    )
+    io.size.should == 11
+  end
 end

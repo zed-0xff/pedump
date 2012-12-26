@@ -97,6 +97,8 @@ class PEdump
       #return if self.data
 
       self.data = []
+      return nil unless file_offset
+
       case type
       when 'BITMAP','ICON'
         f.seek file_offset
