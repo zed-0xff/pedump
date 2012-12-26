@@ -113,13 +113,13 @@ namespace :test do
   end
 end
 
-def check_file url
+def check_file url, prefix=nil
   require 'digest/md5'
   require 'open-uri'
 
   STDOUT.sync = true
-  fname = File.join 'data', File.basename(url)
-  existing_md5 = Digest::MD5.file(fname).hexdigest
+  fname = File.join 'data', (prefix ? "#{prefix}-" : '') + File.basename(url)
+  existing_md5 = File.exist?(fname) ? Digest::MD5.file(fname).hexdigest : ''
   print "[.] fetching #{url} .. "
   remote_data  = open(url).read.force_encoding('cp1252').encode('utf-8')
   puts "#{remote_data.size} bytes"
@@ -128,18 +128,19 @@ def check_file url
   if remote_md5 == existing_md5
     puts "[.] same as local"
   else
-    existing_size = File.size(fname)
+    existing_size = File.exist?(fname) ? File.size(fname) : 0
     File.open(fname,"wb"){ |f| f << remote_data }
     puts "[*] updated: #{existing_size} -> #{remote_data.size}"
   end
 end
 
 namespace :sigs do
-  desc "update packers db from http://research.pandasecurity.com/blogs/images/userdb.txt"
+  desc "update packers db from net"
   task :update do
     require './lib/pedump/packer'
     check_file "http://research.pandasecurity.com/blogs/images/userdb.txt"
     check_file "http://fuu.googlecode.com/svn/trunk/src/x86/Tools/Signaturesdb/signatures.txt"
+    check_file "http://handlers.sans.edu/jclausing/userdb.txt", "jc"
   end
 
   desc "convert txt2bin"

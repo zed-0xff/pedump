@@ -6,8 +6,13 @@ class PEdump
     TEXT_SIGS_FILES = [
       File.join(DATA_ROOT, "data", "userdb.txt"),
       File.join(DATA_ROOT, "data", "signatures.txt"),
-      File.join(DATA_ROOT, "data", "fs.txt")
+      File.join(DATA_ROOT, "data", "jc-userdb.txt"),
+      File.join(DATA_ROOT, "data", "fs.txt"),         # has special parse options!
     ]
+
+    SPECIAL_PARSE_OPTIONS = {
+      File.join(DATA_ROOT, "data", "fs.txt") => {:fix1 => true}
+    }
 
     class OrBlock < Array; end
 
@@ -19,19 +24,20 @@ class PEdump
         sigs = {}; sig = nil
 
         args[:fnames].each do |fname|
-          n0 = sigs.size
+          n0 = sigs.size; add_sig_args = args.dup
+          add_sig_args.merge!(SPECIAL_PARSE_OPTIONS[fname] || {})
           File.open(fname,'r:utf-8') do |f|
             while line = f.gets
               case line.strip
               when /^[<;#]/, /^$/ # comments & blank lines
                 next
               when /^\[(.+)=(.+)\]$/
-                _add_sig(sigs, Packer.new($1, $2, true), args )
-              when /^\[([^=]+)\]$/
+                _add_sig(sigs, Packer.new($1, $2, true), add_sig_args )
+              when /^\[([^=]+)\](\s+\/\/.+)?$/
                 sig = Packer.new($1)
               when /^signature = (.+)$/
                 sig.re = $1
-                _add_sig(sigs, sig, args)
+                _add_sig(sigs, sig, add_sig_args)
               when /^ep_only = (.+)$/
                 sig.ep_only = ($1.strip.downcase == 'true')
               else raise line
@@ -78,7 +84,7 @@ class PEdump
             a = sig.name.split(/-+>/,2).map(&:strip)
             sig.name = "#{a[0]} (#{a[1]})"
           end
-          sig.re.pop while sig.re.last == '??'
+          sig.re.pop while sig.re && sig.re.last == '??'
         end
         sigs.delete_if{ |sig| !sig.re || sig.re.index('BAD_RE') }
         return sigs if args[:raw] || args[:raword]
@@ -150,6 +156,25 @@ class PEdump
 
         sig.re = sig.re.strip.upcase.tr(':','?')
         sig.re = sig.re.scan(/../).join(' ') if sig.re.split.first.size > 2
+
+        # sig contains entirely zeroes or masks or only both
+        return if [%w'00', %w'??', %w'00 ??', %w'90', %w'90 ??'].include?(sig.re.split.uniq.sort)
+
+        # fs.txt contains a lot of signatures that copied from other sources
+        # BUT have all 01 replaced with '??'
+        # // replaced the file with filtered one (see 'fs-good' below) // zzz
+        if args[:fix1]
+          sigs.keys.each do |re|
+            if re.gsub("01","??") == sig.re
+              puts "[.] fix1: rejecting #{sig.name} - already present with 01 in place" if args[:verbose]
+              return
+            end
+          end
+#          File.open("fs-good.txt","a") do |f|
+#            f << "[#{sig.name}=#{sig.re.tr(' ','')}]\n"
+#          end
+        end
+
         if sigs[sig.re]
           a = [sig, sigs[sig.re]].map{ |x| x.name.upcase.split('->').first.tr('V ','') }
           return if a[0][a[1]] || a[1][a[0]]
