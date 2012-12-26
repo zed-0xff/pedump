@@ -61,7 +61,13 @@ class PEdump
               when /\A[a-f0-9]{2}\Z/i
                 x = x.to_i(16).chr
                 bins[sig] << x
-                args[:raw] ? x : Regexp::escape(x)
+                if args[:raw]
+                  x
+                elsif args[:raword]
+                  x.ord
+                else
+                  Regexp::escape(x)
+                end
               else
                 puts "[?] unknown re element: #{x.inspect} in #{sig.inspect}" if args[:verbose]
                 "BAD_RE"
@@ -75,7 +81,7 @@ class PEdump
           sig.re.pop while sig.re.last == '??'
         end
         sigs.delete_if{ |sig| !sig.re || sig.re.index('BAD_RE') }
-        return sigs if args[:raw]
+        return sigs if args[:raw] || args[:raword]
 
 #        require 'awesome_print'
 #        bins.each do |bin_sig, bin|
@@ -135,7 +141,12 @@ class PEdump
         sig.name.sub! 'RLP ','RLPack '
         sig.name.sub! '.beta', ' beta'
         sig.name.sub! '(com)','[com]'
+        sig.name.gsub!(/ V(\d)/, " v\\1") # V1.1 -> v1.1
         sig.name = sig.name.split(/\s*-+>\s*/).join(' -> ') # fix spaces around '->'
+        sig.name = sig.name.split(' ').delete_if do |x|
+          # delete words: vX.X, v?.?, ?.?, x.x
+          x =~ /\Av?[?x]\.[?x]\Z/i
+        end.join(' ')
 
         sig.re = sig.re.strip.upcase.tr(':','?')
         sig.re = sig.re.scan(/../).join(' ') if sig.re.split.first.size > 2
@@ -161,7 +172,6 @@ class PEdump
         d.map! do |x|
           x - [
             'EXE','[EXE]',
-            'vx.x','v?.?',
             'DLL','(DLL)','[DLL]',
             '[LZMA]','(LZMA)','LZMA',
             '-','~','(pack)','(1)','(2)',
@@ -264,13 +274,40 @@ class PEdump
         sigs.delete_if{ |sig| sig.re.empty? }
       end
 
-      def optimize sigs
+      def _name2wordonly name
+        name.downcase.split(/[^a-z0-9_.]+/).join(' ').strip
+      end
+
+      def optimize_names sigs
         # replaces all duplicate names with references to one name
         # saves ~30k out of ~200k mem
         h = {}
+
+        # find shortest names
         sigs.each do |sig|
-          sig.name = (h[sig.name] ||= sig.name)
+          t = _name2wordonly(sig.name)
+          if h[t]
+            # keep shortest name
+            if h[t] != sig.name
+              #print "[d] #{[h[t], sig.name].inspect} -> "
+              h[t] = [h[t], sig.name].sort_by(&:size).first
+              #puts h[t]
+            else
+              # fully identical names
+            end
+          else
+            h[t] = sig.name
+          end
         end
+
+        # assign names back to sigs
+        sigs.each{ |sig| sig.name = h[_name2wordonly(sig.name)] }
+
+        puts "[.] sigs merge: #{h.size} unique names"
+      end
+
+      def optimize sigs
+        optimize_names sigs
 
         print "[.] sigs merge: #{sigs.size}"; _optimize(sigs); puts  " -> #{sigs.size}"
 
