@@ -137,6 +137,9 @@ class PEdump
         # bad sigs
         return if sig.re[/\A538BD833C0A30:::::/]
         return if sig.name == "Name of the Packer v1.0"
+        return if sig.name == "Alias PIX/Vivid IMG Graphics format"
+        return if sig.name == "JAR Archive"
+        return if sig.name == "Turbo / Borland Pascal v7.x Unit"
         return if sig.re == "54 68 69 73 20 70 72 6F 67 72 61 6D 20 63 61 6E 6E 6F 74 20 62 65 20 72 75 6E 20 69 6E 20 44 4F 53 20 6D 6F" # dos stub
 
         sig.name.sub!(/^\*\s+/,    '')
@@ -158,7 +161,20 @@ class PEdump
         sig.re = sig.re.scan(/../).join(' ') if sig.re.split.first.size > 2
 
         # sig contains entirely zeroes or masks or only both
-        return if [%w'00', %w'??', %w'00 ??', %w'90', %w'90 ??'].include?(sig.re.split.uniq.sort)
+        a_bad = [%w'00', %w'??', %w'00 ??', %w'90', %w'90 ??']
+        # ?a, 0? => ??, ??
+        a_cur = sig.re.split.map{ |x| x['?'] ? '??' : x }.uniq.sort
+        return if a_bad.include?(a_cur)
+
+        # first byte is unique and all others are zeroes or masks
+        a_cur = sig.re.split[1..-1].map{ |x| x['?'] ? '??' : x }.uniq.sort
+        return if a_bad.include?(a_cur)
+
+        # too short signatures
+#        if sig.re.split.delete_if{ |x| x['?'] }.size < 6
+#          require 'awesome_print'
+#          puts sig.inspect.red
+#        end
 
         # fs.txt contains a lot of signatures that copied from other sources
         # BUT have all 01 replaced with '??'

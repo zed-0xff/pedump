@@ -31,6 +31,11 @@ describe "PEdump::Packer" do
         next unless row =~ /^\[(.*)=(.*)\]$/
         s = ''
         title,hexstring = $1,$2
+
+        # bad sigs
+        next if hexstring == '909090909090909090909090909090909090909090909090909090909090909090909090'
+        next if hexstring == 'E9::::0000000000000000'
+
         (hexstring.size/2).times do |i|
           c = hexstring[i*2,2]
           if c == '::'
@@ -52,7 +57,7 @@ describe "PEdump::Packer" do
 #            puts "\t= #{x}"
 #          end
         else
-          puts "[?] #{title}"
+          puts "[?] #{title}: #{hexstring}"
           n += 1
         end
       end
