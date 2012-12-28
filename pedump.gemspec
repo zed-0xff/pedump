@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "pedump"
-  s.version = "0.4.14"
+  s.version = "0.4.15"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2012-12-17"
+  s.date = "2012-12-28"
   s.description = "dump headers, sections, extract resources of win32 PE exe,dll,etc"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["pedump"]
@@ -29,6 +29,7 @@ Gem::Specification.new do |s|
     "VERSION",
     "bin/pedump",
     "data/fs.txt",
+    "data/jc-userdb.txt",
     "data/sig.bin",
     "data/signatures.txt",
     "data/userdb.txt",
@@ -104,7 +105,6 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<bundler>, [">= 0"])
       s.add_development_dependency(%q<jeweler>, [">= 0"])
       s.add_development_dependency(%q<what_methods>, [">= 0"])
-      s.add_development_dependency(%q<looksee>, [">= 0"])
     else
       s.add_dependency(%q<multipart-post>, ["~> 1.1.4"])
       s.add_dependency(%q<progressbar>, [">= 0"])
@@ -113,7 +113,6 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<bundler>, [">= 0"])
       s.add_dependency(%q<jeweler>, [">= 0"])
       s.add_dependency(%q<what_methods>, [">= 0"])
-      s.add_dependency(%q<looksee>, [">= 0"])
     end
   else
     s.add_dependency(%q<multipart-post>, ["~> 1.1.4"])
@@ -123,7 +122,6 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<bundler>, [">= 0"])
     s.add_dependency(%q<jeweler>, [">= 0"])
     s.add_dependency(%q<what_methods>, [">= 0"])
-    s.add_dependency(%q<looksee>, [">= 0"])
   end
 end
 
