@@ -171,10 +171,10 @@ class PEdump
         return if a_bad.include?(a_cur)
 
         # too short signatures
-#        if sig.re.split.delete_if{ |x| x['?'] }.size < 6
-#          require 'awesome_print'
-#          puts sig.inspect.red
-#        end
+        if sig.re.split.delete_if{ |x| x['?'] }.size < 3
+          require 'awesome_print'
+          puts sig.inspect.red
+        end
 
         # fs.txt contains a lot of signatures that copied from other sources
         # BUT have all 01 replaced with '??'
@@ -216,10 +216,18 @@ class PEdump
             'DLL','(DLL)','[DLL]',
             '[LZMA]','(LZMA)','LZMA',
             '-','~','(pack)','(1)','(2)',
-            '19??'
+            '19??',
+            'with:', 'with?'
           ]
         end
-        return if d.all?(&:empty?) # no different words
+        return if d.all?(&:empty?) # no different words => can keep ANY name
+
+
+#        if name1 =~ /pecompact/i
+#          require 'awesome_print'
+#          puts "[d] #{name1}".yellow
+#          puts "[d] #{name2}".yellow
+#        end
 
         # [["v1.14/v1.20"], ["v1.14,", "v1.20"]]]
         # [["EXEShield", "v0.3b/v0.3", "v0.6"], ["Shield", "v0.3b,", "v0.3"]]]
@@ -233,21 +241,53 @@ class PEdump
           end
         end
 
+#        require 'awesome_print'
+#        puts "[d] #{name1.yellow} #{name2.green}"
+
         a = name1.split
         b = name2.split
+
+        # merge common head
         new_name_head = []
         while a.any? && b.any? && a.first.upcase == b.first.upcase
           new_name_head << a.shift
           b.shift
         end
+
+        # merge common tail
         new_name_tail = []
         while a.any? && b.any? && a.last.upcase == b.last.upcase
           new_name_tail.unshift a.pop
           b.pop
         end
+
+        # rm common words from middle
+        separators = [ "/", "->" ]
+        was = true
+        while was
+          was = false
+          b.each do |bw|
+            next if bw == "/" || bw == "->"
+            if a.include?(bw) || a.include?(bw+")") || a.include?("("+bw) || a.include?("(#{bw})")
+              b -= [bw]
+              was = true
+              break
+            end
+          end
+        end
+        while separators.include?(b.last)
+          b.pop
+        end
+
         new_name = new_name_head
         new_name << [a.join(' '), b.join(' ')].delete_if{|x| x.empty?}.join(' / ')
         new_name += new_name_tail
+#        if name1 =~ /pecompact/i
+#          p a
+#          p b
+#          p new_name_tail
+#        puts "[=] #{new_name.inspect}".red
+#        end
         new_name = new_name.join(' ')
       end
 
@@ -291,14 +331,16 @@ class PEdump
             if rd = _re_diff(sig1.re, sig2.re, max_diff)
               if    rd.all?{ |x| x[0].nil? || x[0] == '.' } && sig2.re.size >= sig1.re.size
                 if new_name = _merge_names(sig2.name, sig1.name)
-                  #pp ["FIRST", sig1.name, sig2.name, new_name, sig1.re.join, sig2.re.join] if new_name
+#                  require 'pp'
+#                  pp ["FIRST", sig1.name, sig2.name, new_name, sig1.re.join, sig2.re.join] if new_name =~ /pecompact/i
                   sig1.name = new_name
                 end
                 sig2.ep_only ||= sig1.ep_only
                 sig2.re = []
               elsif rd.all?{ |x| x[1].nil? || x[1] == '.' } && sig1.re.size >= sig2.re.size
                 if new_name = _merge_names(sig2.name, sig1.name)
-                  #pp ["SECOND", sig1.name, sig2.name, new_name, sig1.re.join, sig2.re.join] if new_name
+#                  require 'pp'
+#                  pp ["SECOND", sig1.name, sig2.name, new_name, sig1.re.join, sig2.re.join] if new_name =~ /pecompact/i
                   sig2.name = new_name
                 end
                 sig1.re = []
@@ -350,18 +392,18 @@ class PEdump
       def optimize sigs
         optimize_names sigs
 
-        print "[.] sigs merge: #{sigs.size}"; _optimize(sigs); puts  " -> #{sigs.size}"
+        # XXX no optimize from now, prefer more precise sigs
+        #print "[.] sigs merge: #{sigs.size}"; _optimize(sigs); puts  " -> #{sigs.size}"
 
         # try to merge signatures with same name, size & ep_only
-        sigs.group_by{ |sig|
-          [sig.re.size, sig.name, sig.ep_only]
-        }.values.each do |a|
-          next if a.size == 1
-          if merged_re = _merge(a)
-            a.first.re = merged_re
-            a[1..-1].each{ |sig| sig.re = nil }
+        sigs.group_by{ |sig| [sig.re.size, sig.name, sig.ep_only] }.
+          values.each do |a|
+            next if a.size == 1
+            if merged_re = _merge(a)
+              a.first.re = merged_re
+              a[1..-1].each{ |sig| sig.re = nil }
+            end
           end
-        end
         print "[.] sigs merge: #{sigs.size}"; sigs.delete_if{ |x| x.re.nil? }; puts  " -> #{sigs.size}"
 
 
@@ -439,6 +481,7 @@ class PEdump
           end
           prev_eq = eq
         end
+        dstart ||= 0
         r = dstart..dend
         r == (0..(size-1)) ? nil : r
       end
