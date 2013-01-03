@@ -65,6 +65,36 @@ class PEdump
       end
     end
 
+    # only valid for types BITMAP, ICON & CURSOR
+    def restore_icon src_fname
+      File.open(src_fname, "rb") do |f|
+        parse f
+        if data.first == "PNG"
+          "\x89PNG" +f.read(self.size-4)
+        else
+          icondir = [
+            0,        # Reserved. Must always be 0.
+            1,        # image type: 1 for icon (.ICO), 2 for cursor (.CUR). Other values are invalid
+            1,        # number of images in the file
+          ].pack("v3")
+          bitmap_hdr = data.first # BITMAPINFOHEADER
+          icondirentry = ICODIRENTRY.new(
+            bitmap_hdr.biWidth,
+            bitmap_hdr.biHeight / (%w'ICON CURSOR'.include?(type) ? 2 : 1),
+            0,   # XXX: bColors: may be wrong here
+            0,
+            1,
+            bitmap_hdr.biBitCount,
+            bitmap_hdr.biSizeImage,
+            icondir.size + 2 + ICODIRENTRY::SIZE # offset of BMP data from the beginning of ICO file
+          )
+          # ICONDIRENTRY is 2 bytes larger than ICODIRENTRY
+          icondir + icondirentry.pack + "\x00\x00" + bitmap_hdr.pack + f.read(self.size)
+        end
+      end
+    end
+
+    # only valid for types BITMAP, ICON & CURSOR
     def bitmap_mask src_fname
       File.open(src_fname, "rb") do |f|
         parse f
@@ -175,13 +205,20 @@ class PEdump
     end
 
     def validate
-      self.valid =
+      self.valid = self.file_offset &&
         case type
         when 'BITMAP','ICON','CURSOR'
           data.any?{ |x| x.is_a?(BITMAPINFOHEADER) && x.valid? } || data.first == 'PNG'
+        when 'GROUP_ICON'
+          # rough validation
+          data.first.is_a?(CUR_ICO_HEADER) && data.size == data.first.wNumImages.to_i+1
         else
           true
         end
+    end
+
+    def valid?
+      valid
     end
   end
 
