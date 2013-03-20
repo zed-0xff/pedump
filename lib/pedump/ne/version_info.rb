@@ -1,7 +1,7 @@
 class PEdump; end
 
 class PEdump::NE
-  class VS_VERSIONINFO < PEdump.create_struct( 'v2a16',
+  class VS_VERSIONINFO < IOStruct.new( 'v2a16',
     :wLength,
     :wValueLength,
     :szKey,          # ASCII string "VS_VERSION_INFO".
@@ -41,7 +41,7 @@ class PEdump::NE
     end
   end
 
-  class VS_FIXEDFILEINFO < PEdump.create_struct( 'V13',
+  class VS_FIXEDFILEINFO < IOStruct.new( 'V13',
     :dwSignature,
     :dwStrucVersion,
     :dwFileVersionMS,
@@ -65,7 +65,7 @@ class PEdump::NE
     end
   end
 
-  class StringFileInfo < PEdump.create_struct( 'v2a15',
+  class StringFileInfo < IOStruct.new( 'v2a15',
     :wLength,
     :wValueLength,  # always 0
     :szKey,         # The ASCII string "StringFileInfo"
@@ -85,7 +85,7 @@ class PEdump::NE
     end
   end
 
-  class StringTable < PEdump.create_struct( 'v2a9',
+  class StringTable < IOStruct.new( 'v2a9',
     :wLength,       # The length, in bytes, of this StringTable structure,
                     # including all structures indicated by the Children member.
     :wValueLength,  # always 0
@@ -106,7 +106,7 @@ class PEdump::NE
     end
   end
 
-  class VersionString < PEdump.create_struct( 'v2',
+  class VersionString < IOStruct.new( 'v2',
     :wLength,       # The length, in bytes, of this String structure.
     :wValueLength,  # The size, in words, of the Value member
     :szKey,         # An arbitrary ASCII string
@@ -137,7 +137,7 @@ class PEdump::NE
     end
   end
 
-  class VarFileInfo < PEdump.create_struct( 'v2a12',
+  class VarFileInfo < IOStruct.new( 'v2a12',
     :wLength,
     :wValueLength,  # always 0
     :szKey,         # The ASCII string "VarFileInfo"
@@ -153,7 +153,7 @@ class PEdump::NE
     end
   end
 
-  class Var < PEdump.create_struct( 'v2a12',
+  class Var < IOStruct.new( 'v2a12',
     :wLength,
     :wValueLength,  # The length, in bytes, of the Value member
     :szKey,         # The ASCII string "Translation"

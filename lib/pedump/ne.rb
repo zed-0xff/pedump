@@ -1,6 +1,6 @@
 class PEdump
   # from wine's winnt.h
-  class NE < PEdump.create_struct 'a2CCvvVv4VVv8Vv3CCv4',
+  class NE < IOStruct.new 'a2CCvvVv4VVv8Vv3CCv4',
     :ne_magic,             # 00 NE signature 'NE'
     :ne_ver,               # 02 Linker version number
     :ne_rev,               # 03 Linker revision number
@@ -52,7 +52,7 @@ class PEdump
       end
     end
 
-    class Segment < PEdump.create_struct 'v4',
+    class Segment < IOStruct.new 'v4',
       :offset, :size, :flags, :min_alloc_size,
       # manual:
       :file_offset, :relocs
@@ -86,7 +86,7 @@ class PEdump
       end
     end
 
-    class Reloc < PEdump.create_struct 'CCvvv',
+    class Reloc < IOStruct.new 'CCvvv',
       :source, :type,
       :offset,           # offset of the relocation item within the segment
 
@@ -121,7 +121,7 @@ class PEdump
         end
     end
 
-    class ResourceGroup < PEdump.create_struct 'vvV',
+    class ResourceGroup < IOStruct.new 'vvV',
       :type_id, :count, :reserved,
       # manual:
       :type, :children
@@ -143,7 +143,7 @@ class PEdump
       end
     end
 
-    class ResourceInfo < PEdump.create_struct 'v4V',
+    class ResourceInfo < IOStruct.new 'v4V',
       :offset, :size, :flags, :name_offset, :reserved,
       # manual:
       :name
@@ -338,11 +338,11 @@ class PEdump
     #   0xFE = the entry does not refer to a segment but refers to a constant defined within the module.
     #   else it is a segment index.
 
-    class Bundle < PEdump.create_struct 'CC', :num_entries, :seg_idx,
+    class Bundle < IOStruct.new 'CC', :num_entries, :seg_idx,
       :entries # manual
 
-      FixedEntry   = PEdump.create_struct 'Cv',   :flag, :offset
-      MovableEntry = PEdump.create_struct 'CvCv', :flag, :int3F, :seg_idx, :offset
+      FixedEntry   = IOStruct.new 'Cv',   :flag, :offset
+      MovableEntry = IOStruct.new 'CvCv', :flag, :int3F, :seg_idx, :offset
 
       def movable?
         seg_idx == 0xff

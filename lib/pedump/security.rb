@@ -27,7 +27,7 @@ class PEdump
   # WIN_CERT_TYPE_PKCS1_SIGN       (0x0009) bCertificate contains PKCS1_MODULE_SIGN fields.
 
   # http://msdn.microsoft.com/en-us/library/aa447037.aspx
-  class WIN_CERTIFICATE < create_struct 'Vvv',
+  class WIN_CERTIFICATE < IOStruct.new 'Vvv',
     :dwLength,
     :wRevision,
     :wCertificateType,

@@ -1,5 +1,5 @@
 class PEdump
-  IMAGE_TLS_DIRECTORY32 = create_struct 'V6',
+  IMAGE_TLS_DIRECTORY32 = IOStruct.new 'V6',
     :StartAddressOfRawData,
     :EndAddressOfRawData,
     :AddressOfIndex,
@@ -7,7 +7,7 @@ class PEdump
     :SizeOfZeroFill,
     :Characteristics
 
-  IMAGE_TLS_DIRECTORY64 = create_struct 'Q4V2',
+  IMAGE_TLS_DIRECTORY64 = IOStruct.new 'Q4V2',
     :StartAddressOfRawData,
     :EndAddressOfRawData,
     :AddressOfIndex,

@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 require 'stringio'
+require 'iostruct'
 require 'pedump/core'
 require 'pedump/pe'
 require 'pedump/resources'
@@ -34,7 +35,7 @@ class PEdump
   end
 
   # http://www.delorie.com/djgpp/doc/exe/
-  MZ = create_struct( "a2v13Qv2V6",
+  MZ = IOStruct.new( "a2v13Qv2V6",
     :signature,
     :bytes_in_last_block,
     :blocks_in_file,
@@ -61,7 +62,7 @@ class PEdump
   )
 
   # http://msdn.microsoft.com/en-us/library/ms809762.aspx
-  class IMAGE_FILE_HEADER < create_struct( 'v2V3v2',
+  class IMAGE_FILE_HEADER < IOStruct.new( 'v2V3v2',
     :Machine,              # w
     :NumberOfSections,     # w
     :TimeDateStamp,        # dw
@@ -164,7 +165,7 @@ class PEdump
   end
 
   # http://msdn.microsoft.com/en-us/library/ms809762.aspx
-  class IMAGE_OPTIONAL_HEADER32 < create_struct( 'vC2V9v6V4v2V6',
+  class IMAGE_OPTIONAL_HEADER32 < IOStruct.new( 'vC2V9v6V4v2V6',
     :Magic, # w
     :MajorLinkerVersion, :MinorLinkerVersion, # 2b
     :SizeOfCode, :SizeOfInitializedData, :SizeOfUninitializedData, :AddressOfEntryPoint, # 9dw
@@ -182,7 +183,7 @@ class PEdump
   end
 
   # http://msdn.microsoft.com/en-us/library/windows/desktop/ms680339(v=VS.85).aspx)
-  class IMAGE_OPTIONAL_HEADER64 < create_struct( 'vC2V5QV2v6V4v2Q4V2',
+  class IMAGE_OPTIONAL_HEADER64 < IOStruct.new( 'vC2V5QV2v6V4v2Q4V2',
     :Magic, # w
     :MajorLinkerVersion, :MinorLinkerVersion, # 2b
     :SizeOfCode, :SizeOfInitializedData, :SizeOfUninitializedData, :AddressOfEntryPoint, :BaseOfCode, # 5dw
@@ -200,7 +201,7 @@ class PEdump
     include IMAGE_OPTIONAL_HEADER
   end
 
-  IMAGE_DATA_DIRECTORY = create_struct( "VV", :va, :size, :type )
+  IMAGE_DATA_DIRECTORY = IOStruct.new( "VV", :va, :size, :type )
   IMAGE_DATA_DIRECTORY::TYPES =
     %w'EXPORT IMPORT RESOURCE EXCEPTION SECURITY BASERELOC DEBUG ARCHITECTURE GLOBALPTR TLS LOAD_CONFIG
     Bound_IAT IAT Delay_IAT CLR_Header'
@@ -208,7 +209,7 @@ class PEdump
     IMAGE_DATA_DIRECTORY.const_set(type,idx)
   end
 
-  IMAGE_SECTION_HEADER = create_struct( 'A8V6v2V',
+  IMAGE_SECTION_HEADER = IOStruct.new( 'A8V6v2V',
     :Name, # A8 6dw
     :VirtualSize, :VirtualAddress, :SizeOfRawData, :PointerToRawData, :PointerToRelocations, :PointerToLinenumbers,
     :NumberOfRelocations, :NumberOfLinenumbers, # 2w
@@ -455,7 +456,7 @@ class PEdump
 
   # http://sandsprite.com/CodeStuff/Understanding_imports.html
   # http://stackoverflow.com/questions/5631317/import-table-it-vs-import-address-table-iat
-  IMAGE_IMPORT_DESCRIPTOR = create_struct 'V5',
+  IMAGE_IMPORT_DESCRIPTOR = IOStruct.new 'V5',
     :OriginalFirstThunk,
     :TimeDateStamp,
     :ForwarderChain,
@@ -603,7 +604,7 @@ class PEdump
   ##############################################################################
 
   #http://msdn.microsoft.com/en-us/library/ms809762.aspx
-  IMAGE_EXPORT_DIRECTORY = create_struct 'V2v2V7',
+  IMAGE_EXPORT_DIRECTORY = IOStruct.new 'V2v2V7',
     :Characteristics,
     :TimeDateStamp,
     :MajorVersion,          # These fields appear to be unused and are set to 0.

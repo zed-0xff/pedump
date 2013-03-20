@@ -236,7 +236,7 @@ class PEdump
 
   # see also http://www.informit.com/articles/article.aspx?p=1186882 about icons format
 
-  class BITMAPINFOHEADER < create_struct 'V3v2V6',
+  class BITMAPINFOHEADER < IOStruct.new 'V3v2V6',
     :biSize,          # BITMAPINFOHEADER::SIZE
     :biWidth,
     :biHeight,
@@ -255,13 +255,13 @@ class PEdump
   end
 
   # http://www.devsource.com/c/a/Architecture/Resources-From-PE-I/2/
-  CUR_ICO_HEADER = create_struct('v3',
+  CUR_ICO_HEADER = IOStruct.new('v3',
     :wReserved, # always 0
     :wResID,    # always 2
     :wNumImages # Number of cursor images/directory entries
   )
 
-  CURDIRENTRY = create_struct 'v4Vv',
+  CURDIRENTRY = IOStruct.new 'v4Vv',
     :wWidth,
     :wHeight, # Divide by 2 to get the actual height.
     :wPlanes,
@@ -269,9 +269,9 @@ class PEdump
     :dwBytesInImage,
     :wID
 
-  CURSOR_HOTSPOT = create_struct 'v2', :x, :y
+  CURSOR_HOTSPOT = IOStruct.new 'v2', :x, :y
 
-  ICODIRENTRY = create_struct 'C4v2Vv',
+  ICODIRENTRY = IOStruct.new 'C4v2Vv',
     :bWidth,
     :bHeight,
     :bColors,
@@ -286,14 +286,14 @@ class PEdump
     %w'MESSAGETABLE GROUP_CURSOR' + [nil] + %w'GROUP_ICON' + [nil] +
     %w'VERSION DLGINCLUDE' + [nil] + %w'PLUGPLAY VXD ANICURSOR ANIICON HTML MANIFEST'
 
-  IMAGE_RESOURCE_DIRECTORY_ENTRY = create_struct 'V2',
+  IMAGE_RESOURCE_DIRECTORY_ENTRY = IOStruct.new 'V2',
     :Name, :OffsetToData,
     :name, :data
 
-  IMAGE_RESOURCE_DATA_ENTRY = create_struct 'V4',
+  IMAGE_RESOURCE_DATA_ENTRY = IOStruct.new 'V4',
     :OffsetToData, :Size, :CodePage, :Reserved
 
-  IMAGE_RESOURCE_DIRECTORY = create_struct 'V2v4',
+  IMAGE_RESOURCE_DIRECTORY = IOStruct.new 'V2v4',
     :Characteristics, :TimeDateStamp, # 2dw
     :MajorVersion, :MinorVersion, :NumberOfNamedEntries, :NumberOfIdEntries, # 4w
     :entries # manual

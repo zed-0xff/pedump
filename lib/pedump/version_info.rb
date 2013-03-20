@@ -1,5 +1,5 @@
 class PEdump
-  class VS_VERSIONINFO < PEdump.create_struct( 'v3a32v',
+  class VS_VERSIONINFO < IOStruct.new( 'v3a32v',
     :wLength,
     :wValueLength,
     :wType,
@@ -40,7 +40,7 @@ class PEdump
     end
   end
 
-  class VS_FIXEDFILEINFO < PEdump.create_struct( 'V13',
+  class VS_FIXEDFILEINFO < IOStruct.new( 'V13',
     :dwSignature,
     :dwStrucVersion,
     :dwFileVersionMS,
@@ -64,7 +64,7 @@ class PEdump
     end
   end
 
-  class StringFileInfo < PEdump.create_struct( 'v3a30',
+  class StringFileInfo < IOStruct.new( 'v3a30',
     :wLength,
     :wValueLength,  # always 0
     :wType,         # 1 => text data, 0 => binary data
@@ -85,7 +85,7 @@ class PEdump
     end
   end
 
-  class StringTable < PEdump.create_struct( 'v3a16v',
+  class StringTable < IOStruct.new( 'v3a16v',
     :wLength,       # The length, in bytes, of this StringTable structure,
                     # including all structures indicated by the Children member.
     :wValueLength,  # always 0
@@ -107,7 +107,7 @@ class PEdump
     end
   end
 
-  class VersionString < PEdump.create_struct( 'v3',
+  class VersionString < IOStruct.new( 'v3',
     :wLength,       # The length, in bytes, of this String structure.
     :wValueLength,  # The size, in words, of the Value member
     :wType,         # 1 => text data, 0 => binary data
@@ -135,7 +135,7 @@ class PEdump
     end
   end
 
-  class VarFileInfo < PEdump.create_struct( 'v3a24v',
+  class VarFileInfo < IOStruct.new( 'v3a24v',
     :wLength,
     :wValueLength,  # always 0
     :wType,         # 1 => text data, 0 => binary data
@@ -152,7 +152,7 @@ class PEdump
     end
   end
 
-  class Var < PEdump.create_struct( 'v3a24',
+  class Var < IOStruct.new( 'v3a24',
     :wLength,
     :wValueLength,  # The length, in bytes, of the Value member
     :wType,         # 1 => text data, 0 => binary data

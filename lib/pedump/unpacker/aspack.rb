@@ -311,7 +311,7 @@ class PEdump::Unpacker::ASPack
     74                      jz      short exit_relocs_loop
   EOC
 
-  SECTION_INFO = PEdump.create_struct 'VlV', :va, :size, :flags
+  SECTION_INFO = IOStruct.new 'VlV', :va, :size, :flags
 
   ########################################################################
 
