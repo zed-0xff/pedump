@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 require 'stringio'
 require 'iostruct'
+require 'zhexdump'
 require 'pedump/core'
 require 'pedump/pe'
 require 'pedump/resources'
@@ -823,17 +824,13 @@ if $0 == __FILE__
     exit
   end
   p dump.mz
-  require './lib/hexdump_helper' if File.exist?("lib/hexdump_helper.rb")
-  if defined?(HexdumpHelper)
-    include HexdumpHelper
-    puts hexdump(dump.dos_stub) if dump.dos_stub
+  dump.dos_stub.hexdump if dump.dos_stub
+  puts
+  if dump.rich_hdr
+    dump.rich_hdr.hexdump
     puts
-    if dump.rich_hdr
-      puts hexdump(dump.rich_hdr)
-      puts
-      p(dump.rich_hdr.decode)
-      puts hexdump(dump.rich_hdr.dexor)
-    end
+    p(dump.rich_hdr.decode)
+    dump.rich_hdr.dexor.hexdump
   end
   pp dump.pe
   pp dump.resources

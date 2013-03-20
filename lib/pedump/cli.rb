@@ -333,7 +333,7 @@ class PEdump::CLI
   def dump data, opts = {}
     case opts[:format] || @options[:format] || :dump
     when :dump, :hexdump
-      puts hexdump(data)
+      data.hexdump
     when :hex
       puts data.each_byte.map{ |x| "%02x" % x }.join(' ')
     when :binary
@@ -454,7 +454,7 @@ class PEdump::CLI
         puts "[?] don't know how to dump: #{data.inspect[0,50]}" unless data.empty?
       end
     elsif data.is_a?(PEdump::DOSStub)
-      puts hexdump(data)
+      data.hexdump
     elsif data.is_a?(PEdump::RichHdr)
       dump_rich_hdr data
     else
@@ -772,39 +772,11 @@ class PEdump::CLI
       end
     else
       puts "# raw:"
-      puts hexdump(data)
+      data.hexdump
       puts
       puts "# dexored:"
-      puts hexdump(data.dexor)
+      data.dexor.hexdump
     end
   end
 
-  def hexdump *args
-    self.class.hexdump(*args)
-  end
-
-  def self.hexdump data, h = {}
-    offset = h[:offset] || 0
-    add    = h[:add]    || 0
-    size   = h[:size]   || (data.size-offset)
-    tail   = h[:tail]   || "\n"
-    width  = h[:width]  || 0x10                 # row width, in bytes
-
-    size = data.size-offset if size+offset > data.size
-
-    r = ''; s = ''
-    r << "%08x: " % (offset + add)
-    ascii = ''
-    size.times do |i|
-      if i%width==0 && i>0
-        r << "%s |%s|\n%08x: " % [s, ascii, offset + add + i]
-        ascii = ''; s = ''
-      end
-      s << " " if i%width%8==0
-      c = data[offset+i].ord
-      s << "%02x " % c
-      ascii << ((32..126).include?(c) ? c.chr : '.')
-    end
-    r << "%-*s |%-*s|%s" % [width*3+width/8+(width%8==0?0:1), s, width, ascii, tail]
-  end
-end
+end # class PEdump::CLI

@@ -5,7 +5,8 @@ source "http://rubygems.org"
 gem "multipart-post", "~> 1.1.4"
 gem "progressbar"
 gem "awesome_print"
-gem "iostruct", ">= 0.0.2"
+gem "iostruct", ">= 0.0.3"
+gem "zhexdump", ">= 0.0.2"
 
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.
