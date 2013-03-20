@@ -2,6 +2,8 @@ require 'pedump'
 require 'stringio'
 require 'pedump/loader/section'
 
+# This class is kinda Virtual Machine that mimics executable loading as real OS does.
+# Can be used for unpacking, emulating, reversing, ...
 class PEdump::Loader
   attr_accessor :mz_hdr, :dos_stub, :pe_hdr, :sections, :pedump
 
