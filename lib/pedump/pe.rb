@@ -8,7 +8,9 @@ class PEdump
     :section_table
   )
     alias :ifh       :image_file_header
+    alias :ifh=      :image_file_header=
     alias :ioh       :image_optional_header
+    alias :ioh=      :image_optional_header=
     alias :sections  :section_table
     alias :sections= :section_table=
     def x64?

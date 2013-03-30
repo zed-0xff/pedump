@@ -42,10 +42,14 @@ class PEdump::Loader
     end
 
     def inspect
-      "#<Section name=%-10s va=%8x vsize=%8x rawsize=%8s>" % [
-        name.inspect, va, vsize,
+      r = "#<Section"
+      r << (" name=%-10s" % name.inspect) if name
+      r << " va=%8x vsize=%8x rawsize=%8s" % [
+        va, vsize,
         @data.size > 0 ? @data.size.to_s(16) : (@deferred_load_io ? "<defer>" : 0)
       ]
+      r << (" dlpos=%8x" % @deferred_load_pos) if @deferred_load_pos
+      r << ">"
     end
   end
 end
