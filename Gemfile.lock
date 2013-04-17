@@ -13,7 +13,7 @@ GEM
     json (1.7.5)
     multipart-post (1.1.5)
     progressbar (0.12.0)
-    rake (10.0.2)
+    rake (10.0.4)
     rdoc (3.12)
       json (~> 1.4)
     rspec (2.12.0)
