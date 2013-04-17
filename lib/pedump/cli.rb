@@ -302,7 +302,7 @@ class PEdump::CLI
     data = @pedump.send(action, f)
     return if !data || (data.respond_to?(:empty?) && data.empty?)
 
-    puts action_title(action)
+    puts action_title(action) unless @options[:format] == :binary
 
     return dump(data) if [:inspect, :table, :yaml].include?(@options[:format])
 
