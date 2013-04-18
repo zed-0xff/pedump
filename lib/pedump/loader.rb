@@ -8,7 +8,7 @@ require 'pedump/loader/minidump'
 # This class is kinda Virtual Machine that mimics executable loading as real OS does.
 # Can be used for unpacking, emulating, reversing, ...
 class PEdump::Loader
-  attr_accessor :mz_hdr, :dos_stub, :pe_hdr, :sections, :pedump
+  attr_accessor :mz_hdr, :dos_stub, :pe_hdr, :sections, :pedump, :image_base
   attr_accessor :find_limit
 
   DEFAULT_FIND_LIMIT = 2**64
@@ -28,6 +28,7 @@ class PEdump::Loader
       @mz_hdr     = @pedump.mz
       @dos_stub   = @pedump.dos_stub
       @pe_hdr     = @pedump.pe
+      @image_base = @pe_hdr.try(:ioh).try(:ImageBase)
       load_sections @pedump.sections, io
     end
     @find_limit = params[:find_limit] || DEFAULT_FIND_LIMIT
@@ -35,9 +36,8 @@ class PEdump::Loader
 
   def load_sections section_hdrs, f = nil
     if section_hdrs.is_a?(Array) && section_hdrs.map(&:class).uniq == [PEdump::IMAGE_SECTION_HEADER]
-      image_base = @pe_hdr.try(:ioh).try(:ImageBase)
       @sections = section_hdrs.map do |x|
-        Section.new(x, :deferred_load_io => f, :image_base => image_base )
+        Section.new(x, :deferred_load_io => f, :image_base => @image_base )
       end
       if f.respond_to?(:seek) && f.respond_to?(:read)
         #
@@ -102,6 +102,7 @@ class PEdump::Loader
     offset = va - section.va
     raise "negative offset #{offset}" if offset < 0
     r = section.data[offset,size]
+    return nil if r.nil?
     if r.size < size
       # append some empty data
       r << ("\x00".force_encoding('binary')) * (size - r.size)
@@ -220,6 +221,32 @@ class PEdump::Loader
       end
     end
     r
+  end
+
+  ########################################################################
+  # parsing names
+  ########################################################################
+
+  def names
+    @names ||=
+      begin
+        _parse_imports
+        #TODO: exports
+        #TODO: debug info
+      end
+  end
+
+  def _parse_imports
+    names = {}
+    @pedump.imports.each do |image_import_descriptor|
+      va = image_import_descriptor.FirstThunk + @image_base.to_i
+      image_import_descriptor.original_first_thunk.each do |func|
+        name = func.name || "##{func.ordinal}"
+        names[va] = name
+        va += 4
+      end
+    end
+    names
   end
 
   ########################################################################
