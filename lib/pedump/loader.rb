@@ -153,7 +153,14 @@ class PEdump::Loader
   end
 
   # increasing max_diff speed ups the :valid_va? method, but may cause false positives
-  def _merge_ranges max_diff = 5*1048576
+  def _merge_ranges max_diff = nil
+    max_diff ||=
+      if sections.size > 100
+        1024*1024
+      else
+        0
+      end
+
     ranges0 = sections.map(&:range).sort_by(&:begin)
     #puts "[.] #{ranges0.size} ranges"
     ranges1 = []
@@ -167,8 +174,9 @@ class PEdump::Loader
       ranges1 << range
       range = ranges0.shift
     end
+    ranges1 << range
     #puts "[=] #{ranges1.size} ranges"
-    ranges1
+    ranges1.uniq
   end
 
   # find first occurence of string
