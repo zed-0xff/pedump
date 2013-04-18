@@ -13,10 +13,12 @@ class PEdump::Loader
       @deferred_load_io   = args[:deferred_load_io]
       @deferred_load_pos  = args[:deferred_load_pos]  || (@hdr && @hdr.PointerToRawData)
       @deferred_load_size = args[:deferred_load_size] || (@hdr && @hdr.SizeOfRawData)
+      @image_base = args[:image_base] || 0
     end
 
     def name;  @hdr.Name; end
-    def va  ;  @hdr.VirtualAddress; end
+    def va  ;  @hdr.VirtualAddress + @image_base; end
+    def rva ;  @hdr.VirtualAddress; end
     def vsize; @hdr.VirtualSize; end
     def flags; @hdr.Characteristics; end
     def flags= f; @hdr.Characteristics= f; end

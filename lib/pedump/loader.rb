@@ -35,7 +35,10 @@ class PEdump::Loader
 
   def load_sections section_hdrs, f = nil
     if section_hdrs.is_a?(Array) && section_hdrs.map(&:class).uniq == [PEdump::IMAGE_SECTION_HEADER]
-      @sections = section_hdrs.map{ |x| Section.new(x, :deferred_load_io => f) }
+      image_base = @pe_hdr.try(:ioh).try(:ImageBase)
+      @sections = section_hdrs.map do |x|
+        Section.new(x, :deferred_load_io => f, :image_base => image_base )
+      end
       if f.respond_to?(:seek) && f.respond_to?(:read)
         #
         # converted to deferred loading
