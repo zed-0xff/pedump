@@ -29,14 +29,6 @@ rescue LoadError
   end
 end
 
-unless Object.instance_methods.include?(:try)
-  class Object
-    def try(*x)
-      send(*x) if respond_to?(x.first)
-    end
-  end
-end
-
 class PEdump::CLI
   attr_accessor :data, :argv
 

@@ -2,6 +2,11 @@
 require 'stringio'
 require 'iostruct'
 require 'zhexdump'
+
+unless Object.new.respond_to?(:try) && nil.respond_to?(:try)
+  require 'pedump/core_ext/try'
+end
+
 require 'pedump/core'
 require 'pedump/pe'
 require 'pedump/resources'
