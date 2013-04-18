@@ -96,14 +96,14 @@ class PEdump::Loader
   ########################################################################
 
   # read arbitrary string
-  def [] va, size
+  def [] va, size, params = {}
     section = va2section(va)
     raise "no section for va=0x#{va.to_s 16}" unless section
     offset = va - section.va
     raise "negative offset #{offset}" if offset < 0
     r = section.data[offset,size]
     return nil if r.nil?
-    if r.size < size
+    if r.size < size && params.fetch(:zerofill, true)
       # append some empty data
       r << ("\x00".force_encoding('binary')) * (size - r.size)
     end
