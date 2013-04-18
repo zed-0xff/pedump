@@ -34,7 +34,7 @@ class PEdump::CLI
 
   KNOWN_ACTIONS = (
     %w'mz dos_stub rich pe ne data_directory sections tls security' +
-    %w'strings resources resource_directory imports exports version_info packer web packer_only'
+    %w'strings resources resource_directory imports exports version_info packer web console packer_only'
   ).map(&:to_sym)
 
   DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory web packer_only'.map(&:to_sym)
@@ -99,8 +99,14 @@ class PEdump::CLI
       opts.on "--va2file VA", "Convert RVA to file offset" do |va|
         @actions << [:va2file,va]
       end
+
+      opts.separator ''
+
       opts.on "-W", "--web", "Uploads files to a #{URL_BASE}","for a nice HTML tables with image previews,","candies & stuff" do
         @actions << :web
+      end
+      opts.on "-C", "--console", "opens IRB console with specified file loaded" do
+        @actions << :console
       end
     end
 
@@ -132,8 +138,9 @@ class PEdump::CLI
         next if !@options[:force] && !@pedump.mz(f)
 
         @actions.each do |action|
-          if action == :web
-            upload f
+          case action
+          when :web; upload f
+          when :console; console f
           else
             dump_action action,f
           end
@@ -261,6 +268,29 @@ class PEdump::CLI
     puts "[.] uploaded: #{file_url}"
   ensure
     STDOUT.sync = stdout_sync
+  end
+
+  def console f
+    require 'pedump/loader'
+    require 'pp'
+
+    ARGV.clear # clear ARGV so IRB is not confused
+    require 'irb'
+    f.rewind
+    ldr = @ldr = PEdump::Loader.new(f)
+
+    # override IRB.setup, called from IRB.start
+    m0 = IRB.method(:setup)
+    IRB.define_singleton_method :setup do |*args|
+      m0.call *args
+      conf[:IRB_RC] = Proc.new do |context|
+        context.main.instance_variable_set '@ldr', ldr
+        context.main.define_singleton_method(:ldr){ @ldr }
+      end
+    end
+
+    puts "[.] ldr = PEdump::Loader.new(open(#{f.path.inspect}))".gray
+    IRB.start
   end
 
   def action_title action
