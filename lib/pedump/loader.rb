@@ -28,7 +28,7 @@ class PEdump::Loader
       @mz_hdr     = @pedump.mz
       @dos_stub   = @pedump.dos_stub
       @pe_hdr     = @pedump.pe
-      @image_base = @pe_hdr.try(:ioh).try(:ImageBase)
+      @image_base = @pe_hdr.try(:ioh).try(:ImageBase) || 0
       load_sections @pedump.sections, io
     end
     @find_limit = params[:find_limit] || DEFAULT_FIND_LIMIT
@@ -176,7 +176,7 @@ class PEdump::Loader
     end
     ranges1 << range
     #puts "[=] #{ranges1.size} ranges"
-    ranges1.uniq
+    ranges1.uniq.compact
   end
 
   # find first occurence of string
@@ -236,25 +236,34 @@ class PEdump::Loader
   ########################################################################
 
   def names
-    @names ||=
-      begin
-        _parse_imports
-        #TODO: exports
-        #TODO: debug info
-      end
+    return @names if @names
+    @names = {}
+    if oep = @pe_hdr.try(:ioh).try(:AddressOfEntryPoint)
+      oep += @image_base
+      @names[oep] = 'start'
+    end
+    _parse_imports
+    _parse_exports
+    #TODO: debug info
+    @names
   end
 
   def _parse_imports
-    names = {}
-    @pedump.imports.each do |image_import_descriptor|
-      va = image_import_descriptor.FirstThunk + @image_base.to_i
-      image_import_descriptor.original_first_thunk.each do |func|
+    @pedump.imports.each do |iid| # Image Import Descriptor
+      va = iid.FirstThunk + @image_base
+      (Array(iid.original_first_thunk) + Array(iid.first_thunk)).uniq.each do |func|
         name = func.name || "##{func.ordinal}"
-        names[va] = name
+        @names[va] = name
         va += 4
       end
     end
-    names
+  end
+
+  def _parse_exports
+    return {} unless @pedump.exports
+    @pedump.exports.functions.each do |func|
+      @names[@image_base + func.va] = func.name || "##{func.ordinal}"
+    end
   end
 
   ########################################################################
