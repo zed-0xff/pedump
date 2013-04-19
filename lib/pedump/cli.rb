@@ -37,7 +37,7 @@ class PEdump::CLI
     %w'strings resources resource_directory imports exports version_info packer web console packer_only'
   ).map(&:to_sym)
 
-  DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory web packer_only'.map(&:to_sym)
+  DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory web packer_only console'.map(&:to_sym)
 
   URL_BASE = "http://pedump.me"
 
