@@ -35,8 +35,9 @@ class PEdump::Loader
   end
 
   def load_sections section_hdrs, f = nil
-    if section_hdrs.is_a?(Array) && section_hdrs.map(&:class).uniq == [PEdump::IMAGE_SECTION_HEADER]
+    if section_hdrs.is_a?(Array)
       @sections = section_hdrs.map do |x|
+        raise "unknown section hdr: #{x.inspect}" unless x.is_a?(PEdump::IMAGE_SECTION_HEADER)
         Section.new(x, :deferred_load_io => f, :image_base => @image_base )
       end
       if f.respond_to?(:seek) && f.respond_to?(:read)
