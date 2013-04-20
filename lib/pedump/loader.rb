@@ -178,7 +178,7 @@ class PEdump::Loader
     range = ranges0.shift
     while ranges0.any?
       while (ranges0.first.begin-range.end).abs <= max_diff
-        range = range.begin..ranges0.shift.end
+        range = range.begin...ranges0.shift.end
         break if ranges0.empty?
       end
       #puts "[.] diff #{ranges0.first.begin-range.end}"
