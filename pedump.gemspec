@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "pedump"
-  s.version = "0.4.16"
+  s.version = "0.5.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2013-01-03"
+  s.date = "2013-04-20"
   s.description = "dump headers, sections, extract resources of win32 PE exe,dll,etc"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["pedump"]
@@ -38,7 +38,9 @@ Gem::Specification.new do |s|
     "lib/pedump/comparer.rb",
     "lib/pedump/composite_io.rb",
     "lib/pedump/core.rb",
+    "lib/pedump/core_ext/try.rb",
     "lib/pedump/loader.rb",
+    "lib/pedump/loader/minidump.rb",
     "lib/pedump/loader/section.rb",
     "lib/pedump/logger.rb",
     "lib/pedump/ne.rb",
@@ -72,6 +74,8 @@ Gem::Specification.new do |s|
     "spec/foldedhdr_spec.rb",
     "spec/imports_badterm_spec.rb",
     "spec/imports_vterm_spec.rb",
+    "spec/loader/names_spec.rb",
+    "spec/loader/va_spec.rb",
     "spec/manyimportsW7_spec.rb",
     "spec/ne_spec.rb",
     "spec/packer_spec.rb",
@@ -101,6 +105,8 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<multipart-post>, ["~> 1.1.4"])
       s.add_runtime_dependency(%q<progressbar>, [">= 0"])
       s.add_runtime_dependency(%q<awesome_print>, [">= 0"])
+      s.add_runtime_dependency(%q<iostruct>, [">= 0.0.4"])
+      s.add_runtime_dependency(%q<zhexdump>, [">= 0.0.2"])
       s.add_development_dependency(%q<rspec>, [">= 0"])
       s.add_development_dependency(%q<bundler>, [">= 0"])
       s.add_development_dependency(%q<jeweler>, [">= 0"])
@@ -109,6 +115,8 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<multipart-post>, ["~> 1.1.4"])
       s.add_dependency(%q<progressbar>, [">= 0"])
       s.add_dependency(%q<awesome_print>, [">= 0"])
+      s.add_dependency(%q<iostruct>, [">= 0.0.4"])
+      s.add_dependency(%q<zhexdump>, [">= 0.0.2"])
       s.add_dependency(%q<rspec>, [">= 0"])
       s.add_dependency(%q<bundler>, [">= 0"])
       s.add_dependency(%q<jeweler>, [">= 0"])
@@ -118,6 +126,8 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<multipart-post>, ["~> 1.1.4"])
     s.add_dependency(%q<progressbar>, [">= 0"])
     s.add_dependency(%q<awesome_print>, [">= 0"])
+    s.add_dependency(%q<iostruct>, [">= 0.0.4"])
+    s.add_dependency(%q<zhexdump>, [">= 0.0.2"])
     s.add_dependency(%q<rspec>, [">= 0"])
     s.add_dependency(%q<bundler>, [">= 0"])
     s.add_dependency(%q<jeweler>, [">= 0"])
