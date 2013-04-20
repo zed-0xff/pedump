@@ -81,8 +81,14 @@ class PEdump::Loader
   # VA conversion
   ########################################################################
 
+  # VA to section
   def va2section va
     @sections.find{ |x| x.range.include?(va) }
+  end
+
+  # RVA (Relative VA) to section
+  def rva2section rva
+    va2section( rva + @image_base )
   end
 
   def va2stream va
@@ -90,6 +96,10 @@ class PEdump::Loader
     StringIO.new(section.data).tap do |io|
       io.seek va-section.va
     end
+  end
+
+  def rva2stream rva
+    va2stream( rva + @image_base )
   end
 
   ########################################################################
