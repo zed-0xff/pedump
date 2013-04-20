@@ -28,7 +28,7 @@ class PEdump::Loader
       @mz_hdr     = @pedump.mz
       @dos_stub   = @pedump.dos_stub
       @pe_hdr     = @pedump.pe
-      @image_base = @pe_hdr.try(:ioh).try(:ImageBase) || 0
+      @image_base = params[:image_base] || @pe_hdr.try(:ioh).try(:ImageBase) || 0
       load_sections @pedump.sections, io
     end
     @find_limit = params[:find_limit] || DEFAULT_FIND_LIMIT

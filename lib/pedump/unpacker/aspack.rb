@@ -22,7 +22,12 @@ class PEdump::Unpacker::ASPack
   attr_accessor :logger
 
   def initialize io, params = {}
-    params[:logger] ||= PEdump::Logger.create(params)
+    params[:logger]     ||= PEdump::Logger.create(params)
+
+    # XXX aspack unpacker code does not distinguish RVA from VA, so set
+    # image base to zero for RVA be equal VA
+    params[:image_base] ||= 0
+
     @logger = params[:logger]
     @ldr = PEdump::Loader.new(io, params)
     @io = io
