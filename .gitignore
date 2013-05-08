@@ -8,6 +8,7 @@
 *.nam
 *.til
 *.o
+*.gem
 tmp
 dump
 samples/*
