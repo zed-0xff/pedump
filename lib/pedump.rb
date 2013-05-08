@@ -626,7 +626,11 @@ class PEdump
     :name, :entry_points, :names, :name_ordinals, :functions,
     :description # NE only
 
-  ExportedFunction = Struct.new :name, :ord, :va, :file_offset
+  class ExportedFunction < Struct.new :name, :ord, :va, :file_offset
+    def ordinal
+      self.ord
+    end
+  end
 
   def exports f=@io
     if pe(f)
