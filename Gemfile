@@ -13,7 +13,7 @@ gem "zhexdump", ">= 0.0.2"
 group :development do
   gem "rspec"
   gem "bundler"
-  gem "jeweler"
+#  gem "jeweler"
 #  gem "rcov", ">= 0"
   gem "what_methods"
 #  gem "looksee"
