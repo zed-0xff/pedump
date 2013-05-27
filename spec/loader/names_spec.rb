@@ -9,7 +9,7 @@ describe PEdump::Loader do
     @ldr.names.should_not be_nil
     @ldr.names.should_not be_empty
     @ldr.names.size.should >= 343
-    @ldr.names[0x10010d0].should == 'GetStartupInfoA'
+    @ldr.names[0x10010d0].should == '__imp_GetStartupInfoA'
   end
 
   it "should read names from exports" do

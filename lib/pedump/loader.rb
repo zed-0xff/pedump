@@ -263,7 +263,7 @@ class PEdump::Loader
     @pedump.imports.each do |iid| # Image Import Descriptor
       va = iid.FirstThunk + @image_base
       (Array(iid.original_first_thunk) + Array(iid.first_thunk)).uniq.each do |func|
-        name = func.name || "##{func.ordinal}"
+        name = "__imp_" + (func.name || "#{func.ordinal}")
         @names[va] = name
         va += 4
       end
