@@ -1,52 +1,30 @@
-# encoding: utf-8
-
-require 'rubygems'
-require 'bundler'
-begin
-  Bundler.setup(:default, :development)
-rescue Bundler::BundlerError => e
-  $stderr.puts e.message
-  $stderr.puts "Run `bundle install` to install missing gems"
-  exit e.status_code
-end
-require 'rake'
-
-task :build do
-  exec "gem build pedump.gemspec"
-end
-
-require 'jeweler'
-Jeweler::Tasks.new do |gem|
-  # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
-  gem.name = "pedump"
-  gem.homepage = "http://github.com/zed-0xff/pedump"
-  gem.license = "MIT"
-  gem.summary = %Q{dump win32 PE executable files with a pure ruby}
-  gem.description = %Q{dump headers, sections, extract resources of win32 PE exe,dll,etc}
-  gem.email = "zed.0xff@gmail.com"
-  gem.authors = ["Andrey \"Zed\" Zaikin"]
-  gem.executables = %w'pedump'
-  gem.files.include "lib/**/*.rb"
-  gem.files.include "data/*.bin"
-  gem.files.include "data/*.txt"
-
-  gem.files.exclude "samples/*", "README.md.tpl"
-  gem.extra_rdoc_files.exclude "README.md.tpl"
-end
-Jeweler::RubygemsDotOrgTasks.new
-
-require 'rspec/core'
+require 'bundler/gem_tasks'
 require 'rspec/core/rake_task'
-RSpec::Core::RakeTask.new(:spec) do |spec|
-  spec.pattern = FileList['spec/**/*_spec.rb']
-end
 
-RSpec::Core::RakeTask.new(:rcov) do |spec|
-  spec.pattern = 'spec/**/*_spec.rb'
-  spec.rcov = true
-end
+desc "run specs"
+RSpec::Core::RakeTask.new
 
 task :default => :spec
+
+#require 'jeweler'
+#Jeweler::Tasks.new do |gem|
+#  # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
+#  gem.name = "pedump"
+#  gem.homepage = "http://github.com/zed-0xff/pedump"
+#  gem.license = "MIT"
+#  gem.summary = %Q{dump win32 PE executable files with a pure ruby}
+#  gem.description = %Q{dump headers, sections, extract resources of win32 PE exe,dll,etc}
+#  gem.email = "zed.0xff@gmail.com"
+#  gem.authors = ["Andrey \"Zed\" Zaikin"]
+#  gem.executables = %w'pedump'
+#  gem.files.include "lib/**/*.rb"
+#  gem.files.include "data/*.bin"
+#  gem.files.include "data/*.txt"
+#
+#  gem.files.exclude "samples/*", "README.md.tpl"
+#  gem.extra_rdoc_files.exclude "README.md.tpl"
+#end
+#Jeweler::RubygemsDotOrgTasks.new
 
 #require 'rake/rdoctask'
 #Rake::RDocTask.new do |rdoc|
@@ -57,28 +35,28 @@ task :default => :spec
 #  rdoc.rdoc_files.include('README*')
 #  rdoc.rdoc_files.include('lib/**/*.rb')
 #end
-
-class Jeweler::Commands::Version::Base
-  alias :commit_version_old :commit_version
-  def commit_version
-    code = <<-EOF
-class PEdump
-  module Version
-    MAJOR = #{version_helper.major}
-    MINOR = #{version_helper.minor}
-    PATCH = #{version_helper.patch}
-    BUILD = nil
-
-    STRING = [MAJOR, MINOR, PATCH, BUILD].compact.join('.')
-  end
-end
-    EOF
-    vfile = working_subdir.join("lib/pedump/version.rb")
-    File.open(vfile,"w"){ |f| f << code }
-    self.repo.add vfile if self.repo
-    commit_version_old
-  end
-end
+#
+#class Jeweler::Commands::Version::Base
+#  alias :commit_version_old :commit_version
+#  def commit_version
+#    code = <<-EOF
+#class PEdump
+#  module Version
+#    MAJOR = #{version_helper.major}
+#    MINOR = #{version_helper.minor}
+#    PATCH = #{version_helper.patch}
+#    BUILD = nil
+#
+#    STRING = [MAJOR, MINOR, PATCH, BUILD].compact.join('.')
+#  end
+#end
+#    EOF
+#    vfile = working_subdir.join("lib/pedump/version.rb")
+#    File.open(vfile,"w"){ |f| f << code }
+#    self.repo.add vfile if self.repo
+#    commit_version_old
+#  end
+#end
 
 namespace :test do
   desc "test on all files in given path"
