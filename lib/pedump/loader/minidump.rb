@@ -53,6 +53,24 @@ class PEdump
     end
   end
 
+  MINIDUMP_MEMORY_DESCRIPTOR = IOStruct.new 'QLL',
+    :StartOfMemoryRange,
+    :DataSize,
+    :Rva
+
+  class MINIDUMP_MEMORY_LIST < IOStruct.new 'L',
+    :NumberOfMemoryRanges,
+    :MemoryRanges
+
+    def self.read io
+      r = super
+      r.MemoryRanges = r.NumberOfMemoryRanges.times.map{ MINIDUMP_MEMORY_DESCRIPTOR.read(io) }
+      r
+    end
+
+    def entries; self.MemoryRanges; end
+  end
+
   MINIDUMP_MEMORY_DESCRIPTOR64 = IOStruct.new 'QQ',
     :StartOfMemoryRange,
     :DataSize
@@ -78,7 +96,7 @@ class PEdump
          2 => :ReservedStream1,
          3 => :ThreadListStream,
          4 => :ModuleListStream,
-         5 => :MemoryListStream,
+         5 => :MemoryListStream,             # MINIDUMP_MEMORY_LIST
          6 => :ExceptionStream,
          7 => :SystemInfoStream,
          8 => :ThreadExListStream,
@@ -125,6 +143,14 @@ class PEdump
       end
 
       def memory_list
+        # MINIDUMP_MEMORY_LIST
+        stream = streams.find{ |s| s.StreamType == 5 }
+        return nil unless stream
+        io.seek stream.Location.Rva
+        MINIDUMP_MEMORY_LIST.read io
+      end
+
+      def memory64_list
         # MINIDUMP_MEMORY64_LIST
         stream = streams.find{ |s| s.StreamType == 9 }
         return nil unless stream
@@ -136,27 +162,50 @@ class PEdump
 
       # set options[:merge] = true to merge adjacent memory ranges
       def memory_ranges options = {}
-        ml = memory_list
-        file_offset = ml.BaseRva
-        r = []
-        if options[:merge]
-          ml.entries.each do |x|
-            if r.last && r.last.va + r.last.size == x.StartOfMemoryRange
-              # if section VA == prev_section.VA + prev_section.SIZE
-              # then just increase the size of previous section
-              r.last.size += x.DataSize
-            else
-              r << MemoryRange.new( file_offset, x.StartOfMemoryRange, x.DataSize )
+        if memory64_list
+          ml = memory64_list
+          file_offset = ml.BaseRva
+          r = []
+          if options[:merge]
+            ml.entries.each do |x|
+              if r.last && r.last.va + r.last.size == x.StartOfMemoryRange
+                # if section VA == prev_section.VA + prev_section.SIZE
+                # then just increase the size of previous section
+                r.last.size += x.DataSize
+              else
+                r << MemoryRange.new( file_offset, x.StartOfMemoryRange, x.DataSize )
+              end
+              file_offset += x.DataSize
             end
-            file_offset += x.DataSize
+          else
+            ml.entries.each do |x|
+              r << MemoryRange.new( file_offset, x.StartOfMemoryRange, x.DataSize )
+              file_offset += x.DataSize
+            end
           end
+          return r
+        elsif memory_list
+          ml = memory_list
+          r = []
+          if options[:merge]
+            ml.entries.each do |x|
+              if r.last && r.last.va + r.last.size == x.StartOfMemoryRange
+                # if section VA == prev_section.VA + prev_section.SIZE
+                # then just increase the size of previous section
+                r.last.size += x.DataSize
+              else
+                r << MemoryRange.new( x.Rva, x.StartOfMemoryRange, x.DataSize )
+              end
+            end
+          else
+            ml.entries.each do |x|
+              r << MemoryRange.new( x.Rva, x.StartOfMemoryRange, x.DataSize )
+            end
+          end
+          return r
         else
-          ml.entries.each do |x|
-            r << MemoryRange.new( file_offset, x.StartOfMemoryRange, x.DataSize )
-            file_offset += x.DataSize
-          end
+          raise "Could not find memory ranges"
         end
-        r
       end
 
     end # class Minidump
