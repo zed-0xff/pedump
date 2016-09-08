@@ -2,7 +2,7 @@ source "http://rubygems.org"
 # Add dependencies required to use your gem here.
 # Example:
 #   gem "activesupport", ">= 2.3.5"
-gem "multipart-post", "~> 1.1.4"
+gem "multipart-post", "~> 2.0.0"
 gem "progressbar"
 gem "awesome_print"
 gem "iostruct", ">= 0.0.4"

@@ -4,7 +4,7 @@ GEM
     awesome_print (1.7.0)
     diff-lcs (1.2.5)
     iostruct (0.0.4)
-    multipart-post (1.1.5)
+    multipart-post (2.0.0)
     progressbar (0.21.0)
     rspec (3.5.0)
       rspec-core (~> 3.5.0)
@@ -29,7 +29,7 @@ DEPENDENCIES
   awesome_print
   bundler
   iostruct (>= 0.0.4)
-  multipart-post (~> 1.1.4)
+  multipart-post (~> 2.0.0)
   progressbar
   rspec
   what_methods
