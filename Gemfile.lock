@@ -1,19 +1,24 @@
 GEM
   remote: http://rubygems.org/
   specs:
-    awesome_print (1.1.0)
-    diff-lcs (1.1.3)
+    awesome_print (1.7.0)
+    diff-lcs (1.2.5)
     iostruct (0.0.4)
     multipart-post (1.1.5)
-    progressbar (0.12.0)
-    rspec (2.12.0)
-      rspec-core (~> 2.12.0)
-      rspec-expectations (~> 2.12.0)
-      rspec-mocks (~> 2.12.0)
-    rspec-core (2.12.1)
-    rspec-expectations (2.12.0)
-      diff-lcs (~> 1.1.3)
-    rspec-mocks (2.12.0)
+    progressbar (0.21.0)
+    rspec (3.5.0)
+      rspec-core (~> 3.5.0)
+      rspec-expectations (~> 3.5.0)
+      rspec-mocks (~> 3.5.0)
+    rspec-core (3.5.3)
+      rspec-support (~> 3.5.0)
+    rspec-expectations (3.5.0)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.5.0)
+    rspec-mocks (3.5.0)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.5.0)
+    rspec-support (3.5.0)
     what_methods (1.0.1)
     zhexdump (0.0.2)
 
@@ -29,3 +34,6 @@ DEPENDENCIES
   rspec
   what_methods
   zhexdump (>= 0.0.2)
+
+BUNDLED WITH
+   1.12.5

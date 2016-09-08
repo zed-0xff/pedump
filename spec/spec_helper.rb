@@ -16,6 +16,10 @@ def unarchive_samples fname
 end
 
 RSpec.configure do |config|
+  # http://rspec.info/blog/2012/06/rspecs-new-expectation-syntax/
+  config.expect_with :rspec do |c|
+    c.syntax = :should
+  end
   config.before :suite do
     Dir[File.join(SAMPLES_DIR,"*.7z")].each do |fname|
       unarchive_samples fname
