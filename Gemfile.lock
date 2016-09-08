@@ -6,6 +6,7 @@ GEM
     iostruct (0.0.4)
     multipart-post (2.0.0)
     progressbar (0.21.0)
+    rake (10.4.2)
     rspec (3.5.0)
       rspec-core (~> 3.5.0)
       rspec-expectations (~> 3.5.0)
@@ -31,6 +32,7 @@ DEPENDENCIES
   iostruct (>= 0.0.4)
   multipart-post (~> 2.0.0)
   progressbar
+  rake
   rspec
   what_methods
   zhexdump (>= 0.0.2)
