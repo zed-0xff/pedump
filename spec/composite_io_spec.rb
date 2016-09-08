@@ -57,17 +57,17 @@ describe PEdump::CompositeIO do
       StringIO.new('bar2'),
       StringIO.new('baz')
     )
-    io.eof?.should be_false
+    io.eof?.should be false
     io.read(3)
-    io.eof?.should be_false
+    io.eof?.should be false
     io.read(4)
-    io.eof?.should be_false
+    io.eof?.should be false
     io.read
-    io.eof?.should be_true
+    io.eof?.should be true
     io.read
-    io.eof?.should be_true
+    io.eof?.should be true
     io.read 10
-    io.eof?.should be_true
+    io.eof?.should be true
   end
 
   it "seeks" do
