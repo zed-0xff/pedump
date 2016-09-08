@@ -8,7 +8,7 @@ describe 'PE' do
 
   describe KLASS do
     it "should be equal" do
-      pending "necessary?"
+      # XXX necessary?
       a = []
       KLASS.new(*a).should == KLASS.new(*a)
       a = ['a']
@@ -40,7 +40,7 @@ describe 'PE' do
     end
 
     it "should be equal with different VA's" do
-      pending "necessary?"
+      # XXX necessary?
       a = ['a','b','c',nil]
       b = ['a','b','c','d']
       KLASS.new(*a).should == KLASS.new(*b)
