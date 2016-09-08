@@ -474,9 +474,10 @@ class PEdump
     :first_thunk
 
   class ImportedFunction < Struct.new(:hint, :name, :ordinal, :va, :module_name)
-#    def == x
-#      self.hint == x.hint && self.name == x.name && self.ordinal == x.ordinal
-#    end
+    def == x
+      self.hint == x.hint && self.name == x.name && self.ordinal == x.ordinal &&
+        self.module_name == x.module_name
+    end
 #    def <=> x
 #      self.to_a[0..-2] <=> x.to_a[0..-2]
 #    end
