@@ -1,3 +1,4 @@
+require 'bundler'
 require 'bundler/gem_tasks'
 require 'rspec/core/rake_task'
 
@@ -5,58 +6,6 @@ desc "run specs"
 RSpec::Core::RakeTask.new
 
 task :default => :spec
-
-#require 'jeweler'
-#Jeweler::Tasks.new do |gem|
-#  # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
-#  gem.name = "pedump"
-#  gem.homepage = "http://github.com/zed-0xff/pedump"
-#  gem.license = "MIT"
-#  gem.summary = %Q{dump win32 PE executable files with a pure ruby}
-#  gem.description = %Q{dump headers, sections, extract resources of win32 PE exe,dll,etc}
-#  gem.email = "zed.0xff@gmail.com"
-#  gem.authors = ["Andrey \"Zed\" Zaikin"]
-#  gem.executables = %w'pedump'
-#  gem.files.include "lib/**/*.rb"
-#  gem.files.include "data/*.bin"
-#  gem.files.include "data/*.txt"
-#
-#  gem.files.exclude "samples/*", "README.md.tpl"
-#  gem.extra_rdoc_files.exclude "README.md.tpl"
-#end
-#Jeweler::RubygemsDotOrgTasks.new
-
-#require 'rake/rdoctask'
-#Rake::RDocTask.new do |rdoc|
-#  version = File.exist?('VERSION') ? File.read('VERSION') : ""
-#
-#  rdoc.rdoc_dir = 'rdoc'
-#  rdoc.title = "pedump #{version}"
-#  rdoc.rdoc_files.include('README*')
-#  rdoc.rdoc_files.include('lib/**/*.rb')
-#end
-#
-#class Jeweler::Commands::Version::Base
-#  alias :commit_version_old :commit_version
-#  def commit_version
-#    code = <<-EOF
-#class PEdump
-#  module Version
-#    MAJOR = #{version_helper.major}
-#    MINOR = #{version_helper.minor}
-#    PATCH = #{version_helper.patch}
-#    BUILD = nil
-#
-#    STRING = [MAJOR, MINOR, PATCH, BUILD].compact.join('.')
-#  end
-#end
-#    EOF
-#    vfile = working_subdir.join("lib/pedump/version.rb")
-#    File.open(vfile,"w"){ |f| f << code }
-#    self.repo.add vfile if self.repo
-#    commit_version_old
-#  end
-#end
 
 namespace :test do
   desc "test on all files in given path"
