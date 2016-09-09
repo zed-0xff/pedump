@@ -1,12 +1,22 @@
+PATH
+  remote: .
+  specs:
+    pedump (0.5.1)
+      awesome_print
+      iostruct (>= 0.0.4)
+      multipart-post (~> 2.0.0)
+      progressbar
+      zhexdump (>= 0.0.2)
+
 GEM
-  remote: http://rubygems.org/
+  remote: https://rubygems.org/
   specs:
     awesome_print (1.7.0)
     diff-lcs (1.2.5)
     iostruct (0.0.4)
     multipart-post (2.0.0)
     progressbar (0.21.0)
-    rake (10.4.2)
+    rake (10.5.0)
     rspec (3.5.0)
       rspec-core (~> 3.5.0)
       rspec-expectations (~> 3.5.0)
@@ -20,22 +30,16 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.5.0)
     rspec-support (3.5.0)
-    what_methods (1.0.1)
     zhexdump (0.0.2)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  awesome_print
-  bundler
-  iostruct (>= 0.0.4)
-  multipart-post (~> 2.0.0)
-  progressbar
-  rake
-  rspec
-  what_methods
-  zhexdump (>= 0.0.2)
+  bundler (~> 1.11)
+  pedump!
+  rake (~> 10.0)
+  rspec (~> 3.0)
 
 BUNDLED WITH
    1.12.5
