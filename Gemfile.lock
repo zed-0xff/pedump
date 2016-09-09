@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    pedump (0.5.1)
+    pedump (0.5.2)
       awesome_print
       iostruct (>= 0.0.4)
       multipart-post (~> 2.0.0)
