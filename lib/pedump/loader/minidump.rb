@@ -110,7 +110,20 @@ class PEdump
         16 => :MemoryInfoListStream,         # MINIDUMP_MEMORY_INFO_LIST
         17 => :ThreadInfoListStream,
         18 => :HandleOperationListStream,
-    0xffff => :LastReservedStream
+    0xffff => :LastReservedStream,
+
+    # Special types saved by google breakpad
+    # https://chromium.googlesource.com/breakpad/breakpad/+/846b6335c5b0ba46dfa2ed96fccfa3f7a02fa2f1/src/google_breakpad/common/minidump_format.h#311
+    0x47670001 => :BreakpadInfoStream,
+    0x47670002 => :BreakpadAssertionInfoStream,
+    0x47670003 => :BreakpadLinuxCpuInfo,
+    0x47670004 => :BreakpadLinuxProcStatus,
+    0x47670005 => :BreakpadLinuxLsbRelease,
+    0x47670006 => :BreakpadLinuxCmdLine,
+    0x47670007 => :BreakpadLinuxEnviron,
+    0x47670008 => :BreakpadLinuxAuxv,
+    0x47670009 => :BreakpadLinuxMaps,
+    0x4767000A => :BreakpadLinuxDsoDebug
   }
 
   class Loader
@@ -134,9 +147,16 @@ class PEdump
           end
       end
 
+      def stream_by_name(name)
+        type = MINIDUMP_STREAM_TYPE.invert[name]
+        raise "Unknown type symbol #{name}!" if !type
+
+        streams.find { |s| s.StreamType == type }
+      end
+
       def memory_info_list
         # MINIDUMP_MEMORY_INFO_LIST
-        stream = streams.find{ |s| s.StreamType == 16 }
+        stream = stream_by_name(:MemoryInfoListStream)
         return nil unless stream
         io.seek stream.Location.Rva
         MINIDUMP_MEMORY_INFO_LIST.read io
@@ -144,7 +164,7 @@ class PEdump
 
       def memory_list
         # MINIDUMP_MEMORY_LIST
-        stream = streams.find{ |s| s.StreamType == 5 }
+        stream = stream_by_name(:MemoryListStream)
         return nil unless stream
         io.seek stream.Location.Rva
         MINIDUMP_MEMORY_LIST.read io
@@ -152,7 +172,7 @@ class PEdump
 
       def memory64_list
         # MINIDUMP_MEMORY64_LIST
-        stream = streams.find{ |s| s.StreamType == 9 }
+        stream = stream_by_name(:Memory64ListStream)
         return nil unless stream
         io.seek stream.Location.Rva
         MINIDUMP_MEMORY64_LIST.read io
@@ -216,21 +236,102 @@ end # module PEdump
 
 if $0 == __FILE__
   require 'pp'
+  require 'optparse'
 
-  raise "gimme a fname" if ARGV.empty?
-  io = open(ARGV.first,"rb")
+  options = {}
+  opt_parse = OptionParser.new do |opts|
+    opts.banner = "Usage: #{$0} [options] <minidump>"
 
+    opts.on("--all", "Print all of the following sections") do
+      options[:all] = true
+    end
+    opts.on("--header", "Print minidump header") do
+      options[:header] = true
+    end
+    opts.on("--streams", "Print out the streams present") do
+      options[:streams] = true
+    end
+    opts.on("--memory-ranges", "Print out memory ranges included in the minidump") do
+      options[:memory_ranges] = true
+    end
+    opts.on("--breakpad", "Print out breakpad text sections if present") do
+      options[:breakpad] = true
+    end
+    opts.separator ''
+
+    opts.on("--memory <address>", "Print the memory range beginning at address") do |m|
+      options[:memory] = m.hex
+    end
+    opts.separator ''
+
+    opts.on("-h", "--help", "Help") do
+      puts opts
+      exit 0
+    end
+  end
+
+  opt_parse.parse!
+
+  if ARGV.empty?
+    $stderr.puts opt_parse.help
+    exit 1
+  end
+
+  io = open(ARGV.first, "rb")
   md = PEdump::Loader::Minidump.new io
-  pp md.hdr
-  puts
-  puts "[.] #{md.memory_ranges.size} memory ranges"
-  puts "[.] #{md.memory_ranges(:merge => true).size} merged memory ranges"
-  puts
 
-#  pp md.memory_info_list
-#  pp md.memory_list
+  if options[:all] || options[:header]
+    pp md.hdr
+    puts
+  end
 
-  md.memory_ranges(:merge => true).each do |mr|
-    printf "[.] %8x %8x %8x\n", mr.file_offset, mr.va, mr.size
+  if options[:all] || options[:streams]
+    puts "[.] Streams present in the minidump:"
+    md.streams.each do |s|
+      if s.StreamType
+        puts "[.] #{PEdump::MINIDUMP_STREAM_TYPE[s.StreamType]}"
+      else
+        puts "[.] Unknown stream type #{s.StreamType}"
+      end
+    end
+    puts
+  end
+
+  if options[:all] || options[:breakpad]
+    [ :BreakpadLinuxCpuInfo, :BreakpadLinuxProcStatus, :BreakpadLinuxMaps,
+      :BreakpadLinuxCmdLine, :BreakpadLinuxEnviron ].each { |name|
+      stream = md.stream_by_name(name)
+      next if !stream
+
+      io.seek stream.Location.Rva
+      contents = io.read(stream.Location.DataSize)
+
+      if contents !~ /[^[:print:][:space:]]/
+        puts "[.] Section #{name}:"
+        puts contents
+      else
+        puts "[.] Section #{name}: #{contents.inspect}"
+      end
+      puts
+    }
+  end
+
+  if options[:all] || options[:memory_ranges]
+    puts "[.] #{md.memory_ranges.size} memory ranges"
+    puts "[.] #{md.memory_ranges(:merge => true).size} merged memory ranges"
+    puts
+
+    printf "[.] %16s %8s\n", "addr", "size"
+    md.memory_ranges(:merge => true).sort_by { |mr| mr.va }.each do |mr|
+      printf "[.] %16x %8x\n", mr.va, mr.size
+    end
+  end
+
+  if options[:memory]
+    mr = md.memory_ranges(:merge => true).find { |r| r.va == options[:memory] }
+    raise "Could not find the specified region" if !mr
+
+    io.seek(mr.file_offset)
+    print io.read(mr.size)
   end
 end
