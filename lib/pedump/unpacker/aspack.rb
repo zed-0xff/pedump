@@ -607,7 +607,7 @@ class PEdump::Unpacker::ASPack
     if m = @data.match(RELOCS_RE)
       a = m[1..-1].map{|x| x.unpack('V').first }
     else
-      logger.error "[!] cannot find imports"
+      logger.error "[!] cannot find relocs"
       raise
       return
     end
