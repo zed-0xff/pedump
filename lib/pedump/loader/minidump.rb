@@ -123,7 +123,20 @@ class PEdump
     0x47670007 => :BreakpadLinuxEnviron,
     0x47670008 => :BreakpadLinuxAuxv,
     0x47670009 => :BreakpadLinuxMaps,
-    0x4767000A => :BreakpadLinuxDsoDebug
+    0x4767000A => :BreakpadLinuxDsoDebug,
+
+    # Saved by crashpad
+    # https://chromium.googlesource.com/crashpad/crashpad/+/doc/minidump/minidump_extensions.h#95
+    0x43500001 => :CrashpadInfo,
+
+    # Saved by Syzyasan
+    # https://github.com/google/syzygy/blob/c8bb4927f07fec0de8834c4774ddaafef0bc099f/syzygy/kasko/api/client.h#L28
+    # https://github.com/google/syzygy/blob/master/syzygy/crashdata/crashdata.proto
+    0x4B6B0001 => :SyzyasanCrashdata,
+
+    # Saved by Chromium
+    0x4B6B0002 => :ChromiumStabilityReport,
+    0x4B6B0003 => :ChromiumSystemProfile,
   }
 
   class Loader
@@ -288,7 +301,7 @@ if $0 == __FILE__
   if options[:all] || options[:streams]
     puts "[.] Streams present in the minidump:"
     md.streams.each do |s|
-      if s.StreamType
+      if PEdump::MINIDUMP_STREAM_TYPE[s.StreamType]
         puts "[.] #{PEdump::MINIDUMP_STREAM_TYPE[s.StreamType]}"
       else
         puts "[.] Unknown stream type #{s.StreamType}"
