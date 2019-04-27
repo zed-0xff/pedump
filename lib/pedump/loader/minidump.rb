@@ -137,6 +137,7 @@ class PEdump
     # Saved by Chromium
     0x4B6B0002 => :ChromiumStabilityReport,
     0x4B6B0003 => :ChromiumSystemProfile,
+    0x4B6B0004 => :ChromiumGwpAsanData,
   }
 
   class Loader
