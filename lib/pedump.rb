@@ -2,6 +2,7 @@
 require 'stringio'
 require 'iostruct'
 require 'zhexdump'
+require 'set'
 
 unless Object.new.respond_to?(:try) && nil.respond_to?(:try)
   require 'pedump/core_ext/try'
@@ -27,6 +28,7 @@ class PEdump
 
   VERSION    = Version::STRING
   MAX_ERRORS = 100
+  MAX_IMAGE_IMPORT_DESCRIPTORS = 1000
 
   @@logger = nil
 
@@ -527,7 +529,11 @@ class PEdump
           # http://code.google.com/p/corkami/source/browse/trunk/asm/PE/manyimportsW7.asm
           break
         end
-        t=IMAGE_IMPORT_DESCRIPTOR.read(f)
+        if r.size >= MAX_IMAGE_IMPORT_DESCRIPTORS
+          logger.warn "[!] too many IMAGE_IMPORT_DESCRIPTORs, not reading more than #{r.size}"
+          break
+        end
+        t = IMAGE_IMPORT_DESCRIPTOR.read(f)
         break if t.Name.to_i == 0 # also catches EOF
         r << t
         file_offset += IMAGE_IMPORT_DESCRIPTOR::SIZE
@@ -536,8 +542,16 @@ class PEdump
       logger.warn "[?] imports info beyond EOF"
     end
 
+    n_bad_names = 0
     logger.warn "[?] non-empty last IMAGE_IMPORT_DESCRIPTOR: #{t.inspect}" if t && !t.empty?
-    @imports = r.each do |x|
+    @imports = r
+    r = nil
+    @imports.each_with_index do |x, iidx|
+      if n_bad_names > MAX_ERRORS
+        logger.warn "[!] too many bad imported function names. skipping further imports parsing"
+        @imports = @imports[0,iidx]
+        break
+      end
       if x.Name.to_i != 0 && (ofs = va2file(x.Name))
         begin
         f.seek ofs
@@ -572,12 +586,18 @@ class PEdump
                 logger.warn "[?] import ofs 0x#{ofs.to_s(16)} VA=0x#{t.to_s(16)} beyond EOF"
                 nil
               else
-                ImportedFunction.new(
-                  f.read(2).unpack('v').first,
-                  f.gets("\x00").chomp("\x00"),
-                  nil,
-                  va
-                )
+                hint = f.read(2).unpack('v').first
+                name = f.gets("\x00").chomp("\x00")
+                if !name.empty? && name !~ /\A[\x33-\x7f]+\Z/
+                  n_bad_names += 1
+                  if n_bad_names > MAX_ERRORS
+                    nil
+                  else
+                    ImportedFunction.new(hint, name, nil, va)
+                  end
+                else
+                  ImportedFunction.new(hint, name, nil, va)
+                end
               end
             elsif tbl == :original_first_thunk
               # OriginalFirstThunk entries can not be invalid, show a warning msg
@@ -592,7 +612,7 @@ class PEdump
             end
         end
         x[tbl] && x[tbl].compact!
-      end
+      end # [:original_first_thunk, :first_thunk].each
       if x.original_first_thunk && !x.first_thunk
         logger.warn "[?] import table: empty FirstThunk for #{x.module_name}"
       elsif !x.original_first_thunk && x.first_thunk
@@ -603,7 +623,8 @@ class PEdump
           logger.debug "[?] import table: OriginalFirstThunk != FirstThunk for #{x.module_name}"
         end
       end
-    end
+    end # r.each
+    @imports
   end
 
   ##############################################################################
