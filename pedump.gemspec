@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "awesome_print"
   spec.add_dependency "iostruct",       ">= 0.0.4"
-  spec.add_dependency "multipart-post", "~> 2.0.0"
+  spec.add_dependency "multipart-post", ">= 2.0.0"
   spec.add_dependency "progressbar"
   spec.add_dependency "zhexdump",       ">= 0.0.2"
 

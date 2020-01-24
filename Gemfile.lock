@@ -79,7 +79,7 @@ DEPENDENCIES
   bundler (~> 2.1.4)
   iostruct (>= 0.0.4)
   jeweler (~> 2.3.9)
-  multipart-post (~> 2.0.0)
+  multipart-post (>= 2.0.0)
   progressbar
   rainbow
   rspec (~> 3.9.0)
