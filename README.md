@@ -43,7 +43,7 @@ Usage
                                          (can be used multiple times)
         -F, --force                      Try to dump by all means
                                          (can cause exceptions & heavy wounds)
-        -f, --format FORMAT              Output format: bin,c,dump,hex,inspect,table,yaml
+        -f, --format FORMAT              Output format: bin,c,dump,hex,inspect,json,table,yaml
                                          (default: table)
             --mz
             --dos-stub
@@ -67,9 +67,11 @@ Usage
         -r, --recursive                  recurse dirs in packer detect
             --all                        Dump all but resource-directory (default)
             --va2file VA                 Convert RVA to file offset
+    
         -W, --web                        Uploads files to a http://pedump.me
                                          for a nice HTML tables with image previews,
                                          candies & stuff
+        -C, --console                    opens IRB console with specified file loaded
 
 ### MZ Header
 
@@ -107,10 +109,10 @@ Usage
 
     === DOS STUB ===
     
-    00000000:  0e 1f ba 0e 00 b4 09 cd  21 b8 01 4c cd 21 54 68  |........!..L.!Th|
-    00000010:  69 73 20 70 72 6f 67 72  61 6d 20 63 61 6e 6e 6f  |is program canno|
-    00000020:  74 20 62 65 20 72 75 6e  20 69 6e 20 44 4f 53 20  |t be run in DOS |
-    00000030:  6d 6f 64 65 2e 0d 0d 0a  24 00 00 00 00 00 00 00  |mode....$.......|
+    00000000: 0e 1f ba 0e 00 b4 09 cd  21 b8 01 4c cd 21 54 68  |........!..L.!Th|
+    00000010: 69 73 20 70 72 6f 67 72  61 6d 20 63 61 6e 6e 6f  |is program canno|
+    00000020: 74 20 62 65 20 72 75 6e  20 69 6e 20 44 4f 53 20  |t be run in DOS |
+    00000030: 6d 6f 64 65 2e 0d 0d 0a  24 00 00 00 00 00 00 00  |mode....$.......|
 
 ### 'Rich' Header
 
