@@ -29,6 +29,7 @@ class PEdump
   VERSION    = Version::STRING
   MAX_ERRORS = 100
   MAX_IMAGE_IMPORT_DESCRIPTORS = 1000
+  MAX_EXPORT_NUMBER_OF_NAMES = 16384 # got 7977 in http://pedump.me/03ad7400080678c6b1984f995d36fd04
   GOOD_FUNCTION_NAME_RE = /\A[\x21-\x7f]+\Z/
 
   @@logger = nil
@@ -742,9 +743,9 @@ class PEdump
       ord2name = {}
       if x.names && x.names.any?
         n = x.NumberOfNames
-        if n > 2048
-          logger.warn "[?] NumberOfNames too big (#{x.NumberOfNames}), limiting to 2048"
-          n = 2048
+        if n > MAX_EXPORT_NUMBER_OF_NAMES
+          logger.warn "[?] NumberOfNames too big (#{x.NumberOfNames}), limiting to #{MAX_EXPORT_NUMBER_OF_NAMES}"
+          n = MAX_EXPORT_NUMBER_OF_NAMES
         end
         n.times do |i|
           ord2name[x.name_ordinals[i]] ||= []
