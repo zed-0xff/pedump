@@ -1,10 +1,7 @@
 class PEdump
   module Version
-    MAJOR = 0
-    MINOR = 5
-    PATCH = 2
+    STRING = File.read(File.join(File.dirname(File.dirname(File.dirname(__FILE__))), 'VERSION')).strip
+    MAJOR, MINOR, PATCH = STRING.split('.').map(&:to_i)
     BUILD = nil
-
-    STRING = [MAJOR, MINOR, PATCH, BUILD].compact.join('.')
   end
 end
