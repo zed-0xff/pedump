@@ -29,6 +29,7 @@ class PEdump
   VERSION    = Version::STRING
   MAX_ERRORS = 100
   MAX_IMAGE_IMPORT_DESCRIPTORS = 1000
+  GOOD_FUNCTION_NAME_RE = /\A[\x21-\x7f]+\Z/
 
   @@logger = nil
 
@@ -588,7 +589,7 @@ class PEdump
               else
                 hint = f.read(2).unpack('v').first
                 name = f.gets("\x00").chomp("\x00")
-                if !name.empty? && name !~ /\A[\x33-\x7f]+\Z/
+                if !name.empty? && name !~ GOOD_FUNCTION_NAME_RE
                   n_bad_names += 1
                   if n_bad_names > MAX_ERRORS
                     nil
