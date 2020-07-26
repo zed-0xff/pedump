@@ -33,7 +33,7 @@ class PEdump::CLI
   attr_accessor :data, :argv
 
   KNOWN_ACTIONS = (
-    %w'mz dos_stub rich pe ne data_directory sections tls security' +
+    %w'mz dos_stub rich pe ne te data_directory sections tls security' +
     %w'strings resources resource_directory imports exports version_info packer web console packer_only'
   ).map(&:to_sym)
 
@@ -135,7 +135,7 @@ class PEdump::CLI
       File.open(fname,'rb') do |f|
         @pedump = create_pedump fname
 
-        next if !@options[:force] && !@pedump.mz(f)
+        next if !@options[:force] && !@pedump.supported_file?(f)
 
         @actions.each do |action|
           case action
@@ -251,7 +251,7 @@ class PEdump::CLI
 
     f.rewind
 
-    # upload with progressbar
+    # upload with progress
     post_url = URI.parse(URL_BASE+'/')
     # UploadIO is from multipart-post
     uio = UploadIO.new(f, "application/octet-stream", File.basename(f.path))
@@ -458,6 +458,8 @@ class PEdump::CLI
       case data.first
       when PEdump::IMAGE_DATA_DIRECTORY
         dump_data_dir data
+      when PEdump::EFI_IMAGE_DATA_DIRECTORY
+        dump_efi_data_dir data
       when PEdump::IMAGE_SECTION_HEADER
         dump_sections data
       when PEdump::Resource
@@ -782,10 +784,15 @@ class PEdump::CLI
     end
   end
 
-
   def dump_data_dir data
     data.each do |row|
       printf "  %-12s  rva:0x%8x   size:0x %8x\n", row.type, row.va.to_i, row.size.to_i
+    end
+  end
+
+  def dump_efi_data_dir data
+    data.each_with_index do |row, idx|
+      printf "  %-12s  rva:0x%8x   size:0x %8x\n", PEdump::EFI_IMAGE_DATA_DIRECTORY::TYPES[idx], row.va.to_i, row.size.to_i
     end
   end
 

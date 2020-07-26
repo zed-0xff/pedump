@@ -405,7 +405,7 @@ class PEdump
       begin
         ne_offset = mz(f) && mz(f).lfanew
         if ne_offset.nil?
-          logger.fatal "[!] NULL NE offset (e_lfanew)."
+          logger.debug "[!] NULL NE offset (e_lfanew)."
           nil
         elsif ne_offset > f.size
           logger.fatal "[!] NE offset beyond EOF."

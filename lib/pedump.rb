@@ -17,6 +17,7 @@ require 'pedump/security'
 require 'pedump/packer'
 require 'pedump/ne'
 require 'pedump/ne/version_info'
+require 'pedump/te'
 
 # pedump.rb by zed_0xff
 #
@@ -31,6 +32,7 @@ class PEdump
   MAX_IMAGE_IMPORT_DESCRIPTORS = 1000
   MAX_EXPORT_NUMBER_OF_NAMES = 16384 # got 7977 in http://pedump.me/03ad7400080678c6b1984f995d36fd04
   GOOD_FUNCTION_NAME_RE = /\A[\x21-\x7f]+\Z/
+  SUPPORTED_SIGNATURES = ['MZ', 'ZM', 'VZ']
 
   @@logger = nil
 
@@ -318,13 +320,33 @@ class PEdump
     @@logger.level = oldlevel
   end
 
+  def supported_file? f=@io
+    pos = f.tell
+    sig = f.read(2)
+    f.seek(pos)
+    if SUPPORTED_SIGNATURES.include?(sig)
+      true
+    else
+      unless @not_supported_sig_warned
+        msg = "no supported signature. want: #{SUPPORTED_SIGNATURES.join("/")}, got: #{sig.inspect}"
+        if @force
+          logger.warn  "[?] #{msg}"
+        else
+          logger.error "[!] #{msg}. (not forced)"
+        end
+        @not_supported_sig_warned = true
+      end
+      false
+    end
+  end
+
   def mz f=@io
     @mz ||= f && MZ.read(f).tap do |mz|
       if mz.signature != 'MZ' && mz.signature != 'ZM'
         if @force
-          logger.warn  "[?] no MZ signature. want: 'MZ' or 'ZM', got: #{mz.signature.inspect}"
+          #logger.warn  "[?] no MZ signature. want: 'MZ' or 'ZM', got: #{mz.signature.inspect}"
         else
-          logger.error "[!] no MZ signature. want: 'MZ' or 'ZM', got: #{mz.signature.inspect}. (not forced)"
+          #logger.error "[!] no MZ signature. want: 'MZ' or 'ZM', got: #{mz.signature.inspect}. (not forced)"
           return nil
         end
       end
@@ -431,16 +453,22 @@ class PEdump
   end
 
   def _dump_handle h
-    return unless pe(h) # also calls mz(h)
-    rich_hdr h
-    resources h
-    imports h   # also calls tls(h)
-    exports h
-    packer h
+    if pe(h) # also calls mz(h)
+      rich_hdr h
+      resources h
+      imports h   # also calls tls(h)
+      exports h
+      packer h
+    elsif te(h)
+    end
   end
 
   def data_directory f=@io
-    pe(f) && pe.ioh && pe.ioh.DataDirectory
+    if pe(f)
+      pe.ioh && pe.ioh.DataDirectory
+    elsif te(f)
+      te.DataDirectory
+    end
   end
 
   def sections f=@io
@@ -448,6 +476,8 @@ class PEdump
       pe.section_table
     elsif ne(f)
       ne.segments
+    elsif te(f)
+      te.sections
     end
   end
   alias :section_table :sections
