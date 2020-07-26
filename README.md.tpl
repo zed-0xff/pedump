@@ -1,5 +1,9 @@
-pedump    [![Build Status](https://travis-ci.org/zed-0xff/pedump.png?branch=master)](https://travis-ci.org/zed-0xff/pedump) [![Dependency Status](https://gemnasium.com/zed-0xff/pedump.png)](https://gemnasium.com/zed-0xff/pedump)
+pedump    [![Build Status](https://travis-ci.org/zed-0xff/pedump.png?branch=master)](https://travis-ci.org/zed-0xff/pedump) [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/K3K81Z3W5)
 ======
+
+News
+----
+2020.07.25 - added EFI TE parsing; removed 'progressbar' gem dependency
 
 Description
 -----------
@@ -11,6 +15,7 @@ Supported formats:
  * win16 NE
  * win32 PE
  * win64 PE
+ * EFI TE
 
 Can dump:
 
