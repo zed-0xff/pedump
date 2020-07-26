@@ -1,5 +1,14 @@
-dist: trusty
 language: ruby
+
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+    - os: linux
+      dist: xenial
+    - os: linux
+      dist: bionic
+
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq upx-ucl p7zip
