@@ -5,7 +5,6 @@ gem 'rainbow'
 gem "awesome_print"
 gem "iostruct",       ">= 0.0.4"
 gem "multipart-post", ">= 2.0.0"
-gem "progressbar"
 gem "zhexdump",       ">= 0.0.2"
 
 group :development do

@@ -194,16 +194,14 @@ class PEdump::CLI
   end
 
   class ProgressProxy
-    attr_reader :pbar
-
-    def initialize file
-      @file = file
-      @pbar = ProgressBar.new("[.] uploading", file.size, STDOUT)
-      @pbar.try(:file_transfer_mode)
-      @pbar.bar_mark = '='
+    def initialize file, prefix = "[.] uploading: ", io = STDOUT
+      @file   = file
+      @io     = io
+      @prefix = prefix
     end
     def read *args
-      @pbar.inc args.first
+      @io.write("\r#{@prefix}#{@file.tell}/#{@file.size} ")
+      @io.flush
       @file.read *args
     end
     def method_missing *args
@@ -211,6 +209,10 @@ class PEdump::CLI
     end
     def respond_to? *args
       @file.respond_to?(args.first) || super(*args)
+    end
+
+    def finish!
+      @io.write("\r#{@prefix}#{@file.size}/#{@file.size} \n")
     end
   end
 
@@ -224,7 +226,6 @@ class PEdump::CLI
     require 'open-uri'
     require 'net/http'
     require 'net/http/post/multipart'
-    require 'progressbar'
 
     stdout_sync = STDOUT.sync
     STDOUT.sync = true
@@ -252,13 +253,13 @@ class PEdump::CLI
 
     # upload with progressbar
     post_url = URI.parse(URL_BASE+'/')
+    # UploadIO is from multipart-post
     uio = UploadIO.new(f, "application/octet-stream", File.basename(f.path))
     ppx = ProgressProxy.new(uio)
     req = Net::HTTP::Post::Multipart.new post_url.path, "file" => ppx
     res = Net::HTTP.start(post_url.host, post_url.port){ |http| http.request(req) }
-    ppx.pbar.finish
+    ppx.finish!
 
-    puts
     puts "[.] analyzing..."
 
     if (r=open(File.join(URL_BASE,md5,'analyze')).read) != "OK"
