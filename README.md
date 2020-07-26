@@ -1,6 +1,10 @@
 pedump    [![Build Status](https://travis-ci.org/zed-0xff/pedump.png?branch=master)](https://travis-ci.org/zed-0xff/pedump) [![Dependency Status](https://gemnasium.com/zed-0xff/pedump.png)](https://gemnasium.com/zed-0xff/pedump)
 ======
 
+News
+----
+2020.07.25 - added EFI TE parsing; removed 'progressbar' gem dependency
+
 Description
 -----------
 A pure ruby implementation of win32 PE binary files dumper.
@@ -11,6 +15,7 @@ Supported formats:
  * win16 NE
  * win32 PE
  * win64 PE
+ * EFI TE
 
 Can dump:
 
