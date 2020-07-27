@@ -30,6 +30,7 @@ int unpack(BYTE*packed_data, size_t packed_size, size_t unpacked_size){
     LZX_CONTEXT LZX;
     BYTE* unpacked_data = NULL;
     size_t decoded_size;
+    int r;
 
     bzero(&LZX, sizeof(LZX));
 
@@ -38,8 +39,9 @@ int unpack(BYTE*packed_data, size_t packed_size, size_t unpacked_size){
         return(ERR_NO_MEM);
     }
 
-    decoded_size = DecodeLZX(&LZX, packed_data, unpacked_data, packed_size, unpacked_size);
-    if ( decoded_size < 0 || decoded_size < unpacked_size ) {
+    r = DecodeLZX(&LZX, packed_data, unpacked_data, packed_size, unpacked_size);
+    decoded_size = (size_t)r;
+    if ( r < 0 || decoded_size < unpacked_size ) {
         free(unpacked_data);
         fprintf(stderr,"ERR_UNPACK\n");
         return(ERR_UNPACK);
