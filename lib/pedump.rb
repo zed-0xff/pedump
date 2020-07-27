@@ -646,7 +646,7 @@ class PEdump
                 nil
               else
                 hint = f.read(2).unpack('v').first
-                name = f.gets("\x00").chomp("\x00")
+                name = f.gets("\x00").to_s.chomp("\x00")
                 if !name.empty? && name !~ GOOD_FUNCTION_NAME_RE
                   n_bad_names += 1
                   if n_bad_names > MAX_ERRORS
