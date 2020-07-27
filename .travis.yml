@@ -14,7 +14,16 @@ jobs:
       dist: xenial
     - os: linux
       dist: bionic
+    - os: osx
+    - os: osx
+      osx_image: xcode12u
 
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq upx-ucl p7zip
+addons:
+  apt:
+    packages:
+      - p7zip
+      - upx-ucl
+  homebrew:
+    packages:
+      - p7zip
+      - upx
