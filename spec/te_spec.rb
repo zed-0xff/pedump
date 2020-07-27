@@ -25,4 +25,9 @@ describe te_fname do
 
     te.sections.size.should == 3
   end
+  it "should be TE and not PE or NE" do
+    sample.should be_te
+    sample.should_not be_pe
+    sample.should_not be_ne
+  end
 end

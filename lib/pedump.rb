@@ -320,26 +320,6 @@ class PEdump
     @@logger.level = oldlevel
   end
 
-  def supported_file? f=@io
-    pos = f.tell
-    sig = f.read(2)
-    f.seek(pos)
-    if SUPPORTED_SIGNATURES.include?(sig)
-      true
-    else
-      unless @not_supported_sig_warned
-        msg = "no supported signature. want: #{SUPPORTED_SIGNATURES.join("/")}, got: #{sig.inspect}"
-        if @force
-          logger.warn  "[?] #{msg}"
-        else
-          logger.error "[!] #{msg}. (not forced)"
-        end
-        @not_supported_sig_warned = true
-      end
-      false
-    end
-  end
-
   def mz f=@io
     @mz ||= f && MZ.read(f).tap do |mz|
       if mz.signature != 'MZ' && mz.signature != 'ZM'
@@ -482,12 +462,46 @@ class PEdump
   end
   alias :section_table :sections
 
-  def ne?
-    @pe ? false : (@ne ? true : (pe ? false : (ne ? true : false)))
+  def supported_file? f=@io
+    pos = f.tell
+    sig = f.read(2)
+    f.seek(pos)
+    if SUPPORTED_SIGNATURES.include?(sig)
+      true
+    else
+      unless @not_supported_sig_warned
+        msg = "no supported signature. want: #{SUPPORTED_SIGNATURES.join("/")}, got: #{sig.inspect}"
+        if @force
+          logger.warn  "[?] #{msg}"
+        else
+          logger.error "[!] #{msg}. (not forced)"
+        end
+        @not_supported_sig_warned = true
+      end
+      false
+    end
+  end
+
+  def _detect_format
+    return :pe if @pe
+    return :ne if @ne
+    return :te if @te
+    return :pe if pe()
+    return :ne if ne()
+    return :te if te()
+    nil
   end
 
   def pe?
-    @pe ? true  : (@ne ? false : (pe ? true : false ))
+    _detect_format() == :pe
+  end
+
+  def ne?
+    _detect_format() == :ne
+  end
+
+  def te?
+    _detect_format() == :te
   end
 
   ##############################################################################
