@@ -58,7 +58,7 @@ int main(int argc, char*argv[]){
     if(argc != 3){
         fprintf(stderr, "ASPack unLZX\n");
         fprintf(stderr, "usage: %s <packed_size> <unpacked_size>\n", argv[0]);
-        fprintf(stderr, "(data is read from stdin and written to stdout)\n", argv[0]);
+        fprintf(stderr, "(data is read from stdin and written to stdout)\n");
         return 1;
     }
 
