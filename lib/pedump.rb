@@ -382,6 +382,13 @@ class PEdump
   def va2file va, h={}
     return nil if va.nil?
 
+    va0 = va # save for log output of original addr
+    if pe?
+      # most common case, do nothing
+    elsif te?
+      va = va - te_shift()
+    end
+
     sections.each do |s|
       if (s.VirtualAddress...(s.VirtualAddress+s.VirtualSize)).include?(va)
         offset = va - s.VirtualAddress
@@ -413,9 +420,9 @@ class PEdump
     # TODO: not all VirtualAdresses == 0 case
 
     if h[:quiet]
-      logger.debug "[?] can't find file_offset of VA 0x#{va.to_i.to_s(16)} (quiet=true)"
+      logger.debug "[?] can't find file_offset of VA 0x#{va0.to_i.to_s(16)} (quiet=true)"
     else
-      logger.error "[?] can't find file_offset of VA 0x#{va.to_i.to_s(16)}"
+      logger.error "[?] can't find file_offset of VA 0x#{va0.to_i.to_s(16)}"
     end
     nil
   end
@@ -546,6 +553,8 @@ class PEdump
       pe_imports(f)
     elsif ne(f)
       ne(f).imports
+    else
+      []
     end
   end
 

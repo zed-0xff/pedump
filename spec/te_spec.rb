@@ -34,6 +34,15 @@ describe te_fname do
     sample.should_not be_pe
     sample.should_not be_ne
   end
+  it "should have te_shift = 352" do
+    sample.te_shift.should == 352
+  end
+end
+
+describe pe_fname do
+  it "should have te_shift = 0" do
+    sample.te_shift.should == 0
+  end
 end
 
 describe PEdump::EFI_TE_IMAGE_HEADER do

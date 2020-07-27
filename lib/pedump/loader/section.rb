@@ -10,15 +10,16 @@ class PEdump::Loader
         @hdr = x.dup
       end
       @data = EMPTY_DATA.dup
+      @delta = args[:delta] || 0
       @deferred_load_io   = args[:deferred_load_io]
-      @deferred_load_pos  = args[:deferred_load_pos]  || (@hdr && @hdr.PointerToRawData)
+      @deferred_load_pos  = args[:deferred_load_pos]  || (@hdr && (@hdr.PointerToRawData - @delta))
       @deferred_load_size = args[:deferred_load_size] || (@hdr && @hdr.SizeOfRawData)
       @image_base = args[:image_base] || 0
     end
 
     def name;  @hdr.Name; end
-    def va  ;  @hdr.VirtualAddress + @image_base; end
-    def rva ;  @hdr.VirtualAddress; end
+    def va  ;  @hdr.VirtualAddress + @image_base - @delta; end
+    def rva ;  @hdr.VirtualAddress - @delta; end
     def vsize; @hdr.VirtualSize; end
     def flags; @hdr.Characteristics; end
     def flags= f; @hdr.Characteristics= f; end
@@ -51,6 +52,7 @@ class PEdump::Loader
         @data.size > 0 ? @data.size.to_s(16) : (@deferred_load_io ? "<defer>" : 0)
       ]
       r << (" dlpos=%8x" % @deferred_load_pos) if @deferred_load_pos
+      r << (" delta=%3x" % @delta) if @delta != 0
       r << ">"
     end
   end

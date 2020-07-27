@@ -15,7 +15,15 @@ class PEdump::Loader
 
   # shortcuts
   alias :pe :pe_hdr
-  def ep; @pe_hdr.ioh.AddressOfEntryPoint; end
+
+  def ep
+    if @pe_hdr
+      @pe_hdr.try(:ioh).try(:AddressOfEntryPoint)
+    elsif @te_hdr
+      @te_hdr.AddressOfEntryPoint - @delta
+    end
+  end
+
   def ep= v; @pe_hdr.ioh.AddressOfEntryPoint=v; end
 
   ########################################################################
@@ -23,12 +31,24 @@ class PEdump::Loader
   ########################################################################
 
   def initialize io = nil, params = {}
+    # @delta is for EFI TE loading, based on https://github.com/gdbinit/TELoader/blob/master/teloader.cpp
+    @delta = 0
     @pedump = PEdump.new(io, params)
     if io
       @mz_hdr     = @pedump.mz
       @dos_stub   = @pedump.dos_stub
       @pe_hdr     = @pedump.pe
-      @image_base = params[:image_base] || @pe_hdr.try(:ioh).try(:ImageBase) || 0
+      @te_hdr     = @pedump.te
+
+      @image_base = params[:image_base]
+      if @pe_hdr
+        @image_base ||= @pe_hdr.try(:ioh).try(:ImageBase)
+      elsif @te_hdr
+        @image_base ||= @te_hdr.ImageBase
+        @delta = @pedump.te_shift
+      end
+      @image_base ||= 0
+
       load_sections @pedump.sections, io
     end
     @find_limit = params[:find_limit] || DEFAULT_FIND_LIMIT
@@ -38,7 +58,7 @@ class PEdump::Loader
     if section_hdrs.is_a?(Array)
       @sections = section_hdrs.map do |x|
         raise "unknown section hdr: #{x.inspect}" unless x.is_a?(PEdump::IMAGE_SECTION_HEADER)
-        Section.new(x, :deferred_load_io => f, :image_base => @image_base )
+        Section.new(x, :deferred_load_io => f, :image_base => @image_base, :delta => @delta )
       end
       if f.respond_to?(:seek) && f.respond_to?(:read)
         #
@@ -249,10 +269,12 @@ class PEdump::Loader
   def names
     return @names if @names
     @names = {}
-    if oep = @pe_hdr.try(:ioh).try(:AddressOfEntryPoint)
-      oep += @image_base
-      @names[oep] = 'start'
+
+    oep = ep()
+    if oep
+      @names[oep + @image_base] = 'start'
     end
+
     _parse_imports
     _parse_exports
     #TODO: debug info

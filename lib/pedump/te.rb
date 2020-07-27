@@ -3,6 +3,7 @@ class PEdump
   # http://wiki.phoenix.com/wiki/index.php/EFI_TE_IMAGE_HEADER
   # https://formats.kaitai.io/uefi_te/index.html
   # http://ho.ax/tag/efi/
+  # https://github.com/gdbinit/TELoader
   
   EFI_IMAGE_DATA_DIRECTORY = IOStruct.new( "VV", :va, :size )
   EFI_IMAGE_DATA_DIRECTORY::TYPES = %w'BASERELOC DEBUG'
@@ -35,6 +36,14 @@ class PEdump
     end
   end
   TE = EFI_TE_IMAGE_HEADER
+
+  def te_shift
+    if @te
+      @te.StrippedSize - EFI_TE_IMAGE_HEADER::REAL_SIZE
+    else
+      0
+    end
+  end
 
   def te f=@io
     return @te if defined?(@te)
