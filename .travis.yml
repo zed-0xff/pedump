@@ -15,7 +15,6 @@ jobs:
     - os: linux
       dist: bionic
     - os: osx
-    - os: osx
       osx_image: xcode12u
 
 addons:

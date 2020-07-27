@@ -3,6 +3,7 @@ pedump    [![Build Status](https://travis-ci.org/zed-0xff/pedump.png?branch=mast
 
 News
 ----
+2020.07.26 - now travis autotests run on ARM and OSX too!
 2020.07.25 - added EFI TE parsing; removed 'progressbar' gem dependency
 
 Description
