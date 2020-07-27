@@ -21,7 +21,7 @@ class PEdump
     :ImageBase,
     :DataDirectory # readed manually: EFI_IMAGE_DATA_DIRECTORY DataDirectory[2]
 
-    SIZE = superclass::SIZE + EFI_IMAGE_DATA_DIRECTORY::SIZE * 2
+    REAL_SIZE = SIZE + EFI_IMAGE_DATA_DIRECTORY::SIZE * 2
 
     attr_accessor :sections
 

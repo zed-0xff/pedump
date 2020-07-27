@@ -10,8 +10,9 @@ describe te_fname do
     sample.te.Signature.should == ('Z'.ord << 8) + 'V'.ord
   end
   it "should be equal to source efi" do
-    #efi = PEdump.new(open(File.join(File.dirname(sample.io.path), pe_fname)))
-    #pe = efi.pe
+    efi = PEdump.new(open(File.join(File.dirname(sample.io.path), pe_fname)))
+    pe = efi.pe
+
     te = sample.te
     te.Machine.should              ==  0x8664
     te.NumberOfSections.should     ==  3
@@ -24,6 +25,9 @@ describe te_fname do
     te.DataDirectory.size.should == 2
 
     te.sections.size.should == 3
+    te.sections.each_with_index do |sec,idx|
+      sec.should == pe.sections[idx]
+    end
   end
   it "should be TE and not PE or NE" do
     sample.should be_te
@@ -33,7 +37,7 @@ describe te_fname do
 end
 
 describe PEdump::EFI_TE_IMAGE_HEADER do
-  it "should have size = 40" do
-    PEdump::EFI_TE_IMAGE_HEADER::SIZE.should == 40
+  it "should have real size = 40" do
+    PEdump::EFI_TE_IMAGE_HEADER::REAL_SIZE.should == 40
   end
 end
