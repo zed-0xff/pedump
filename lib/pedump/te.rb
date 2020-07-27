@@ -4,6 +4,12 @@ class PEdump
   # https://formats.kaitai.io/uefi_te/index.html
   # http://ho.ax/tag/efi/
   
+  EFI_IMAGE_DATA_DIRECTORY = IOStruct.new( "VV", :va, :size )
+  EFI_IMAGE_DATA_DIRECTORY::TYPES = %w'BASERELOC DEBUG'
+  EFI_IMAGE_DATA_DIRECTORY::TYPES.each_with_index do |type,idx|
+    EFI_IMAGE_DATA_DIRECTORY.const_set(type,idx)
+  end
+
   class EFI_TE_IMAGE_HEADER < IOStruct.new 'vvCCvVVQ',
     :Signature,
     :Machine,
@@ -14,6 +20,8 @@ class PEdump
     :BaseOfCode,
     :ImageBase,
     :DataDirectory # readed manually: EFI_IMAGE_DATA_DIRECTORY DataDirectory[2]
+
+    SIZE = superclass::SIZE + EFI_IMAGE_DATA_DIRECTORY::SIZE * 2
 
     attr_accessor :sections
 
@@ -27,12 +35,6 @@ class PEdump
     end
   end
   TE = EFI_TE_IMAGE_HEADER
-
-  EFI_IMAGE_DATA_DIRECTORY = IOStruct.new( "VV", :va, :size )
-  EFI_IMAGE_DATA_DIRECTORY::TYPES = %w'BASERELOC DEBUG'
-  EFI_IMAGE_DATA_DIRECTORY::TYPES.each_with_index do |type,idx|
-    EFI_IMAGE_DATA_DIRECTORY.const_set(type,idx)
-  end
 
   def te f=@io
     return @te if defined?(@te)

@@ -31,3 +31,9 @@ describe te_fname do
     sample.should_not be_ne
   end
 end
+
+describe PEdump::EFI_TE_IMAGE_HEADER do
+  it "should have size = 40" do
+    PEdump::EFI_TE_IMAGE_HEADER::SIZE.should == 40
+  end
+end
