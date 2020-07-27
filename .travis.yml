@@ -1,4 +1,9 @@
 language: ruby
+os: linux
+
+arch:
+  - amd64
+  - arm64
 
 matrix:
   include:
