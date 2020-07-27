@@ -272,6 +272,10 @@ class PEdump
     def self.from_dos_stub stub
       key = stub[stub.index('Rich')+4,4]
       start_idx = stub.index(key.xor('DanS'))
+      unless start_idx
+        PEdump.logger.error "[!] cannot find rich_hdr start_idx"
+        return nil
+      end
       end_idx   = stub.index('Rich')+8
       if stub[end_idx..-1].tr("\x00",'') != ''
         t = stub[end_idx..-1]
