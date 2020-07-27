@@ -1,11 +1,12 @@
 language: ruby
 os: linux
+dist: bionic
 
 arch:
   - amd64
   - arm64
 
-matrix:
+jobs:
   include:
     - os: linux
       dist: trusty
