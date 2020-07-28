@@ -3,6 +3,8 @@ pedump    [![Build Status](https://travis-ci.org/zed-0xff/pedump.png?branch=mast
 
 News
 ----
+2020.07.28 - 0.6.1; better RICH HDR parsing/output
+2020.07.27 - 0.6.0
 2020.07.26 - now travis autotests run on ARM and OSX too!
 2020.07.25 - added EFI TE parsing; removed 'progressbar' gem dependency
 
@@ -127,14 +129,14 @@ Usage
 
     === RICH Header ===
     
-        LIB_ID        VERSION        TIMES_USED   
-       149  95      21022  521e         9   9
-         1   1          0     0       367 16f
-       147  93      21022  521e        29  1d
-       132  84      21022  521e       129  81
-       131  83      21022  521e        25  19
-       148  94      21022  521e         1   1
-       145  91      21022  521e         1   1
+       ID   VER         COUNT  DESCRIPTION
+       95  521e             9  [ASM] VS2008 build 21022
+        1     0           367  [---] Unmarked objects
+       93  521e            29  [IMP] VS2008 build 21022
+       84  521e           129  [C++] VS2008 build 21022
+       83  521e            25  [ C ] VS2008 build 21022
+       94  521e             1  [RES] VS2008 build 21022
+       91  521e             1  [LNK] VS2008 build 21022
 
 ### PE Header
 

@@ -3,6 +3,8 @@ pedump    [![Build Status](https://travis-ci.org/zed-0xff/pedump.png?branch=mast
 
 News
 ----
+2020.07.28 - 0.6.1; better RICH HDR parsing/output
+2020.07.27 - 0.6.0
 2020.07.26 - now travis autotests run on ARM and OSX too!
 2020.07.25 - added EFI TE parsing; removed 'progressbar' gem dependency
 
