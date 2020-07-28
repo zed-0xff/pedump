@@ -261,7 +261,7 @@ class PEdump
 
   # http://ntcore.com/files/richsign.htm
   class RichHdr < String
-    attr_accessor :offset, :key # xor key
+    attr_accessor :offset, :skip, :key # xor key
 
     class Entry < Struct.new(:version,:id,:times)
       def inspect
@@ -270,11 +270,20 @@ class PEdump
     end
 
     def self.from_dos_stub stub
+      #stub.hexdump
       key = stub[stub.index('Rich')+4,4]
       start_idx = stub.index(key.xor('DanS'))
-      unless start_idx
-        PEdump.logger.error "[!] cannot find rich_hdr start_idx"
-        return nil
+      skip = 0
+      if start_idx
+        skip = 4
+      else
+        PEdump.logger.warn "[?] cannot find rich_hdr start_idx, using heuristics"
+        start_idx = stub.index("$\x00\x00\x00\x00\x00\x00\x00")
+        unless start_idx
+          PEdump.logger.warn "[?] heuristics failed :("
+          return nil
+        end
+        start_idx += 8
       end
       end_idx   = stub.index('Rich')+8
       if stub[end_idx..-1].tr("\x00",'') != ''
@@ -283,14 +292,16 @@ class PEdump
         PEdump.logger.error "[!] non-zero dos stub after rich_hdr: #{t.inspect}"
         return nil
       end
+      #stub[start_idx, end_idx-start_idx].hexdump
       RichHdr.new(stub[start_idx, end_idx-start_idx]).tap do |x|
         x.key = key
         x.offset = stub.offset + start_idx
+        x.skip = skip
       end
     end
 
     def dexor
-      self[4..-9].sub(/\A(#{Regexp::escape(key)}){3}/,'').xor(key)
+      self[skip..-9].sub(/\A(#{Regexp::escape(key)}){3}/,'').xor(key)
     end
 
     def decode

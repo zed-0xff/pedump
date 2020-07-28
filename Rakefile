@@ -74,17 +74,20 @@ namespace :test do
   end
 end
 
-def check_file url, prefix=nil
+def check_file url, params = {}
   require 'digest/md5'
   require 'open-uri'
 
+  params[:min_size] ||= 80_000
+
   STDOUT.sync = true
+  prefix = params[:prefix]
   fname = File.join 'data', (prefix ? "#{prefix}-" : '') + File.basename(url)
   existing_md5 = File.exist?(fname) ? Digest::MD5.file(fname).hexdigest : ''
   print "[.] fetching #{url} .. "
   remote_data  = open(url).read.force_encoding('cp1252').encode('utf-8')
   puts "#{remote_data.size} bytes"
-  raise "too small remote data (#{remote_data.size})" if remote_data.size < 80_000
+  raise "too small remote data (#{remote_data.size})" if remote_data.size < params[:min_size]
   remote_md5   = Digest::MD5.hexdigest(remote_data)
   if remote_md5 == existing_md5
     puts "[.] same as local"
@@ -95,13 +98,45 @@ def check_file url, prefix=nil
   end
 end
 
+RICH_IDS_URL = "https://raw.githubusercontent.com/dishather/richprint/master/comp_id.txt"
+
+namespace :rich do
+  desc "update rich comp_id db from net"
+  task :update do
+    check_file RICH_IDS_URL, :min_size => 30_000
+  end
+
+  desc "convert"
+  task :convert do
+    result = [
+      "class PEdump",
+      "  # data from #{RICH_IDS_URL}",
+      "  RICH_IDS = {"
+    ]
+    n = 0
+    t0 = Time.now
+    File.readlines(File.join("data", File.basename(RICH_IDS_URL))).each do |line|
+      line.strip!
+      next if line.empty? || line[0] == '#'
+      comp_id, desc = line.split(nil, 2)
+      raise unless comp_id =~ /\A[0-9a-fA-F]+\Z/
+      result << "    0x#{comp_id} => #{desc.inspect},"
+      n += 1
+    end
+    result << "  }"
+    result << "end"
+    printf "[.] parsed %d definitions in %6.3fs\n", n, Time.now-t0
+    File.write("lib/pedump/rich.rb", result.join("\n") + "\n")
+  end
+end
+
 namespace :sigs do
   desc "update packers db from net"
   task :update do
     require './lib/pedump/packer'
     check_file "http://research.pandasecurity.com/blogs/images/userdb.txt"
     check_file "http://fuu.googlecode.com/svn/trunk/src/x86/Tools/Signaturesdb/signatures.txt"
-    check_file "http://handlers.sans.edu/jclausing/userdb.txt", "jc"
+    check_file "http://handlers.sans.edu/jclausing/userdb.txt", :prefix => "jc"
   end
 
   desc "convert txt2bin"

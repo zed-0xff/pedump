@@ -1,5 +1,6 @@
 require 'pedump'
 require 'pedump/packer'
+require 'pedump/rich'
 require 'pedump/version_info'
 require 'optparse'
 
@@ -798,10 +799,12 @@ class PEdump::CLI
 
   def dump_rich_hdr data
     if decoded = data.decode
-      puts "    LIB_ID        VERSION        TIMES_USED   "
+      puts "   ID   VER         COUNT  DESCRIPTION"
       decoded.each do |row|
-        printf " %5d  %2x    %7d  %4x   %7d %3x\n",
-          row.id, row.id, row.version, row.version, row.times, row.times
+#        printf " %5d  %4x    %7d  %4x   %12d %8x\n",
+#          row.id, row.id, row.version, row.version, row.times, row.times
+        printf " %4x  %4x  %12d  %s\n",
+          row.id, row.version, row.times, ::PEdump::RICH_IDS[(row.id<<16) + row.version]
       end
     else
       puts "# raw:"

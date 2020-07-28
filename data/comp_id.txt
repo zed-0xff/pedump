@@ -1,0 +1,776 @@
+# Format is:
+# <comp.id> Description
+
+# I use the following extra marks in description:
+# [ C ] - obj file produced by C compiler
+# [C++] - obj file produced by C++ compiler
+# [RES] - obj file produced by CVTRES converter
+# [IMP] - DLL import record in library file
+# [EXP] - DLL export record in library file
+# [ASM] - obj file produced by assembler
+# (*) at the end marks entries that are interpolated/calculated.
+
+# Objects without @comp.id are collected under this record
+00010000 [---] Unmarked objects
+00000000 [---] Unmarked objects (old)
+
+# MSVS2019 v16.6.2
+01047086 [ C ] VS2019 v16.6.2 build 28806
+01037086 [ASM] VS2019 v16.6.2 build 28806
+01057086 [C++] VS2019 v16.6.2 build 28806
+00ff7086 [RES] VS2019 v16.6.2 build 28806
+01027086 [LNK] VS2019 v16.6.2 build 28806
+01007086 [EXP] VS2019 v16.6.2 build 28806
+01017086 [IMP] VS2019 v16.6.2 build 28806
+
+# MSVS2019 v16.6.0
+01047085 [ C ] VS2019 v16.6.0 build 28805
+01037085 [ASM] VS2019 v16.6.0 build 28805
+01057085 [C++] VS2019 v16.6.0 build 28805
+00ff7085 [RES] VS2019 v16.6.0 build 28805
+01027085 [LNK] VS2019 v16.6.0 build 28805
+01007085 [EXP] VS2019 v16.6.0 build 28805
+01017085 [IMP] VS2019 v16.6.0 build 28805
+
+# MSVS2019 v16.5.5 (also 16.5.4)
+01046fc6 [ C ] VS2019 v16.5.5 build 28614
+01036fc6 [ASM] VS2019 v16.5.5 build 28614
+01056fc6 [C++] VS2019 v16.5.5 build 28614
+00ff6fc6 [RES] VS2019 v16.5.5 build 28614
+01026fc6 [LNK] VS2019 v16.5.5 build 28614
+01006fc6 [EXP] VS2019 v16.5.5 build 28614
+01016fc6 [IMP] VS2019 v16.5.5 build 28614
+
+# Visual Studio 2019 version 16.5.2 (values are interpolated)
+# source: https://walbourn.github.io/vs-2019-update-5/
+01046fc4 [ C ] VS2019 v16.5.2 build 28612 (*)
+01036fc4 [ASM] VS2019 v16.5.2 build 28612 (*)
+01056fc4 [C++] VS2019 v16.5.2 build 28612 (*)
+00ff6fc4 [RES] VS2019 v16.5.2 build 28612 (*)
+01026fc4 [LNK] VS2019 v16.5.2 build 28612 (*)
+01016fc4 [IMP] VS2019 v16.5.2 build 28612 (*)
+01006fc4 [EXP] VS2019 v16.5.2 build 28612 (*)
+
+# Visual Studio 2019 version 16.5.1 (values are interpolated)
+01046fc3 [ C ] VS2019 v16.5.1 build 28611 (*)
+01036fc3 [ASM] VS2019 v16.5.1 build 28611 (*)
+01056fc3 [C++] VS2019 v16.5.1 build 28611 (*)
+00ff6fc3 [RES] VS2019 v16.5.1 build 28611 (*)
+01026fc3 [LNK] VS2019 v16.5.1 build 28611 (*)
+01016fc3 [IMP] VS2019 v16.5.1 build 28611 (*)
+01006fc3 [EXP] VS2019 v16.5.1 build 28611 (*)
+
+# Visual Studio 2019 version 16.5.0 (values are interpolated)
+# source: https://walbourn.github.io/vs-2019-update-5/
+01046fc2 [ C ] VS2019 v16.5.0 build 28610 (*)
+01036fc2 [ASM] VS2019 v16.5.0 build 28610 (*)
+01056fc2 [C++] VS2019 v16.5.0 build 28610 (*)
+00ff6fc2 [RES] VS2019 v16.5.0 build 28610 (*)
+01026fc2 [LNK] VS2019 v16.5.0 build 28610 (*)
+01016fc2 [IMP] VS2019 v16.5.0 build 28610 (*)
+01006fc2 [EXP] VS2019 v16.5.0 build 28610 (*)
+
+# MSVS2019 v16.4.6 (values are interpolated)
+# source: https://walbourn.github.io/vs-2019-update-4/
+01046e9f [ C ] VS2019 v16.4.6 build 28319 (*)
+01036e9f [ASM] VS2019 v16.4.6 build 28319 (*)
+01056e9f [C++] VS2019 v16.4.6 build 28319 (*)
+00ff6e9f [RES] VS2019 v16.4.6 build 28319 (*)
+01026e9f [LNK] VS2019 v16.4.6 build 28319 (*)
+01006e9f [EXP] VS2019 v16.4.6 build 28319 (*)
+01016e9f [IMP] VS2019 v16.4.6 build 28319 (*)
+
+# MSVS2019 v16.4.4 (values are interpolated)
+# source: https://walbourn.github.io/vs-2019-update-4/
+01046e9c [ C ] VS2019 v16.4.4 build 28316 (*)
+01036e9c [ASM] VS2019 v16.4.4 build 28316 (*)
+01056e9c [C++] VS2019 v16.4.4 build 28316 (*)
+00ff6e9c [RES] VS2019 v16.4.4 build 28316 (*)
+01026e9c [LNK] VS2019 v16.4.4 build 28316 (*)
+01006e9c [EXP] VS2019 v16.4.4 build 28316 (*)
+01016e9c [IMP] VS2019 v16.4.4 build 28316 (*)
+
+# MSVS2019 v16.4.3
+01046e9b [ C ] VS2019 v16.4.3 build 28315
+01036e9b [ASM] VS2019 v16.4.3 build 28315
+01056e9b [C++] VS2019 v16.4.3 build 28315
+00ff6e9b [RES] VS2019 v16.4.3 build 28315
+01026e9b [LNK] VS2019 v16.4.3 build 28315
+01006e9b [EXP] VS2019 v16.4.3 build 28315
+01016e9b [IMP] VS2019 v16.4.3 build 28315
+
+# Visual Studio 2019 version 16.4.0 (values are interpolated)
+01046e9a [ C ] VS2019 v16.4.0 build 28314 (*)
+01036e9a [ASM] VS2019 v16.4.0 build 28314 (*)
+01056e9a [C++] VS2019 v16.4.0 build 28314 (*)
+00ff6e9a [RES] VS2019 v16.4.0 build 28314 (*)
+01026e9a [LNK] VS2019 v16.4.0 build 28314 (*)
+01016e9a [IMP] VS2019 v16.4.0 build 28314 (*)
+01006e9a [EXP] VS2019 v16.4.0 build 28314 (*)
+
+# Visual Studio 2019 version 16.3.2 (values are interpolated)
+01046dc9 [ C ] VS2019 v16.3.2 build 28105 (*)
+01036dc9 [ASM] VS2019 v16.3.2 build 28105 (*)
+01056dc9 [C++] VS2019 v16.3.2 build 28105 (*)
+00ff6dc9 [RES] VS2019 v16.3.2 build 28105 (*)
+01026dc9 [LNK] VS2019 v16.3.2 build 28105 (*)
+01016dc9 [IMP] VS2019 v16.3.2 build 28105 (*)
+01006dc9 [EXP] VS2019 v16.3.2 build 28105 (*)
+
+# Visual Studio 2019 version 16.2.3 (values are interpolated)
+01046d01 [ C ] VS2019 v16.2.3 build 27905 (*)
+01036d01 [ASM] VS2019 v16.2.3 build 27905 (*)
+01056d01 [C++] VS2019 v16.2.3 build 27905 (*)
+00ff6d01 [RES] VS2019 v16.2.3 build 27905 (*)
+01026d01 [LNK] VS2019 v16.2.3 build 27905 (*)
+01016d01 [IMP] VS2019 v16.2.3 build 27905 (*)
+01006d01 [EXP] VS2019 v16.2.3 build 27905 (*)
+
+# Visual Studio 2019 version 16.1.2 (values are interpolated)
+01046c36 [ C ] VS2019 v16.1.2 build 27702 (*)
+01036c36 [ASM] VS2019 v16.1.2 build 27702 (*)
+01056c36 [C++] VS2019 v16.1.2 build 27702 (*)
+00ff6c36 [RES] VS2019 v16.1.2 build 27702 (*)
+01026c36 [LNK] VS2019 v16.1.2 build 27702 (*)
+01016c36 [IMP] VS2019 v16.1.2 build 27702 (*)
+01006c36 [EXP] VS2019 v16.1.2 build 27702 (*)
+
+# MSVS2019 v16.0.0
+01046b74 [ C ] VS2019 v16.0.0 build 27508
+01036b74 [ASM] VS2019 v16.0.0 build 27508
+01056b74 [C++] VS2019 v16.0.0 build 27508
+00ff6b74 [RES] VS2019 v16.0.0 build 27508
+01026b74 [LNK] VS2019 v16.0.0 build 27508
+01006b74 [EXP] VS2019 v16.0.0 build 27508
+01016b74 [IMP] VS2019 v16.0.0 build 27508
+
+# Visual Studio 2017 version 15.9.11 (values are interpolated)
+01046996 [ C ] VS2017 v15.9.11 build 27030 (*)
+01036996 [ASM] VS2017 v15.9.11 build 27030 (*)
+01056996 [C++] VS2017 v15.9.11 build 27030 (*)
+00ff6996 [RES] VS2017 v15.9.11 build 27030 (*)
+01026996 [LNK] VS2017 v15.9.11 build 27030 (*)
+01016996 [IMP] VS2017 v15.9.11 build 27030 (*)
+01006996 [EXP] VS2017 v15.9.11 build 27030 (*)
+
+# Visual Studio 2017 version 15.9.7 (values are interpolated)
+01046993 [ C ] VS2017 v15.9.7 build 27027 (*)
+01036993 [ASM] VS2017 v15.9.7 build 27027 (*)
+01056993 [C++] VS2017 v15.9.7 build 27027 (*)
+00ff6993 [RES] VS2017 v15.9.7 build 27027 (*)
+01026993 [LNK] VS2017 v15.9.7 build 27027 (*)
+01016993 [IMP] VS2017 v15.9.7 build 27027 (*)
+01006993 [EXP] VS2017 v15.9.7 build 27027 (*)
+
+# Visual Studio 2017 version 15.9.5 (values are interpolated)
+01046992 [ C ] VS2017 v15.9.5 build 27026 (*)
+01036992 [ASM] VS2017 v15.9.5 build 27026 (*)
+01056992 [C++] VS2017 v15.9.5 build 27026 (*)
+00ff6992 [RES] VS2017 v15.9.5 build 27026 (*)
+01026992 [LNK] VS2017 v15.9.5 build 27026 (*)
+01016992 [IMP] VS2017 v15.9.5 build 27026 (*)
+01006992 [EXP] VS2017 v15.9.5 build 27026 (*)
+
+# Visual Studio 2017 version 15.9.4 (values are interpolated)
+01046991 [ C ] VS2017 v15.9.4 build 27025 (*)
+01036991 [ASM] VS2017 v15.9.4 build 27025 (*)
+01056991 [C++] VS2017 v15.9.4 build 27025 (*)
+00ff6991 [RES] VS2017 v15.9.4 build 27025 (*)
+01026991 [LNK] VS2017 v15.9.4 build 27025 (*)
+01016991 [IMP] VS2017 v15.9.4 build 27025 (*)
+01006991 [EXP] VS2017 v15.9.4 build 27025 (*)
+
+# Visual Studio 2017 version 15.9.1 (values are interpolated)
+0104698f [ C ] VS2017 v15.9.1 build 27023 (*)
+0103698f [ASM] VS2017 v15.9.1 build 27023 (*)
+0105698f [C++] VS2017 v15.9.1 build 27023 (*)
+00ff698f [RES] VS2017 v15.9.1 build 27023 (*)
+0102698f [LNK] VS2017 v15.9.1 build 27023 (*)
+0101698f [IMP] VS2017 v15.9.1 build 27023 (*)
+0100698f [EXP] VS2017 v15.9.1 build 27023 (*)
+
+# Visual Studio 2017 version 15.8.5 (values are interpolated)
+# source: https://walbourn.github.io/vs-2017-15-8-update/
+0104686c [ C ] VS2017 v15.8.5 build 26732 (*)
+0103686c [ASM] VS2017 v15.8.5 build 26732 (*)
+0105686c [C++] VS2017 v15.8.5 build 26732 (*)
+00ff686c [RES] VS2017 v15.8.5 build 26732 (*)
+0102686c [LNK] VS2017 v15.8.5 build 26732 (*)
+0101686c [IMP] VS2017 v15.8.5 build 26732 (*)
+0100686c [EXP] VS2017 v15.8.5 build 26732 (*)
+
+# Visual Studio 2017 version 15.8.9 (sic!) (values are interpolated)
+# source: https://walbourn.github.io/vs-2017-15-8-update/
+0104686a [ C ] VS2017 v15.8.9? build 26730 (*)
+0103686a [ASM] VS2017 v15.8.9? build 26730 (*)
+0105686a [C++] VS2017 v15.8.9? build 26730 (*)
+00ff686a [RES] VS2017 v15.8.9? build 26730 (*)
+0102686a [LNK] VS2017 v15.8.9? build 26730 (*)
+0101686a [IMP] VS2017 v15.8.9? build 26730 (*)
+0100686a [EXP] VS2017 v15.8.9? build 26730 (*)
+
+# Visual Studio 2017 version 15.8.4 (values are interpolated)
+# source: https://walbourn.github.io/vs-2017-15-8-update/
+01046869 [ C ] VS2017 v15.8.4 build 26729 (*)
+01036869 [ASM] VS2017 v15.8.4 build 26729 (*)
+01056869 [C++] VS2017 v15.8.4 build 26729 (*)
+00ff6869 [RES] VS2017 v15.8.4 build 26729 (*)
+01026869 [LNK] VS2017 v15.8.4 build 26729 (*)
+01016869 [IMP] VS2017 v15.8.4 build 26729 (*)
+01006869 [EXP] VS2017 v15.8.4 build 26729 (*)
+
+# Visual Studio 2017 version 15.8.0 (values are interpolated)
+# source: https://walbourn.github.io/vs-2017-15-8-update/
+01046866 [ C ] VS2017 v15.8.0 build 26726 (*)
+01036866 [ASM] VS2017 v15.8.0 build 26726 (*)
+01056866 [C++] VS2017 v15.8.0 build 26726 (*)
+00ff6866 [RES] VS2017 v15.8.0 build 26726 (*)
+01026866 [LNK] VS2017 v15.8.0 build 26726 (*)
+01016866 [IMP] VS2017 v15.8.0 build 26726 (*)
+01006866 [EXP] VS2017 v15.8.0 build 26726 (*)
+
+# Visual Studio 2017 version 15.7.5 (values are interpolated)
+01046741 [ C ] VS2017 v15.7.5 build 26433 (*)
+01036741 [ASM] VS2017 v15.7.5 build 26433 (*)
+01056741 [C++] VS2017 v15.7.5 build 26433 (*)
+00ff6741 [RES] VS2017 v15.7.5 build 26433 (*)
+01026741 [LNK] VS2017 v15.7.5 build 26433 (*)
+01016741 [IMP] VS2017 v15.7.5 build 26433 (*)
+01006741 [EXP] VS2017 v15.7.5 build 26433 (*)
+
+# Visual Studio 2017 version 15.7.4 (values are interpolated)
+# source: https://walbourn.github.io/vs-2017-15-7-update/
+0104673f [ C ] VS2017 v15.7.4 build 26431 (*)
+0103673f [ASM] VS2017 v15.7.4 build 26431 (*)
+0105673f [C++] VS2017 v15.7.4 build 26431 (*)
+00ff673f [RES] VS2017 v15.7.4 build 26431 (*)
+0102673f [LNK] VS2017 v15.7.4 build 26431 (*)
+0101673f [IMP] VS2017 v15.7.4 build 26431 (*)
+0100673f [EXP] VS2017 v15.7.4 build 26431 (*)
+
+# Visual Studio 2017 version 15.7.3 (values are interpolated)
+0104673e [ C ] VS2017 v15.7.3 build 26430 (*)
+0103673e [ASM] VS2017 v15.7.3 build 26430 (*)
+0105673e [C++] VS2017 v15.7.3 build 26430 (*)
+00ff673e [RES] VS2017 v15.7.3 build 26430 (*)
+0102673e [LNK] VS2017 v15.7.3 build 26430 (*)
+0101673e [IMP] VS2017 v15.7.3 build 26430 (*)
+0100673e [EXP] VS2017 v15.7.3 build 26430 (*)
+
+# Visual Studio 2017 version 15.7.2 (values are interpolated)
+0104673d [ C ] VS2017 v15.7.2 build 26429 (*)
+0103673d [ASM] VS2017 v15.7.2 build 26429 (*)
+0105673d [C++] VS2017 v15.7.2 build 26429 (*)
+00ff673d [RES] VS2017 v15.7.2 build 26429 (*)
+0102673d [LNK] VS2017 v15.7.2 build 26429 (*)
+0101673d [IMP] VS2017 v15.7.2 build 26429 (*)
+0100673d [EXP] VS2017 v15.7.2 build 26429 (*)
+
+# Visual Studio 2017 version 15.7.1 (values are interpolated)
+0104673c [ C ] VS2017 v15.7.1 build 26428 (*)
+0103673c [ASM] VS2017 v15.7.1 build 26428 (*)
+0105673c [C++] VS2017 v15.7.1 build 26428 (*)
+00ff673c [RES] VS2017 v15.7.1 build 26428 (*)
+0102673c [LNK] VS2017 v15.7.1 build 26428 (*)
+0101673c [IMP] VS2017 v15.7.1 build 26428 (*)
+0100673c [EXP] VS2017 v15.7.1 build 26428 (*)
+
+# Visual Studio 2017 version 15.6.7 (values are interpolated)
+01046614 [ C ] VS2017 v15.6.7 build 26132 (*)
+01036614 [ASM] VS2017 v15.6.7 build 26132 (*)
+01056614 [C++] VS2017 v15.6.7 build 26132 (*)
+00ff6614 [RES] VS2017 v15.6.7 build 26132 (*)
+01026614 [LNK] VS2017 v15.6.7 build 26132 (*)
+01016614 [IMP] VS2017 v15.6.7 build 26132 (*)
+01006614 [EXP] VS2017 v15.6.7 build 26132 (*)
+
+# Visual Studio 2017 version 15.6.6 (values are interpolated)
+01046613 [ C ] VS2017 v15.6.6 build 26131 (*)
+01036613 [ASM] VS2017 v15.6.6 build 26131 (*)
+01056613 [C++] VS2017 v15.6.6 build 26131 (*)
+00ff6613 [RES] VS2017 v15.6.6 build 26131 (*)
+01026613 [LNK] VS2017 v15.6.6 build 26131 (*)
+01016613 [IMP] VS2017 v15.6.6 build 26131 (*)
+01006613 [EXP] VS2017 v15.6.6 build 26131 (*)
+
+# Visual Studio 2017 version 15.6.4 has the same build number
+# Visual Studio 2017 version 15.6.3 (values are interpolated)
+01046611 [ C ] VS2017 v15.6.3 build 26129 (*)
+01036611 [ASM] VS2017 v15.6.3 build 26129 (*)
+01056611 [C++] VS2017 v15.6.3 build 26129 (*)
+00ff6611 [RES] VS2017 v15.6.3 build 26129 (*)
+01026611 [LNK] VS2017 v15.6.3 build 26129 (*)
+01016611 [IMP] VS2017 v15.6.3 build 26129 (*)
+01006611 [EXP] VS2017 v15.6.3 build 26129 (*)
+
+# Visual Studio 2017 version 15.6.2 has the same build number
+# Visual Studio 2017 version 15.6.1 has the same build number
+# Visual Studio 2017 version 15.6.0 (values are interpolated)
+01046610 [ C ] VS2017 v15.6.0 build 26128 (*)
+01036610 [ASM] VS2017 v15.6.0 build 26128 (*)
+01056610 [C++] VS2017 v15.6.0 build 26128 (*)
+00ff6610 [RES] VS2017 v15.6.0 build 26128 (*)
+01026610 [LNK] VS2017 v15.6.0 build 26128 (*)
+01016610 [IMP] VS2017 v15.6.0 build 26128 (*)
+01006610 [EXP] VS2017 v15.6.0 build 26128 (*)
+
+# Visual Studio 2017 version 15.5.7 has the same build number
+# Visual Studio 2017 version 15.5.6 (values are interpolated)
+010464eb [ C ] VS2017 v15.5.6 build 25835 (*)
+010364eb [ASM] VS2017 v15.5.6 build 25835 (*)
+010564eb [C++] VS2017 v15.5.6 build 25835 (*)
+00ff64eb [RES] VS2017 v15.5.6 build 25835 (*)
+010264eb [LNK] VS2017 v15.5.6 build 25835 (*)
+010164eb [IMP] VS2017 v15.5.6 build 25835 (*)
+010064eb [EXP] VS2017 v15.5.6 build 25835 (*)
+
+# MSVS2017 v15.5.4 (15.5.3 has the same build number)
+010464ea [ C ] VS2017 v15.5.4 build 25834
+010364ea [ASM] VS2017 v15.5.4 build 25834
+010564ea [C++] VS2017 v15.5.4 build 25834
+00ff64ea [RES] VS2017 v15.5.4 build 25834
+010264ea [LNK] VS2017 v15.5.4 build 25834
+010064ea [EXP] VS2017 v15.5.4 build 25834
+010164ea [IMP] VS2017 v15.5.4 build 25834
+
+# Visual Studio 2017 version 15.5.2 (values are interpolated)
+010464e7 [ C ] VS2017 v15.5.2 build 25831 (*)
+010364e7 [ASM] VS2017 v15.5.2 build 25831 (*)
+010564e7 [C++] VS2017 v15.5.2 build 25831 (*)
+00ff64e7 [RES] VS2017 v15.5.2 build 25831 (*)
+010264e7 [LNK] VS2017 v15.5.2 build 25831 (*)
+010164e7 [IMP] VS2017 v15.5.2 build 25831 (*)
+010064e7 [EXP] VS2017 v15.5.2 build 25831 (*)
+
+# Visual Studio 2017 version 15.4.5 (values are interpolated)
+010463cb [ C ] VS2017 v15.4.5 build 25547 (*)
+010363cb [ASM] VS2017 v15.4.5 build 25547 (*)
+010563cb [C++] VS2017 v15.4.5 build 25547 (*)
+00ff63cb [RES] VS2017 v15.4.5 build 25547 (*)
+010263cb [LNK] VS2017 v15.4.5 build 25547 (*)
+010163cb [IMP] VS2017 v15.4.5 build 25547 (*)
+010063cb [EXP] VS2017 v15.4.5 build 25547 (*)
+
+# Visual Studio 2017 version 15.4.4 (values are interpolated)
+010463c6 [ C ] VS2017 v15.4.4 build 25542 (*)
+010363c6 [ASM] VS2017 v15.4.4 build 25542 (*)
+010563c6 [C++] VS2017 v15.4.4 build 25542 (*)
+00ff63c6 [RES] VS2017 v15.4.4 build 25542 (*)
+010263c6 [LNK] VS2017 v15.4.4 build 25542 (*)
+010163c6 [IMP] VS2017 v15.4.4 build 25542 (*)
+010063c6 [EXP] VS2017 v15.4.4 build 25542 (*)
+
+# Visual Studio 2017 version 15.3.3 (values are interpolated)
+010463a3 [ C ] VS2017 v15.3.3 build 25507 (*)
+010363a3 [ASM] VS2017 v15.3.3 build 25507 (*)
+010563a3 [C++] VS2017 v15.3.3 build 25507 (*)
+00ff63a3 [RES] VS2017 v15.3.3 build 25507 (*)
+010263a3 [LNK] VS2017 v15.3.3 build 25507 (*)
+010163a3 [IMP] VS2017 v15.3.3 build 25507 (*)
+010063a3 [EXP] VS2017 v15.3.3 build 25507 (*)
+
+# Visual Studio 2017 version 15.3 (values are interpolated)
+# source: https://twitter.com/visualc/status/897853176002433024
+010463a2 [ C ] VS2017 v15.3 build 25506 (*)
+010363a2 [ASM] VS2017 v15.3 build 25506 (*)
+010563a2 [C++] VS2017 v15.3 build 25506 (*)
+00ff63a2 [RES] VS2017 v15.3 build 25506 (*)
+010263a2 [LNK] VS2017 v15.3 build 25506 (*)
+010163a2 [IMP] VS2017 v15.3 build 25506 (*)
+010063a2 [EXP] VS2017 v15.3 build 25506 (*)
+
+# Visual Studio 2017 version 15.2 has the same build number
+# Visual Studio 2017 version 15.1 has the same build number
+# Visual Studio 2017 version 15.0 (values are interpolated)
+010461b9 [ C ] VS2017 v15.0 build 25017 (*)
+010361b9 [ASM] VS2017 v15.0 build 25017 (*)
+010561b9 [C++] VS2017 v15.0 build 25017 (*)
+00ff61b9 [RES] VS2017 v15.0 build 25017 (*)
+010261b9 [LNK] VS2017 v15.0 build 25017 (*)
+010161b9 [IMP] VS2017 v15.0 build 25017 (*)
+010061b9 [EXP] VS2017 v15.0 build 25017 (*)
+
+# MSVS Community 2015 UPD3.1 (cl version 19.00.24215.1) - some IDs are interpolated
+# [ASM] is the same as in UPD3 build 24213
+01045e97 [ C ] VS2015 UPD3.1 build 24215
+01055e97 [C++] VS2015 UPD3.1 build 24215
+01025e97 [LNK] VS2015 UPD3.1 build 24215
+01005e97 [EXP] VS2015 UPD3.1 build 24215
+01015e97 [IMP] VS2015 UPD3.1 build 24215
+
+# MSVS Community 2015 UPD3 (cl version 19.00.24213.1)
+01045e95 [ C ] VS2015 UPD3 build 24213
+01035e92 [ASM] VS2015 UPD3 build 24210
+01055e95 [C++] VS2015 UPD3 build 24213
+00ff5e92 [RES] VS2015 UPD3 build 24210
+01025e95 [LNK] VS2015 UPD3 build 24213
+01005e95 [EXP] VS2015 UPD3 build 24213
+01015e95 [IMP] VS2015 UPD3 build 24213
+
+# Visual Studio 2015 Update 3 [14.0] (values are interpolated)
+01045e92 [ C ] VS2015 Update 3 [14.0] build 24210 (*)
+# 01035e92 [ASM] VS2015 Update 3 [14.0] build 24210 (*)
+01055e92 [C++] VS2015 Update 3 [14.0] build 24210 (*)
+# 00ff5e92 [RES] VS2015 Update 3 [14.0] build 24210 (*)
+01025e92 [LNK] VS2015 Update 3 [14.0] build 24210 (*)
+01015e92 [IMP] VS2015 Update 3 [14.0] build 24210 (*)
+01005e92 [EXP] VS2015 Update 3 [14.0] build 24210 (*)
+
+# MSVS Community 2015 UPD2 (14.0.25123.0?)
+01045d6e [ C ] VS2015 UPD2 build 23918
+01035d6e [ASM] VS2015 UPD2 build 23918
+01055d6e [C++] VS2015 UPD2 build 23918
+00ff5d6e [RES] VS2015 UPD2 build 23918
+01025d6e [LNK] VS2015 UPD2 build 23918
+01005d6e [EXP] VS2015 UPD2 build 23918
+01015d6e [IMP] VS2015 UPD2 build 23918
+
+# MSVS Community 2015 14.0.24728.2 (UPD 1) 14.0.24720.0 D14REL
+01045bd2 [ C ] VS2015 UPD1 build 23506
+01035bd2 [ASM] VS2015 UPD1 build 23506
+01055bd2 [C++] VS2015 UPD1 build 23506
+00ff5bd2 [RES] VS2015 UPD1 build 23506
+01025bd2 [LNK] VS2015 UPD1 build 23506
+01005bd2 [EXP] VS2015 UPD1 build 23506
+01015bd2 [IMP] VS2015 UPD1 build 23506
+
+# MSVS Community 2015 [14.0]
+010459f2 [ C ] VS2015 [14.0] build 23026
+010359f2 [ASM] VS2015 [14.0] build 23026
+010559f2 [C++] VS2015 [14.0] build 23026
+00ff59f2 [RES] VS2015 [14.0] build 23026
+010259f2 [LNK] VS2015 [14.0] build 23026
+010059f2 [EXP] VS2015 [14.0] build 23026
+010159f2 [IMP] VS2015 [14.0] build 23026
+
+# Visual Studio 2013 Nobemver CTP [12.0] (values are interpolated)
+00e0527a [ C ] VS2013 Nobemver CTP [12.0] build 21114 (*)
+00df527a [ASM] VS2013 Nobemver CTP [12.0] build 21114 (*)
+00e1527a [C++] VS2013 Nobemver CTP [12.0] build 21114 (*)
+00db527a [RES] VS2013 Nobemver CTP [12.0] build 21114 (*)
+00de527a [LNK] VS2013 Nobemver CTP [12.0] build 21114 (*)
+00dd527a [IMP] VS2013 Nobemver CTP [12.0] build 21114 (*)
+00dc527a [EXP] VS2013 Nobemver CTP [12.0] build 21114 (*)
+
+# MSVS2013 12.0.40629.00 Update 5
+00e09eb5 [ C ] VS2013 UPD5 build 40629
+00e19eb5 [C++] VS2013 UPD5 build 40629
+# cvtres not updated since RTM version, so add interpolated one
+00db9eb5 [RES] VS2013 Update 5 [12.0] build 40629 (*)
+00de9eb5 [LNK] VS2013 UPD5 build 40629
+00dc9eb5 [EXP] VS2013 UPD5 build 40629
+00dd9eb5 [IMP] VS2013 UPD5 build 40629
+00df9eb5 [ASM] VS2013 UPD5 build 40629
+
+# MSVS2013 12.0.31101.00 Update 4 - not attested in real world, @comp.id is
+# calculated.
+00e0797d [ C ] VS2013 UPD4 build 31101 (*)
+00e1797d [C++] VS2013 UPD4 build 31101 (*)
+00db797d [RES] VS2013 UPD4 build 31101 (*)
+00de797d [LNK] VS2013 UPD4 build 31101 (*)
+00dc797d [EXP] VS2013 UPD4 build 31101 (*)
+00dd797d [IMP] VS2013 UPD4 build 31101 (*)
+00df797d [ASM] VS2013 UPD4 build 31101 (*)
+
+# MSVS2013 12.0.30723.00 Update 3 - not attested in real world, @comp.id is
+# calculated.
+00e07803 [ C ] VS2013 UPD3 build 30723 (*)
+00e17803 [C++] VS2013 UPD3 build 30723 (*)
+00db7803 [RES] VS2013 UPD3 build 30723 (*)
+00de7803 [LNK] VS2013 UPD3 build 30723 (*)
+00dc7803 [EXP] VS2013 UPD3 build 30723 (*)
+00dd7803 [IMP] VS2013 UPD3 build 30723 (*)
+00df7803 [ASM] VS2013 UPD3 build 30723 (*)
+
+# MSVS2013 12.0.30501.00 Update 2 - not attested in real world, @comp.id is
+# calculated.
+00e07725 [ C ] VS2013 UPD2 build 30501
+00e17725 [C++] VS2013 UPD2 build 30501
+# cvtres not updated since RTM version, so add interpolated one
+00db7725 [RES] VS2013 Update 2 [12.0] build 30501 (*)
+00de7725 [LNK] VS2013 UPD2 build 30501
+00dc7725 [EXP] VS2013 UPD2 build 30501
+00dd7725 [IMP] VS2013 UPD2 build 30501
+00df7725 [ASM] VS2013 UPD2 build 30501
+
+# Visual Studio 2013 Update2 RC [12.0] (values are interpolated)
+00e07674 [ C ] VS2013 Update2 RC [12.0] build 30324 (*)
+00df7674 [ASM] VS2013 Update2 RC [12.0] build 30324 (*)
+00e17674 [C++] VS2013 Update2 RC [12.0] build 30324 (*)
+00db7674 [RES] VS2013 Update2 RC [12.0] build 30324 (*)
+00de7674 [LNK] VS2013 Update2 RC [12.0] build 30324 (*)
+00dd7674 [IMP] VS2013 Update2 RC [12.0] build 30324 (*)
+00dc7674 [EXP] VS2013 Update2 RC [12.0] build 30324 (*)
+
+# MSVS2013 RTM
+# Looks like it doesn't always dump linker's comp.id
+# Visual Studio 2013 Update 1 [12.0] also has this build number
+00e0520d [ C ] VS2013 build 21005
+00e1520d [C++] VS2013 build 21005
+00db520d [RES] VS2013 build 21005
+00de520d [LNK] VS2013 build 21005
+00dc520d [EXP] VS2013 build 21005
+00dd520d [IMP] VS2013 build 21005
+00df520d [ASM] VS2013 build 21005
+
+# Visual Studio 2013 RC [12.0] (values are interpolated)
+00e0515b [ C ] VS2013 RC [12.0] build 20827 (*)
+00df515b [ASM] VS2013 RC [12.0] build 20827 (*)
+00e1515b [C++] VS2013 RC [12.0] build 20827 (*)
+00db515b [RES] VS2013 RC [12.0] build 20827 (*)
+00de515b [LNK] VS2013 RC [12.0] build 20827 (*)
+00dd515b [IMP] VS2013 RC [12.0] build 20827 (*)
+00dc515b [EXP] VS2013 RC [12.0] build 20827 (*)
+
+# Visual Studio 2013 Preview [12.0] (values are interpolated)
+00e05089 [ C ] VS2013 Preview [12.0] build 20617 (*)
+00df5089 [ASM] VS2013 Preview [12.0] build 20617 (*)
+00e15089 [C++] VS2013 Preview [12.0] build 20617 (*)
+00db5089 [RES] VS2013 Preview [12.0] build 20617 (*)
+00de5089 [LNK] VS2013 Preview [12.0] build 20617 (*)
+00dd5089 [IMP] VS2013 Preview [12.0] build 20617 (*)
+00dc5089 [EXP] VS2013 Preview [12.0] build 20617 (*)
+
+# MSVS2012 Premium Update 4 (11.0.61030.00 Update 4)
+00ceee66 [ C ] VS2012 UPD4 build 61030
+00cfee66 [C++] VS2012 UPD4 build 61030
+00cdee66 [ASM] VS2012 UPD4 build 61030
+00c9ee66 [RES] VS2012 UPD4 build 61030
+00ccee66 [LNK] VS2012 UPD4 build 61030
+00caee66 [EXP] VS2012 UPD4 build 61030
+00cbee66 [IMP] VS2012 UPD4 build 61030
+
+# MSVS2012 Update 3 (17.00.60610.1 Update 3) - not attested in real world,
+# @comp.id is calculated.
+00ceecc2 [ C ] VS2012 UPD3 build 60610 (*)
+00cfecc2 [C++] VS2012 UPD3 build 60610 (*)
+00cdecc2 [ASM] VS2012 UPD3 build 60610 (*)
+00c9ecc2 [RES] VS2012 UPD3 build 60610 (*)
+00ccecc2 [LNK] VS2012 UPD3 build 60610 (*)
+00caecc2 [EXP] VS2012 UPD3 build 60610 (*)
+00cbecc2 [IMP] VS2012 UPD3 build 60610 (*)
+
+# MSVS2012 Update 2 (17.00.60315.1 Update 2) - not attested in real world,
+# @comp.id is calculated.
+00ceeb9b [ C ] VS2012 UPD2 build 60315 (*)
+00cfeb9b [C++] VS2012 UPD2 build 60315 (*)
+00cdeb9b [ASM] VS2012 UPD2 build 60315 (*)
+00c9eb9b [RES] VS2012 UPD2 build 60315 (*)
+00cceb9b [LNK] VS2012 UPD2 build 60315 (*)
+00caeb9b [EXP] VS2012 UPD2 build 60315 (*)
+00cbeb9b [IMP] VS2012 UPD2 build 60315 (*)
+
+# MSVS2012 Update 1 (17.00.51106.1 Update 1) - not attested in real world,
+# @comp.id is calculated.
+00cec7a2 [ C ] VS2012 UPD1 build 51106 (*)
+00cfc7a2 [C++] VS2012 UPD1 build 51106 (*)
+00cdc7a2 [ASM] VS2012 UPD1 build 51106 (*)
+00c9c7a2 [RES] VS2012 UPD1 build 51106 (*)
+00ccc7a2 [LNK] VS2012 UPD1 build 51106 (*)
+00cac7a2 [EXP] VS2012 UPD1 build 51106 (*)
+00cbc7a2 [IMP] VS2012 UPD1 build 51106 (*)
+
+# Visual Studio 2012 November CTP [11.0] (values are interpolated)
+00cec751 [ C ] VS2012 November CTP [11.0] build 51025 (*)
+00cdc751 [ASM] VS2012 November CTP [11.0] build 51025 (*)
+00cfc751 [C++] VS2012 November CTP [11.0] build 51025 (*)
+00c9c751 [RES] VS2012 November CTP [11.0] build 51025 (*)
+00ccc751 [LNK] VS2012 November CTP [11.0] build 51025 (*)
+00cbc751 [IMP] VS2012 November CTP [11.0] build 51025 (*)
+00cac751 [EXP] VS2012 November CTP [11.0] build 51025 (*)
+
+# MSVS2012 Premium (11.0.50727.1 RTMREL)
+00cec627 [ C ] VS2012 build 50727
+00cfc627 [C++] VS2012 build 50727
+00c9c627 [RES] VS2012 build 50727
+00cdc627 [ASM] VS2012 build 50727
+00cac627 [EXP] VS2012 build 50727
+00cbc627 [IMP] VS2012 build 50727
+00ccc627 [LNK] VS2012 build 50727
+
+# MSVS2010 SP1 kb 983509 (10.0.40219.1 SP1Rel)
+00aa9d1b [ C ] VS2010 SP1 build 40219
+00ab9d1b [C++] VS2010 SP1 build 40219
+009d9d1b [LNK] VS2010 SP1 build 40219
+009a9d1b [RES] VS2010 SP1 build 40219
+009b9d1b [EXP] VS2010 SP1 build 40219
+009c9d1b [IMP] VS2010 SP1 build 40219
+009e9d1b [ASM] VS2010 SP1 build 40219
+
+# MSVS2010 (10.0.30319.1 RTMRel)
+00aa766f [ C ] VS2010 build 30319
+00ab766f [C++] VS2010 build 30319
+009d766f [LNK] VS2010 build 30319
+009a766f [RES] VS2010 build 30319
+009b766f [EXP] VS2010 build 30319
+009c766f [IMP] VS2010 build 30319
+009e766f [ASM] VS2010 build 30319
+
+# Visual Studio 2010 Beta 2 [10.0] (values are interpolated)
+00aa520b [ C ] VS2010 Beta 2 [10.0] build 21003 (*)
+009e520b [ASM] VS2010 Beta 2 [10.0] build 21003 (*)
+00ab520b [C++] VS2010 Beta 2 [10.0] build 21003 (*)
+009a520b [RES] VS2010 Beta 2 [10.0] build 21003 (*)
+009d520b [LNK] VS2010 Beta 2 [10.0] build 21003 (*)
+009c520b [IMP] VS2010 Beta 2 [10.0] build 21003 (*)
+009b520b [EXP] VS2010 Beta 2 [10.0] build 21003 (*)
+
+# Visual Studio 2010 Beta 1 [10.0] (values are interpolated)
+00aa501a [ C ] VS2010 Beta 1 [10.0] build 20506 (*)
+009e501a [ASM] VS2010 Beta 1 [10.0] build 20506 (*)
+00ab501a [C++] VS2010 Beta 1 [10.0] build 20506 (*)
+009a501a [RES] VS2010 Beta 1 [10.0] build 20506 (*)
+009d501a [LNK] VS2010 Beta 1 [10.0] build 20506 (*)
+009c501a [IMP] VS2010 Beta 1 [10.0] build 20506 (*)
+009b501a [EXP] VS2010 Beta 1 [10.0] build 20506 (*)
+
+# MSVS2008 SP1 (9.0.30729.1 SP)
+00837809 [ C ] VS2008 SP1 build 30729
+00847809 [C++] VS2008 SP1 build 30729
+# cvtres is the same as in VS2008, so add interpolated
+00947809 [RES] VS2008 SP1 [9.0] build 30729 (*)
+00957809 [ASM] VS2008 SP1 build 30729
+00927809 [EXP] VS2008 SP1 build 30729
+00937809 [IMP] VS2008 SP1 build 30729
+00917809 [LNK] VS2008 SP1 build 30729
+
+# MSVS2008 (9.0.21022.8 RTM)
+0083521e [ C ] VS2008 build 21022
+0084521e [C++] VS2008 build 21022
+0091521e [LNK] VS2008 build 21022
+0094521e [RES] VS2008 build 21022
+0092521e [EXP] VS2008 build 21022
+0093521e [IMP] VS2008 build 21022
+0095521e [ASM] VS2008 build 21022
+
+# Visual Studio 2008 Beta 2 [9.0] (values are interpolated)
+008350e2 [ C ] VS2008 Beta 2 [9.0] build 20706 (*)
+009550e2 [ASM] VS2008 Beta 2 [9.0] build 20706 (*)
+008450e2 [C++] VS2008 Beta 2 [9.0] build 20706 (*)
+009450e2 [RES] VS2008 Beta 2 [9.0] build 20706 (*)
+009150e2 [LNK] VS2008 Beta 2 [9.0] build 20706 (*)
+009350e2 [IMP] VS2008 Beta 2 [9.0] build 20706 (*)
+009250e2 [EXP] VS2008 Beta 2 [9.0] build 20706 (*)
+
+# MSVS2005 (RTM.50727-4200) cl version: 14.00.50727.42
+# MSVS2005-SP1 dumps the same comp.id's.
+# It is strange, but there exists VS2012 with the same build number:
+# 11 Build 50727.1
+006dc627 [ C ] VS2005 build 50727
+006ec627 [C++] VS2005 build 50727
+0078c627 [LNK] VS2005 build 50727
+007cc627 [RES] VS2005 build 50727
+007ac627 [EXP] VS2005 build 50727
+007bc627 [IMP] VS2005 build 50727
+007dc627 [ASM] VS2005 build 50727
+
+# Visual Studio 2005 [8.0] (values are interpolated)
+006dc490 [ C ] VS2005 [8.0] build 50320 (*)
+007dc490 [ASM] VS2005 [8.0] build 50320 (*)
+006ec490 [C++] VS2005 [8.0] build 50320 (*)
+007cc490 [RES] VS2005 [8.0] build 50320 (*)
+0078c490 [LNK] VS2005 [8.0] build 50320 (*)
+007bc490 [IMP] VS2005 [8.0] build 50320 (*)
+007ac490 [EXP] VS2005 [8.0] build 50320 (*)
+
+# Visual Studio 2005 Beta 2 [8.0] (values are interpolated)
+006dc427 [ C ] VS2005 Beta 2 [8.0] build 50215 (*)
+007dc427 [ASM] VS2005 Beta 2 [8.0] build 50215 (*)
+006ec427 [C++] VS2005 Beta 2 [8.0] build 50215 (*)
+007cc427 [RES] VS2005 Beta 2 [8.0] build 50215 (*)
+0078c427 [LNK] VS2005 Beta 2 [8.0] build 50215 (*)
+007bc427 [IMP] VS2005 Beta 2 [8.0] build 50215 (*)
+007ac427 [EXP] VS2005 Beta 2 [8.0] build 50215 (*)
+
+# Visual Studio 2005 Beta 1 [8.0] (values are interpolated)
+006d9e9f [ C ] VS2005 Beta 1 [8.0] build 40607 (*)
+007d9e9f [ASM] VS2005 Beta 1 [8.0] build 40607 (*)
+006e9e9f [C++] VS2005 Beta 1 [8.0] build 40607 (*)
+007c9e9f [RES] VS2005 Beta 1 [8.0] build 40607 (*)
+00789e9f [LNK] VS2005 Beta 1 [8.0] build 40607 (*)
+007b9e9f [IMP] VS2005 Beta 1 [8.0] build 40607 (*)
+007a9e9f [EXP] VS2005 Beta 1 [8.0] build 40607 (*)
+
+# Windows Server 2003 SP1 DDK (for AMD64) (values are interpolated)
+006d9d76 [ C ] Windows Server 2003 SP1 DDK (for AMD64) build 40310 (*)
+007d9d76 [ASM] Windows Server 2003 SP1 DDK (for AMD64) build 40310 (*)
+006e9d76 [C++] Windows Server 2003 SP1 DDK (for AMD64) build 40310 (*)
+007c9d76 [RES] Windows Server 2003 SP1 DDK (for AMD64) build 40310 (*)
+00789d76 [LNK] Windows Server 2003 SP1 DDK (for AMD64) build 40310 (*)
+007b9d76 [IMP] Windows Server 2003 SP1 DDK (for AMD64) build 40310 (*)
+007a9d76 [EXP] Windows Server 2003 SP1 DDK (for AMD64) build 40310 (*)
+
+# MSVS2003 (.NET) SP1 (kb918007)
+005f178e [ C ] VS2003 (.NET) SP1 build 6030
+0060178e [C++] VS2003 (.NET) SP1 build 6030
+005a178e [LNK] VS2003 (.NET) SP1 build 6030
+000f178e [ASM] VS2003 (.NET) SP1 build 6030
+# cvtres is the same version as without SP1
+005e178e [RES] VS.NET 2003 SP1 [7.1] build 6030 (*)
+005c178e [EXP] VS2003 (.NET) SP1 build 6030
+005d178e [IMP] VS2003 (.NET) SP1 build 6030
+
+# Windows Server 2003 SP1 DDK (values are interpolated)
+005f0fc3 [ C ] Windows Server 2003 SP1 DDK build 4035 (*)
+000f0fc3 [ASM] Windows Server 2003 SP1 DDK build 4035 (*)
+00600fc3 [C++] Windows Server 2003 SP1 DDK build 4035 (*)
+005e0fc3 [RES] Windows Server 2003 SP1 DDK build 4035 (*)
+005a0fc3 [LNK] Windows Server 2003 SP1 DDK build 4035 (*)
+005d0fc3 [IMP] Windows Server 2003 SP1 DDK build 4035 (*)
+005c0fc3 [EXP] Windows Server 2003 SP1 DDK build 4035 (*)
+
+# MSVS2003 (.NET) 7.0.1.3088
+005f0c05 [ C ] VS2003 (.NET) build 3077
+00600c05 [C++] VS2003 (.NET) build 3077
+000f0c05 [ASM] VS2003 (.NET) build 3077
+005e0bec [RES] VS2003 (.NET) build 3052
+005c0c05 [EXP] VS2003 (.NET) build 3077
+005d0c05 [IMP] VS2003 (.NET) build 3077
+005a0c05 [LNK] VS2003 (.NET) build 3077
+# Visual Studio .NET 2003 [7.1] (values are interpolated)
+005e0c05 [RES] VS.NET 2003 [7.1] build 3077 (*)
+
+# MSVS2002 (.NET) 7.0.9466
+001c24fa [ C ] VS2002 (.NET) build 9466
+001d24fa [C++] VS2002 (.NET) build 9466
+004024fa [ASM] VS2002 (.NET) build 9466
+003d24fa [LNK] VS2002 (.NET) build 9466
+004524fa [RES] VS2002 (.NET) build 9466
+003f24fa [EXP] VS2002 (.NET) build 9466
+001924fa [IMP] VS2002 (.NET) build 9466
+
+# Windows XP SP1 DDK (values are interpolated)
+001c23d8 [ C ] Windows XP SP1 DDK build 9176 (*)
+004023d8 [ASM] Windows XP SP1 DDK build 9176 (*)
+001d23d8 [C++] Windows XP SP1 DDK build 9176 (*)
+004523d8 [RES] Windows XP SP1 DDK build 9176 (*)
+003d23d8 [LNK] Windows XP SP1 DDK build 9176 (*)
+001923d8 [IMP] Windows XP SP1 DDK build 9176 (*)
+003f23d8 [EXP] Windows XP SP1 DDK build 9176 (*)
+
+# MSVS98 6.0 SP6 (Enterprise edition)
+# Looks like linker may mix compids for C and C++ objects (why?)
+000a2636 [ C ] VS98 (6.0) SP6 build 8804
+000b2636 [C++] VS98 (6.0) SP6 build 8804
+
+# MSVC++ 6.0 SP5 (Enterprise edition)
+00152306 [ C ] VC++ 6.0 SP5 build 8804
+00162306 [C++] VC++ 6.0 SP5 build 8804
+000420ff [LNK] VC++ 6.0 SP5 imp/exp build 8447
+000606c7 [RES] VS98 (6.0) SP6 cvtres build 1736
+
+# MSVS6.0 (no servicepacks)
+000a1fe8 [ C ] VS98 (6.0) build 8168
+000b1fe8 [C++] VS98 (6.0) build 8168
+000606b8 [RES] VS98 (6.0) cvtres build 1720
+00041fe8 [LNK] VS98 (6.0) imp/exp build 8168
+
+# MSVS97 5.0 Enterprise Edition (cl 11.00.7022, link 5.00.7022)
+# Does NOT generate any @comp.id records, nor Rich headers.
+# SP3 added Rich-generating linker (albeit it doesn't identify itself),
+# and CVTRES and LIB(?) utilities that generate @comp.id records. There is no
+# distinction between import and export records yet. I marked the records as
+# [IMP] because VS98 linker seems to omit export records from the header; VS97
+# linker might do the same.
+00060684 [RES] VS97 (5.0) SP3 cvtres 5.00.1668
+00021c87 [IMP] VS97 (5.0) SP3 link 5.10.7303
