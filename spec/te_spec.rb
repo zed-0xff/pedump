@@ -47,6 +47,6 @@ end
 
 describe PEdump::EFI_TE_IMAGE_HEADER do
   it "should have real size = 40" do
-    PEdump::EFI_TE_IMAGE_HEADER::REAL_SIZE.should == 40
+    described_class::REAL_SIZE.should == 40
   end
 end

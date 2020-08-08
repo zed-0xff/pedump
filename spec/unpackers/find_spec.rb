@@ -4,18 +4,18 @@ require "#{root}/lib/pedump/unpacker"
 
 describe PEdump::Unpacker do
   it "finds UPX" do
-    PEdump::Unpacker.find("#{root}/samples/calc_upx.exe").should == PEdump::Unpacker::UPX
+    described_class.find("#{root}/samples/calc_upx.exe").should == described_class::UPX
   end
 
   it "finds ARM UPX" do
-    PEdump::Unpacker.find("#{root}/samples/arm_upx.exe").should == PEdump::Unpacker::UPX
+    described_class.find("#{root}/samples/arm_upx.exe").should == described_class::UPX
   end
 
   it "finds ASPack" do
-    PEdump::Unpacker.find("#{root}/samples/calc.asp212.exe").should == PEdump::Unpacker::ASPack
+    described_class.find("#{root}/samples/calc.asp212.exe").should == described_class::ASPack
   end
 
   it "finds nothing" do
-    PEdump::Unpacker.find("#{root}/samples/calc.exe").should be_nil
+    described_class.find("#{root}/samples/calc.exe").should be_nil
   end
 end

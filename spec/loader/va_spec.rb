@@ -6,7 +6,7 @@ describe PEdump::Loader do
     describe "samples/calc.exe" do
       before do
         io = open("samples/calc.exe","rb")
-        @ldr = PEdump::Loader.new io
+        @ldr = described_class.new io
       end
 
       %w'1001000 1010000 104b999 104c000 1051000 109c000 10a01f5'.each do |x|
@@ -25,7 +25,7 @@ describe PEdump::Loader do
     describe "samples/upx.exe" do
       before do
         io = open("samples/upx.exe","rb")
-        @ldr = PEdump::Loader.new io
+        @ldr = described_class.new io
       end
 
       %w'401000 541000 589000 589fff'.each do |x|

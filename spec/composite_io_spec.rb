@@ -3,7 +3,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../lib/pedump/composite_io')
 
 describe PEdump::CompositeIO do
   it "concatenates" do
-    io = PEdump::CompositeIO.new(
+    io = described_class.new(
       StringIO.new('foo'),
       StringIO.new('bar'),
       StringIO.new('baz')
@@ -12,7 +12,7 @@ describe PEdump::CompositeIO do
   end
 
   it "reads sequentally" do
-    io = PEdump::CompositeIO.new(
+    io = described_class.new(
       StringIO.new('foo1'),
       StringIO.new('bar2'),
       StringIO.new('baz')
@@ -25,7 +25,7 @@ describe PEdump::CompositeIO do
 
   it "behaves like StringIO" do
     io1 = StringIO.new('foo')
-    io2 = PEdump::CompositeIO.new(StringIO.new('foo'))
+    io2 = described_class.new(StringIO.new('foo'))
 
     io1.read.should == io2.read       # 'foo'
     io1.read.should == io2.read       # ''
@@ -33,7 +33,7 @@ describe PEdump::CompositeIO do
   end
 
   it "tracks number of bytes read" do
-    io = PEdump::CompositeIO.new(
+    io = described_class.new(
       StringIO.new('foo1'),
       StringIO.new('bar2'),
       StringIO.new('baz')
@@ -52,7 +52,7 @@ describe PEdump::CompositeIO do
   end
 
   it "chains eof? call" do
-    io = PEdump::CompositeIO.new(
+    io = described_class.new(
       StringIO.new('foo1'),
       StringIO.new('bar2'),
       StringIO.new('baz')
@@ -71,7 +71,7 @@ describe PEdump::CompositeIO do
   end
 
   it "seeks" do
-    io = PEdump::CompositeIO.new(
+    io = described_class.new(
       StringIO.new('foo1'),
       StringIO.new('bar2'),
       StringIO.new('baz')
@@ -100,7 +100,7 @@ describe PEdump::CompositeIO do
 
     s = "oo1r23"
 
-    io = PEdump::CompositeIO.new(*ios)
+    io = described_class.new(*ios)
     io.tell.should == 0
     io.read.should == s
 
@@ -112,7 +112,7 @@ describe PEdump::CompositeIO do
   end
 
   it "summarizes size" do
-    io = PEdump::CompositeIO.new(
+    io = described_class.new(
       StringIO.new('foo1'),
       StringIO.new('bar2'),
       StringIO.new('baz')

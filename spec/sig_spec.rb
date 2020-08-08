@@ -1,26 +1,26 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 require File.expand_path(File.dirname(__FILE__) + '/../lib/pedump/packer')
 
-describe "PEdump::Packer" do
+describe PEdump::Packer do
   it "should have enough signatures" do
-    PEdump::Packer.count.should > 1000
+    described_class.count.should > 1000
   end
 
   it "should not match" do
-    maxlen = PEdump::Packer.map(&:size).max
+    maxlen = described_class.map(&:size).max
     s = 'x'*maxlen
-    PEdump::Packer.of_data(s).should be_nil
+    described_class.of_data(s).should be_nil
   end
 
   it "should parse" do
     a = PEdump::SigParser.parse
     a.should be_instance_of(Array)
-    a.map(&:class).uniq.should == [PEdump::Packer]
+    a.map(&:class).uniq.should == [described_class]
   end
 
   it "should not react to DOS signature" do
     data = "This program cannot be run in DOS mode"
-    PEdump::Packer.of(data).should be_nil
+    described_class.of(data).should be_nil
   end
 
   it "should match sigs" do
@@ -44,7 +44,7 @@ describe "PEdump::Packer" do
             s << c.to_i(16).chr
           end
         end
-        packers = PEdump::Packer.of(s)
+        packers = described_class.of(s)
         if packers
           names = packers.map(&:name)
           next if names.any? do |name|

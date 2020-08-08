@@ -4,7 +4,7 @@ require 'pedump/loader'
 describe PEdump::Loader do
   it "should read names from imports" do
     io = open("samples/calc.exe","rb")
-    @ldr = PEdump::Loader.new io
+    @ldr = described_class.new io
 
     @ldr.names.should_not be_nil
     @ldr.names.should_not be_empty
@@ -14,7 +14,7 @@ describe PEdump::Loader do
 
   it "should read names from exports" do
     io = open("samples/zlib.dll","rb")
-    @ldr = PEdump::Loader.new io
+    @ldr = described_class.new io
 
     @ldr.names.should_not be_nil
     @ldr.names.should_not be_empty

@@ -15,7 +15,7 @@ describe PEdump::Unpacker::ASPack do
 
       it "should have no differences" do
         File.open(pname,"rb") do |f|
-          u = PEdump::Unpacker::ASPack.new(f)
+          u = described_class.new(f)
           File.open("#{root}/tmp/unpacked.tmp","w+") do |fo|
             u.unpack.dump(fo)
             fo.rewind
@@ -45,7 +45,7 @@ describe PEdump::Unpacker::ASPack do
 
       it "should have no differences" do
         File.open(pname,"rb") do |f|
-          u = PEdump::Unpacker::ASPack.new(f)
+          u = described_class.new(f)
           File.open("#{root}/tmp/unpacked.tmp","w+") do |fo|
             u.unpack.dump(fo)
             fo.rewind
