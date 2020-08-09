@@ -23,7 +23,7 @@ Jeweler::Tasks.new do |gem|
   gem.authors = ["Andrey \"Zed\" Zaikin"]
   gem.executables = %w'pedump'
   gem.files.include "lib/**/*.rb"
-  gem.files.exclude %w'samples/**/* spec/**/* tmp/**/* tmp/.keep .* README.md.tpl'
+  gem.files.exclude %w'samples/**/* spec/**/* tmp/**/* tmp/.keep .* README.md.tpl .github/*'
   gem.extra_rdoc_files.exclude 'README.md.tpl'
   # dependencies defined in Gemfile
 end

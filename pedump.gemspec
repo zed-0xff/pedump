@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib".freeze]
   s.authors = ["Andrey \"Zed\" Zaikin".freeze]
-  s.date = "2020-07-28"
+  s.date = "2020-08-09"
   s.description = "dump headers, sections, extract resources of win32 PE exe,dll,etc".freeze
   s.email = "zed.0xff@gmail.com".freeze
   s.executables = ["pedump".freeze]
@@ -20,8 +20,6 @@ Gem::Specification.new do |s|
     "README.md"
   ]
   s.files = [
-    ".github/FUNDING.yml",
-    ".github/dependabot.yml",
     "CODE_OF_CONDUCT.md",
     "Gemfile",
     "Gemfile.lock",
@@ -66,38 +64,27 @@ Gem::Specification.new do |s|
     "misc/aspack/lzxdec.c",
     "misc/aspack/lzxdec.h",
     "misc/nedump.c",
-    "pedump.gemspec",
-    "rich.py"
+    "pedump.gemspec"
   ]
   s.homepage = "http://github.com/zed-0xff/pedump".freeze
   s.licenses = ["MIT".freeze]
-  s.rubygems_version = "2.7.10".freeze
+  s.rubygems_version = "3.1.2".freeze
   s.summary = "dump win32 PE executable files with a pure ruby".freeze
 
   if s.respond_to? :specification_version then
     s.specification_version = 4
+  end
 
-    if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-      s.add_runtime_dependency(%q<rainbow>.freeze, [">= 0"])
-      s.add_runtime_dependency(%q<awesome_print>.freeze, [">= 0"])
-      s.add_runtime_dependency(%q<iostruct>.freeze, [">= 0.0.4"])
-      s.add_runtime_dependency(%q<multipart-post>.freeze, [">= 2.0.0"])
-      s.add_runtime_dependency(%q<zhexdump>.freeze, [">= 0.0.2"])
-      s.add_development_dependency(%q<rspec>.freeze, ["~> 3.9.0"])
-      s.add_development_dependency(%q<rspec-its>.freeze, ["~> 1.3.0"])
-      s.add_development_dependency(%q<bundler>.freeze, ["~> 2.1.4"])
-      s.add_development_dependency(%q<jeweler>.freeze, ["~> 2.3.9"])
-    else
-      s.add_dependency(%q<rainbow>.freeze, [">= 0"])
-      s.add_dependency(%q<awesome_print>.freeze, [">= 0"])
-      s.add_dependency(%q<iostruct>.freeze, [">= 0.0.4"])
-      s.add_dependency(%q<multipart-post>.freeze, [">= 2.0.0"])
-      s.add_dependency(%q<zhexdump>.freeze, [">= 0.0.2"])
-      s.add_dependency(%q<rspec>.freeze, ["~> 3.9.0"])
-      s.add_dependency(%q<rspec-its>.freeze, ["~> 1.3.0"])
-      s.add_dependency(%q<bundler>.freeze, ["~> 2.1.4"])
-      s.add_dependency(%q<jeweler>.freeze, ["~> 2.3.9"])
-    end
+  if s.respond_to? :add_runtime_dependency then
+    s.add_runtime_dependency(%q<rainbow>.freeze, [">= 0"])
+    s.add_runtime_dependency(%q<awesome_print>.freeze, [">= 0"])
+    s.add_runtime_dependency(%q<iostruct>.freeze, [">= 0.0.4"])
+    s.add_runtime_dependency(%q<multipart-post>.freeze, [">= 2.0.0"])
+    s.add_runtime_dependency(%q<zhexdump>.freeze, [">= 0.0.2"])
+    s.add_development_dependency(%q<rspec>.freeze, ["~> 3.9.0"])
+    s.add_development_dependency(%q<rspec-its>.freeze, ["~> 1.3.0"])
+    s.add_development_dependency(%q<bundler>.freeze, ["~> 2.1.4"])
+    s.add_development_dependency(%q<jeweler>.freeze, ["~> 2.3.9"])
   else
     s.add_dependency(%q<rainbow>.freeze, [">= 0"])
     s.add_dependency(%q<awesome_print>.freeze, [">= 0"])
