@@ -105,8 +105,11 @@ class PEdump::CLI
 #        @actions << [:disasm, v]
 #      end
       opts.on("--extract ID", "Extract a resource/section/data_dir",
-              "ID: resource:0x98478 - extract resource by offset",
-              "ID: resource:ICON/#1 - extract resource by type & name",
+              "ID: resource:0x98478 - resource by offset",
+              "ID: resource:ICON/#1 - resource by type & name",
+              "ID: section:.text      - section by name",
+              "ID: section:rva/0x1000 - section by RVA",
+              "ID: section:raw/0x400  - section by RAW_PTR",
              ) do |v|
         @actions << [:extract, v]
       end
@@ -841,6 +844,8 @@ class PEdump::CLI
     case a[0]
     when 'resource'
       extract_resource a[1]
+    when 'section'
+      extract_section a[1]
     else
       raise "invalid #{x.inspect}"
     end
@@ -865,9 +870,31 @@ class PEdump::CLI
       @pedump.logger.fatal "[!] resource #{id.inspect} not found"
       exit(1)
     end
-    @pedump.io.seek(res.file_offset)
-    data = @pedump.io.read(res.size)
-    $stdout << data
+    IO::copy_stream @pedump.io, $stdout, res.size, res.file_offset
+  end
+
+  def extract_section id
+    section = nil
+    if id['/']
+      a = id.split('/',2)
+      if a[0] == 'rva'
+        value = a[1].to_i(0) # auto hex/dec, but also can parse oct and bin
+        section = @pedump.sections.find{ |s| s.VirtualAddress == value }
+      elsif a[0] == 'raw'
+        value = a[1].to_i(0) # auto hex/dec, but also can parse oct and bin
+        section = @pedump.sections.find{ |s| s.PointerToRawData == value }
+      else
+        @pedump.logger.fatal "[!] invalid section id #{id.inspect}"
+        exit(1)
+      end
+    else
+      section = @pedump.sections.find{ |s| s.Name == id }
+    end
+    unless section
+      @pedump.logger.fatal "[!] section #{id.inspect} not found"
+      exit(1)
+    end
+    IO::copy_stream @pedump.io, $stdout, section.SizeOfRawData, section.PointerToRawData
   end
 
 end # class PEdump::CLI

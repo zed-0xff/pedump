@@ -78,8 +78,11 @@ Usage
             --all                        Dump all but resource-directory (default)
     
             --extract ID                 Extract a resource/section/data_dir
-                                         ID: resource:0x98478 - extract resource by offset
-                                         ID: resource:ICON/#1 - extract resource by type & name
+                                         ID: resource:0x98478 - resource by offset
+                                         ID: resource:ICON/#1 - resource by type & name
+                                         ID: section:.text      - section by name
+                                         ID: section:rva/0x1000 - section by RVA
+                                         ID: section:raw/0x400  - section by RAW_PTR
             --va2file VA                 Convert RVA to file offset
     
         -W, --web                        Uploads files to a http://pedump.me
@@ -423,7 +426,9 @@ Usage
 
 ### Extracting
 
-resource by name:
+#### Resources
+
+by name:
 
     # pedump calc.exe --extract resource:VERSION/#1 | hexdump -C | head
 
@@ -438,7 +443,7 @@ resource by name:
     00000080  b2 02 00 00 01 00 30 00  34 00 30 00 39 00 30 00  |......0.4.0.9.0.|
     00000090  34 00 42 00 30 00 00 00  4c 00 16 00 01 00 43 00  |4.B.0...L.....C.|
 
-resource by offset
+by offset:
 
     # pedump calc.exe --extract resource:0x98478 | head
 
@@ -453,6 +458,34 @@ resource by offset
     <description>Windows Shell</description>
     <dependency>
 
+#### Sections
+
+by name:
+
+    # pedump calc.exe --extract section:.text | hexdump -C | head -4
+
+    00000000  0b aa cb 77 f7 c4 cc 77  a4 c4 cc 77 c4 c4 cc 77  |...w...w...w...w|
+    00000010  3e d7 ca 77 ec b4 cb 77  69 9c f0 77 dc c4 cc 77  |>..w...wi..w...w|
+    00000020  12 9c cb 77 4d af cb 77  b4 c4 cc 77 6e a8 ee 77  |...wM..w...wn..w|
+    00000030  14 fc f0 77 00 00 00 00  2c 92 04 76 09 62 04 76  |...w....,..v.b.v|
+
+by RVA:
+
+    # pedump calc.exe --extract section:rva/0x1000 | hexdump -C | head -4
+
+    00000000  0b aa cb 77 f7 c4 cc 77  a4 c4 cc 77 c4 c4 cc 77  |...w...w...w...w|
+    00000010  3e d7 ca 77 ec b4 cb 77  69 9c f0 77 dc c4 cc 77  |>..w...wi..w...w|
+    00000020  12 9c cb 77 4d af cb 77  b4 c4 cc 77 6e a8 ee 77  |...wM..w...wn..w|
+    00000030  14 fc f0 77 00 00 00 00  2c 92 04 76 09 62 04 76  |...w....,..v.b.v|
+
+by RAW_PTR (file offset):
+
+    # pedump calc.exe --extract section:raw/0x400 | hexdump -C | head -4
+
+    00000000  0b aa cb 77 f7 c4 cc 77  a4 c4 cc 77 c4 c4 cc 77  |...w...w...w...w|
+    00000010  3e d7 ca 77 ec b4 cb 77  69 9c f0 77 dc c4 cc 77  |>..w...wi..w...w|
+    00000020  12 9c cb 77 4d af cb 77  b4 c4 cc 77 6e a8 ee 77  |...wM..w...wn..w|
+    00000030  14 fc f0 77 00 00 00 00  2c 92 04 76 09 62 04 76  |...w....,..v.b.v|
 
 License
 -------

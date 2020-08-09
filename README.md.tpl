@@ -104,14 +104,29 @@ Usage
 
 ### Extracting
 
-resource by name:
+#### Resources
+
+by name:
 
 % pedump calc.exe --extract resource:VERSION/#1 | hexdump -C | head
 
-resource by offset
+by offset:
 
 % pedump calc.exe --extract resource:0x98478 | head
 
+#### Sections
+
+by name:
+
+% pedump calc.exe --extract section:.text | hexdump -C | head -4
+
+by RVA:
+
+% pedump calc.exe --extract section:rva/0x1000 | hexdump -C | head -4
+
+by RAW_PTR (file offset):
+
+% pedump calc.exe --extract section:raw/0x400 | hexdump -C | head -4
 
 License
 -------
