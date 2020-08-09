@@ -3,6 +3,7 @@ pedump    [![Build Status](https://travis-ci.org/zed-0xff/pedump.png?branch=mast
 
 News
 ----
+2020.08.09 - CLI: added resource extracting with --extract ID
 2020.07.28 - 0.6.1; better RICH HDR parsing/output
 2020.07.27 - 0.6.0
 2020.07.26 - now travis autotests run on ARM and OSX too!
@@ -100,6 +101,17 @@ Usage
     samples/gms_v1_0_3.exe:                   UPX 2.90 [LZMA] (Markus Oberhumer, Laszlo Molnar & John Reiser)
     samples/unpackme.exe:                     ASProtect 1.33 - 2.1 Registered (Alexey Solodovnikov)
     samples/zlib.dll:                         Microsoft Visual C v2.0
+
+### Extracting
+
+resource by name:
+
+% pedump calc.exe --extract resource:VERSION/#1 | hexdump -C | head
+
+resource by offset
+
+% pedump calc.exe --extract resource:0x98478 | head
+
 
 License
 -------

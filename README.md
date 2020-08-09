@@ -3,6 +3,7 @@ pedump    [![Build Status](https://travis-ci.org/zed-0xff/pedump.png?branch=mast
 
 News
 ----
+2020.08.09 - CLI: added resource extracting with --extract ID
 2020.07.28 - 0.6.1; better RICH HDR parsing/output
 2020.07.27 - 0.6.0
 2020.07.26 - now travis autotests run on ARM and OSX too!
@@ -75,6 +76,10 @@ Usage
                                          mimics 'file' command output
         -r, --recursive                  recurse dirs in packer detect
             --all                        Dump all but resource-directory (default)
+    
+            --extract ID                 Extract a resource/section/data_dir
+                                         ID: resource:0x98478 - extract resource by offset
+                                         ID: resource:ICON/#1 - extract resource by type & name
             --va2file VA                 Convert RVA to file offset
     
         -W, --web                        Uploads files to a http://pedump.me
@@ -415,6 +420,39 @@ Usage
     samples/gms_v1_0_3.exe:                   UPX 2.90 [LZMA] (Markus Oberhumer, Laszlo Molnar & John Reiser)
     samples/unpackme.exe:                     ASProtect 1.33 - 2.1 Registered (Alexey Solodovnikov)
     samples/zlib.dll:                         Microsoft Visual C v2.0
+
+### Extracting
+
+resource by name:
+
+    # pedump calc.exe --extract resource:VERSION/#1 | hexdump -C | head
+
+    00000000  78 03 34 00 00 00 56 00  53 00 5f 00 56 00 45 00  |x.4...V.S._.V.E.|
+    00000010  52 00 53 00 49 00 4f 00  4e 00 5f 00 49 00 4e 00  |R.S.I.O.N._.I.N.|
+    00000020  46 00 4f 00 00 00 00 00  bd 04 ef fe 00 00 01 00  |F.O.............|
+    00000030  01 00 06 00 00 00 91 1a  01 00 06 00 00 00 91 1a  |................|
+    00000040  3f 00 00 00 00 00 00 00  04 00 04 00 01 00 00 00  |?...............|
+    00000050  00 00 00 00 00 00 00 00  00 00 00 00 d6 02 00 00  |................|
+    00000060  01 00 53 00 74 00 72 00  69 00 6e 00 67 00 46 00  |..S.t.r.i.n.g.F.|
+    00000070  69 00 6c 00 65 00 49 00  6e 00 66 00 6f 00 00 00  |i.l.e.I.n.f.o...|
+    00000080  b2 02 00 00 01 00 30 00  34 00 30 00 39 00 30 00  |......0.4.0.9.0.|
+    00000090  34 00 42 00 30 00 00 00  4c 00 16 00 01 00 43 00  |4.B.0...L.....C.|
+
+resource by offset
+
+    # pedump calc.exe --extract resource:0x98478 | head
+
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <!-- Copyright (c) Microsoft Corporation -->
+    <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+    <assemblyIdentity
+        name="Microsoft.Windows.Shell.calc"
+        processorArchitecture="x86"
+        version="5.1.0.0"
+        type="win32"/>
+    <description>Windows Shell</description>
+    <dependency>
+
 
 License
 -------

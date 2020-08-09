@@ -35,10 +35,11 @@ class PEdump::CLI
 
   KNOWN_ACTIONS = (
     %w'mz dos_stub rich pe ne te data_directory sections tls security' +
-    %w'strings resources resource_directory imports exports version_info packer web console packer_only'
+    %w'strings resources resource_directory imports exports version_info packer web console packer_only' +
+    %w'extract' # 'disasm'
   ).map(&:to_sym)
 
-  DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory web packer_only console'.map(&:to_sym)
+  DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory web packer_only console extract disasm'.map(&:to_sym)
 
   URL_BASE = "http://pedump.me"
 
@@ -97,8 +98,20 @@ class PEdump::CLI
       opts.on "--all", "Dump all but resource-directory (default)" do
         @actions = DEFAULT_ALL_ACTIONS
       end
+
+      opts.separator ''
+
+#      opts.on "--disasm [X]", "Disassemble a symbol/VA" do |v|
+#        @actions << [:disasm, v]
+#      end
+      opts.on("--extract ID", "Extract a resource/section/data_dir",
+              "ID: resource:0x98478 - extract resource by offset",
+              "ID: resource:ICON/#1 - extract resource by type & name",
+             ) do |v|
+        @actions << [:extract, v]
+      end
       opts.on "--va2file VA", "Convert RVA to file offset" do |va|
-        @actions << [:va2file,va]
+        @actions << [:va2file, va]
       end
 
       opts.separator ''
@@ -134,7 +147,7 @@ class PEdump::CLI
       @file_name = fname
 
       File.open(fname,'rb') do |f|
-        @pedump = create_pedump fname
+        @pedump = create_pedump f
 
         next if !@options[:force] && !@pedump.supported_file?(f)
 
@@ -153,8 +166,8 @@ class PEdump::CLI
     # prevents a 'Broken pipe - <STDOUT> (Errno::EPIPE)' message
   end
 
-  def create_pedump fname
-    PEdump.new(fname, :force => @options[:force]).tap do |x|
+  def create_pedump io
+    PEdump.new(io, :force => @options[:force]).tap do |x|
       x.logger.level =
         case @options[:verbose]
         when -100..-3
@@ -313,6 +326,10 @@ class PEdump::CLI
   def dump_action action, f
     if action.is_a?(Array)
       case action[0]
+      when :disasm
+        return
+      when :extract
+        return extract action[1]
       when :va2file
         @pedump.sections(f)
         va = action[1] =~ /(^0x)|(h$)/i ? action[1].to_i(16) : action[1].to_i
@@ -813,6 +830,44 @@ class PEdump::CLI
       puts "# dexored:"
       data.dexor.hexdump
     end
+  end
+
+  def disasm x
+    puts "TODO"
+  end
+
+  def extract x
+    a = x.split(':',2)
+    case a[0]
+    when 'resource'
+      extract_resource a[1]
+    else
+      raise "invalid #{x.inspect}"
+    end
+  end
+
+  def extract_resource id
+    res = nil
+    if id =~ /\A0x\h+\Z/
+      needle = id.to_i(16)
+      res = @pedump.resources.find{ |r| r.file_offset == needle }
+    elsif id =~ /\A\d+\Z/
+      needle = id.to_i(10)
+      res = @pedump.resources.find{ |r| r.file_offset == needle }
+    elsif id['/']
+      type, name = id.split('/', 2)
+      res = @pedump.resources.find{ |r| r.type == type && r.name == name }
+    else
+      @pedump.logger.fatal "[!] invalid resource id #{id.inspect}"
+      exit(1)
+    end
+    unless res
+      @pedump.logger.fatal "[!] resource #{id.inspect} not found"
+      exit(1)
+    end
+    @pedump.io.seek(res.file_offset)
+    data = @pedump.io.read(res.size)
+    STDOUT << data
   end
 
 end # class PEdump::CLI
