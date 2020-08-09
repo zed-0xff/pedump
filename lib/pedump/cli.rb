@@ -208,7 +208,7 @@ class PEdump::CLI
   end
 
   class ProgressProxy
-    def initialize file, prefix = "[.] uploading: ", io = STDOUT
+    def initialize file, prefix = "[.] uploading: ", io = $stdout
       @file   = file
       @io     = io
       @prefix = prefix
@@ -241,8 +241,8 @@ class PEdump::CLI
     require 'net/http'
     require 'net/http/post/multipart'
 
-    stdout_sync = STDOUT.sync
-    STDOUT.sync = true
+    stdout_sync = $stdout.sync
+    $stdout.sync = true
 
     md5 = Digest::MD5.file(f.path).hexdigest
     @pedump.logger.info "[.] md5: #{md5}"
@@ -282,7 +282,7 @@ class PEdump::CLI
 
     puts "[.] uploaded: #{file_url}"
   ensure
-    STDOUT.sync = stdout_sync
+    $stdout.sync = stdout_sync
   end
 
   def console f
@@ -867,7 +867,7 @@ class PEdump::CLI
     end
     @pedump.io.seek(res.file_offset)
     data = @pedump.io.read(res.size)
-    STDOUT << data
+    $stdout << data
   end
 
 end # class PEdump::CLI
