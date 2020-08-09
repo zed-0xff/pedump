@@ -128,6 +128,10 @@ by RAW_PTR (file offset):
 
 % pedump calc.exe --extract section:raw/0x400 | hexdump -C | head -4
 
+#### Data Directory
+
+% pedump calc.exe --extract datadir:IMPORT | hexdump -C | head -4
+
 License
 -------
 Released under the MIT License.  See the [LICENSE](https://github.com/zed-0xff/pedump/blob/master/LICENSE.txt) file for further details.

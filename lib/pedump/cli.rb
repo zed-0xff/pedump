@@ -105,8 +105,9 @@ class PEdump::CLI
 #        @actions << [:disasm, v]
 #      end
       opts.on("--extract ID", "Extract a resource/section/data_dir",
-              "ID: resource:0x98478 - resource by offset",
-              "ID: resource:ICON/#1 - resource by type & name",
+              "ID: datadir:EXPORT     - datadir by type",
+              "ID: resource:0x98478   - resource by offset",
+              "ID: resource:ICON/#1   - resource by type & name",
               "ID: section:.text      - section by name",
               "ID: section:rva/0x1000 - section by RVA",
               "ID: section:raw/0x400  - section by RAW_PTR",
@@ -842,12 +843,25 @@ class PEdump::CLI
   def extract x
     a = x.split(':',2)
     case a[0]
+    when 'datadir'
+      extract_datadir a[1]
     when 'resource'
       extract_resource a[1]
     when 'section'
       extract_section a[1]
     else
       raise "invalid #{x.inspect}"
+    end
+  end
+
+  def extract_datadir id
+    entry = @pedump.data_directory.find{ |x| x.type == id }
+    unless entry
+      @pedump.logger.fatal "[!] entry #{id.inspect} not found"
+      exit(1)
+    end
+    if entry.size != 0
+      IO::copy_stream @pedump.io, $stdout, entry.size, @pedump.va2file(entry.va)
     end
   end
 

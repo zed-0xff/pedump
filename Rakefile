@@ -35,7 +35,7 @@ require 'rspec/core/rake_task'
 desc "run specs"
 RSpec::Core::RakeTask.new
 
-task :default => :spec
+task :default => [:spec, :readme]
 
 namespace :test do
   desc "test on all files in given path"

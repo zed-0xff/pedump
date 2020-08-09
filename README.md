@@ -78,8 +78,9 @@ Usage
             --all                        Dump all but resource-directory (default)
     
             --extract ID                 Extract a resource/section/data_dir
-                                         ID: resource:0x98478 - resource by offset
-                                         ID: resource:ICON/#1 - resource by type & name
+                                         ID: datadir:EXPORT     - datadir by type
+                                         ID: resource:0x98478   - resource by offset
+                                         ID: resource:ICON/#1   - resource by type & name
                                          ID: section:.text      - section by name
                                          ID: section:rva/0x1000 - section by RVA
                                          ID: section:raw/0x400  - section by RAW_PTR
@@ -486,6 +487,15 @@ by RAW_PTR (file offset):
     00000010  3e d7 ca 77 ec b4 cb 77  69 9c f0 77 dc c4 cc 77  |>..w...wi..w...w|
     00000020  12 9c cb 77 4d af cb 77  b4 c4 cc 77 6e a8 ee 77  |...wM..w...wn..w|
     00000030  14 fc f0 77 00 00 00 00  2c 92 04 76 09 62 04 76  |...w....,..v.b.v|
+
+#### Data Directory
+
+    # pedump calc.exe --extract datadir:IMPORT | hexdump -C | head -4
+
+    00000000  90 9f 04 00 ff ff ff ff  ff ff ff ff dc a2 04 00  |................|
+    00000010  48 12 00 00 f4 a0 04 00  ff ff ff ff ff ff ff ff  |H...............|
+    00000020  10 a5 04 00 ac 13 00 00  48 9d 04 00 ff ff ff ff  |........H.......|
+    00000030  ff ff ff ff f6 a5 04 00  00 10 00 00 5c 9f 04 00  |............\...|
 
 License
 -------

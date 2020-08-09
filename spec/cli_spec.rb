@@ -52,3 +52,16 @@ describe "--extract section" do
     cli("samples/calc.exe --extract section:raw/0x400").md5.should == "b7347dffd3d096f0b02ef8e1fe586b97"
   end
 end
+
+describe "--extract datadir" do
+  it "should set errorlevel to 1 if datadir is not found" do
+    cli("samples/calc.exe --extract datadir:foo").status.should == 1
+  end
+  it "should extract empty datadir" do
+    cli("samples/calc.exe --extract datadir:EXPORT").output.should == ""
+    cli("samples/calc.exe --extract datadir:EXPORT").status.should == 0
+  end
+  it "should extract datadir by RVA" do
+    cli("samples/calc.exe --extract datadir:IMPORT").md5.should == "de0ef456633e7a605a3b5d34921edf0d"
+  end
+end
