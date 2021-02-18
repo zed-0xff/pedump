@@ -280,7 +280,7 @@ class PEdump::CLI
 
     puts "[.] analyzing..."
 
-    if (r=open(File.join(URL_BASE,md5,'analyze')).read) != "OK"
+    if (r=URI.open(File.join(URL_BASE,md5,'analyze')).read) != "OK"
       raise "invalid server response: #{r}"
     end
 

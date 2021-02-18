@@ -85,7 +85,7 @@ def check_file url, params = {}
   fname = File.join 'data', (prefix ? "#{prefix}-" : '') + File.basename(url)
   existing_md5 = File.exist?(fname) ? Digest::MD5.file(fname).hexdigest : ''
   print "[.] fetching #{url} .. "
-  remote_data  = open(url).read.force_encoding('cp1252').encode('utf-8')
+  remote_data = URI.open(url).read.force_encoding('cp1252').encode('utf-8')
   puts "#{remote_data.size} bytes"
   raise "too small remote data (#{remote_data.size})" if remote_data.size < params[:min_size]
   remote_md5   = Digest::MD5.hexdigest(remote_data)
