@@ -2,7 +2,7 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 require File.expand_path(File.dirname(__FILE__) + '/../lib/pedump')
 
-# uploaded by someone: http://pedump.me/1cfd896e77173e512e1627804e03317a/
+# uploaded by someone: https://pedump.me/1cfd896e77173e512e1627804e03317a/
 describe "corkami/manyimportsW7.v2.exe" do
   before :all do
     @sample = sample

@@ -41,7 +41,7 @@ class PEdump::CLI
 
   DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory web packer_only console extract disasm'.map(&:to_sym)
 
-  URL_BASE = "http://pedump.me"
+  URL_BASE = "https://pedump.me"
 
   def initialize argv = ARGV
     @argv = argv
@@ -253,7 +253,8 @@ class PEdump::CLI
     file_url = "#{URL_BASE}/#{md5}/"
 
     @pedump.logger.warn "[.] checking if file already uploaded.."
-    Net::HTTP.start('pedump.me') do |http|
+    uri = URI.parse URL_BASE
+    Net::HTTP.start(uri.host, uri.port, use_ssl: (uri.scheme == 'https')) do |http|
       http.open_timeout = 10
       http.read_timeout = 10
       # doing HTTP HEAD is a lot faster than open-uri
@@ -275,13 +276,15 @@ class PEdump::CLI
     uio = UploadIO.new(f, "application/octet-stream", File.basename(f.path))
     ppx = ProgressProxy.new(uio)
     req = Net::HTTP::Post::Multipart.new post_url.path, "file" => ppx
-    res = Net::HTTP.start(post_url.host, post_url.port){ |http| http.request(req) }
+    res = Net::HTTP.start(post_url.host, post_url.port, use_ssl: (post_url.scheme == 'https')) do |http|
+      http.request(req)
+    end
     ppx.finish!
 
-    puts "[.] analyzing..."
-
-    if (r=URI.open(File.join(URL_BASE,md5,'analyze')).read) != "OK"
-      raise "invalid server response: #{r}"
+    unless [200, 302, 303].include?(res.code.to_i)
+      @pedump.logger.fatal "[!] invalid server response: #{res.code} #{res.msg}"
+      @pedump.logger.fatal res.body unless res.body.empty?
+      exit(1)
     end
 
     puts "[.] uploaded: #{file_url}"

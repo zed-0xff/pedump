@@ -3,6 +3,7 @@ pedump    [![Build Status](https://travis-ci.org/zed-0xff/pedump.png?branch=mast
 
 News
 ----
+2021.02.18 - updated gems; changed open-uri to URI.open; enabled SSL on https://pedump.me/
 2020.08.09 - CLI: added resource extracting with --extract ID
 2020.07.28 - 0.6.1; better RICH HDR parsing/output
 2020.07.27 - 0.6.0
@@ -33,7 +34,7 @@ Can dump:
  * Imports & Exports
  * VS_VERSIONINFO parsing
  * PE Packer/Compiler detection
- * a convenient way to upload your PE's to http://pedump.me for a nice HTML tables with image previews, candies & stuff
+ * a convenient way to upload your PE's to https://pedump.me for a nice HTML tables with image previews, candies & stuff
 
 Installation
 ------------
