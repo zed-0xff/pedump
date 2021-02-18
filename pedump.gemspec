@@ -20,7 +20,6 @@ Gem::Specification.new do |s|
     "README.md"
   ]
   s.files = [
-    ".github/workflows/rubocop-analysis.yml",
     "CODE_OF_CONDUCT.md",
     "Gemfile",
     "Gemfile.lock",
