@@ -2,7 +2,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     addressable (2.4.0)
-    awesome_print (1.8.0)
+    awesome_print (1.9.2)
     builder (3.2.4)
     descendants_tracker (0.0.4)
       thread_safe (~> 0.3, >= 0.3.1)
