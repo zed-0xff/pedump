@@ -271,7 +271,7 @@ class PEdump::CLI
     f.rewind
 
     # upload with progress
-    post_url = URI.parse(URL_BASE+'/')
+    post_url = URI.parse(URL_BASE+'/upload')
     # UploadIO is from multipart-post
     uio = UploadIO.new(f, "application/octet-stream", File.basename(f.path))
     ppx = ProgressProxy.new(uio)
