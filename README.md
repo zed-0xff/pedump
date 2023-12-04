@@ -4,6 +4,7 @@ pedump    [![Build Status](https://travis-ci.org/zed-0xff/pedump.png?branch=mast
 News
 ----
 ```
+2023.12.04 - workaround IO.pread() not available on windows
 2021.02.18 - updated gems; changed open-uri to URI.open; enabled SSL on https://pedump.me/
 2020.08.09 - CLI: added resource extracting with --extract ID
 2020.07.28 - 0.6.1; better RICH HDR parsing/output

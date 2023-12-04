@@ -864,7 +864,7 @@ class PEdump::CLI
       exit(1)
     end
     if entry.size != 0
-      IO::copy_stream @pedump.io, $stdout, entry.size, @pedump.va2file(entry.va)
+      _copy_stream @pedump.io, $stdout, entry.size, @pedump.va2file(entry.va)
     end
   end
 
@@ -887,7 +887,7 @@ class PEdump::CLI
       @pedump.logger.fatal "[!] resource #{id.inspect} not found"
       exit(1)
     end
-    IO::copy_stream @pedump.io, $stdout, res.size, res.file_offset
+    _copy_stream @pedump.io, $stdout, res.size, res.file_offset
   end
 
   def extract_section id
@@ -911,7 +911,31 @@ class PEdump::CLI
       @pedump.logger.fatal "[!] section #{id.inspect} not found"
       exit(1)
     end
-    IO::copy_stream @pedump.io, $stdout, section.SizeOfRawData, section.PointerToRawData
+    _copy_stream @pedump.io, $stdout, section.SizeOfRawData, section.PointerToRawData
   end
 
+  private
+
+  # https://github.com/zed-0xff/pedump/issues/44
+  # https://redmine.ruby-lang.org/issues/12280
+  def _copy_stream(src, dst, src_length = nil, src_offset = 0)
+    IO::copy_stream(src, dst, src_length, src_offset)
+  rescue NotImplementedError # `copy_stream': pread() not implemented (NotImplementedError)
+    src_length ||= src.size - src_offset
+    bufsize = 16384
+    buf = ("\x00".force_encoding('binary')) * bufsize
+    src.binmode
+    dst.binmode
+    saved_pos = src.tell
+    src.seek(src_offset)
+    bytes_copied = 0
+    while src_length > 0 && buf.size != 0
+      src.read([bufsize, src_length].min, buf)
+      dst.write(buf)
+      src_length -= buf.size
+      bytes_copied += buf.size
+    end
+    src.seek(saved_pos)
+    bytes_copied
+  end
 end # class PEdump::CLI
