@@ -7,6 +7,8 @@ class PEdump
     :image_optional_header, # includes data directory
     :section_table
   )
+    attr_accessor :ioh_offset
+
     alias :ifh       :image_file_header
     alias :ifh=      :image_file_header=
     alias :ioh       :image_optional_header
@@ -68,7 +70,7 @@ class PEdump
       end
       pe = PE.new(pe_sig)
       pe.image_file_header = IMAGE_FILE_HEADER.read(f)
-      ioh_offset = f.tell # offset to IMAGE_OPTIONAL_HEADER
+      pe.ioh_offset = f.tell # offset to IMAGE_OPTIONAL_HEADER
       if pe.ifh.SizeOfOptionalHeader.to_i > 0
         if pe.x64?
           pe.image_optional_header = IMAGE_OPTIONAL_HEADER64.read(f, pe.ifh.SizeOfOptionalHeader)
@@ -81,7 +83,7 @@ class PEdump
 
       # The Windows loader expects to find the PE section headers after the optional header. It calculates the address of the first section header by adding SizeOfOptionalHeader to the beginning of the optional header.
       # // http://www.phreedom.org/research/tinype/
-      f.seek( ioh_offset + pe.ifh.SizeOfOptionalHeader.to_i )
+      f.seek( pe.ioh_offset + pe.ifh.SizeOfOptionalHeader.to_i )
       pe.sections = read_sections(f, nToRead, args)
 
       pe_end = f.tell

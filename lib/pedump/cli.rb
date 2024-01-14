@@ -118,6 +118,10 @@ class PEdump::CLI
         @actions << [:va2file, va]
       end
 
+      opts.on "--set-os-version VER", "Patch OS version in PE header" do |ver|
+        @actions << [:set_os_version, ver]
+      end
+
       opts.separator ''
 
       opts.on "-W", "--web", "Uploads files to a #{URL_BASE}","for a nice HTML tables with image previews,","candies & stuff" do
@@ -337,6 +341,8 @@ class PEdump::CLI
         return
       when :extract
         return extract action[1]
+      when :set_os_version
+        return set_os_version action[1]
       when :va2file
         @pedump.sections(f)
         va = action[1] =~ /(^0x)|(h$)/i ? action[1].to_i(16) : action[1].to_i
@@ -912,6 +918,40 @@ class PEdump::CLI
       exit(1)
     end
     _copy_stream @pedump.io, $stdout, section.SizeOfRawData, section.PointerToRawData
+  end
+
+  def set_os_version ver
+    raise "[!] invalid version #{ver.inspect}" unless ver =~ /\A(\d+)\.(\d+)\Z/
+    raise "[!] no IMAGE_OPTIONAL_HEADER" if @pedump.pe.ifh.SizeOfOptionalHeader.to_i == 0
+    major = $1.to_i
+    minor = $2.to_i
+    ver = "#{major}.#{minor}"
+    ioh = @pedump.pe.image_optional_header
+
+    prev_os_ver = "#{ioh.MajorOperatingSystemVersion}.#{ioh.MinorOperatingSystemVersion}"
+    prev_ss_ver = "#{ioh.MajorSubsystemVersion}.#{ioh.MinorSubsystemVersion}"
+
+    if prev_os_ver == ver && prev_ss_ver == ver
+      @pedump.logger.warn "[?] already has #{ver}"
+      return
+    end
+
+    if prev_os_ver != ver
+      ioh.MajorOperatingSystemVersion = major
+      ioh.MinorOperatingSystemVersion = minor
+      @pedump.logger.warn "[.] MajorOperatingSystemVersion: #{prev_os_ver} -> #{ver}"
+    end
+
+    if prev_ss_ver != ver
+      ioh.MajorSubsystemVersion = major
+      ioh.MinorSubsystemVersion = minor
+      @pedump.logger.warn "[.] MajorSubsystemVersion:       #{prev_ss_ver} -> #{ver}"
+    end
+
+    io = @pedump.io.reopen(@file_name,'rb+')
+    io.seek @pedump.pe.ioh_offset
+    io.write ioh.pack
+    io.close
   end
 
   private
