@@ -65,3 +65,12 @@ describe "--extract datadir" do
     cli("samples/calc.exe --extract datadir:IMPORT").md5.should == "de0ef456633e7a605a3b5d34921edf0d"
   end
 end
+
+describe "--imphash" do
+  it "outputs nothing if no imports" do
+    cli("samples/bad_imports.exe --imphash").output.should == ""
+  end
+  it "outputs a line per file" do
+    cli("samples/calc.exe samples/notepad.exe --imphash").output.should == "15424d7bd976766dc8b2452077f79c09 samples/calc.exe\n419c3fe8c1eefea9336b96f74f0951dd samples/notepad.exe\n"
+  end
+end

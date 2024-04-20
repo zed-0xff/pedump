@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+require 'digest/md5'
 require 'stringio'
 require 'iostruct'
 require 'zhexdump'
@@ -9,6 +10,7 @@ unless Object.new.respond_to?(:try) && nil.respond_to?(:try)
 end
 
 require 'pedump/core'
+require 'pedump/ordlookup'
 require 'pedump/pe'
 require 'pedump/resources'
 require 'pedump/version_info'
@@ -573,11 +575,37 @@ class PEdump
     end
   end
 
+  def imphash f=@io
+    return @imphash if @imphash
+    return nil unless pe(f) && pe(f).ioh && f
+
+    imports = imports(f)
+    return nil if imports.empty?
+
+    a = []
+    imports.each do |iid|
+      next unless iid.module_name
+
+      names = [iid.original_first_thunk, iid.first_thunk].compact.flatten.map do |x|
+        x.name || PEdump.ordlookup(iid.module_name, x.ordinal, make_name: true)
+      end.compact.map(&:downcase).uniq
+      libname = iid.module_name.downcase.sub(/\.(ocx|sys|dll)$/,'') # as in python's pefile
+      names.each do |name|
+        a << "#{libname}.#{name}"
+      end
+    end
+
+    return nil if a.empty?
+    @imphash = Digest::MD5.hexdigest(a.join(","))
+  end
+
   def pe_imports f=@io
     return @imports if @imports
     return nil unless pe(f) && pe(f).ioh && f
+
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::IMPORT]
     return [] if !dir || (dir.va == 0 && dir.size == 0)
+
     file_offset = va2file(dir.va)
     return nil unless file_offset
 

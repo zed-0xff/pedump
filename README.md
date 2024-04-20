@@ -4,6 +4,9 @@ pedump    [![Build Status](https://travis-ci.org/zed-0xff/pedump.png?branch=mast
 News
 ----
 ```
+2024.04.20 - cli: add --set-dll-char to patch dll characteristics
+             pe: imphash calculation
+             cli: added --imphash option
 2024.01.15 - add "--set-os-version VER" cmdline option for patching OS version in PE header
 2023.12.04 - workaround IO.pread() not available on windows
 2021.02.18 - updated gems; changed open-uri to URI.open; enabled SSL on https://pedump.me/

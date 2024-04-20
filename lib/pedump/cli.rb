@@ -35,7 +35,7 @@ class PEdump::CLI
 
   KNOWN_ACTIONS = (
     %w'mz dos_stub rich pe ne te data_directory sections tls security' +
-    %w'strings resources resource_directory imports exports version_info packer web console packer_only' +
+    %w'strings resources resource_directory imports exports version_info imphash packer web console packer_only' +
     %w'extract' # 'disasm'
   ).map(&:to_sym)
 
@@ -334,6 +334,7 @@ class PEdump::CLI
     s = action.to_s.upcase.tr('_',' ')
     s += " Header" if [:mz, :pe, :rich].include?(action)
     s = "Packer / Compiler" if action == :packer
+    s = "imphash" if action == :imphash
     "\n=== %s ===\n\n" % s
   end
 
@@ -361,9 +362,9 @@ class PEdump::CLI
     data = @pedump.send(action, f)
     return if !data || (data.respond_to?(:empty?) && data.empty?)
 
-    puts action_title(action) unless @options[:format] == :binary
+    puts action_title(action) unless @options[:format] == :binary || @actions == [:imphash]
 
-    return dump(data) if [:inspect, :table, :json, :yaml].include?(@options[:format])
+    return dump(data, action:) if [:inspect, :table, :json, :yaml].include?(@options[:format])
 
     dump_opts = {:name => action}
     case action
@@ -409,7 +410,7 @@ class PEdump::CLI
       require 'pp'
       pp data
     when :table
-      dump_table data
+      dump_table data, opts
     when :yaml
       require 'yaml'
       puts data.to_yaml
@@ -485,7 +486,7 @@ class PEdump::CLI
     end
   end
 
-  def dump_table data
+  def dump_table data, opts = {}
     if data.is_a?(Struct)
       return dump_res_dir(data) if data.is_a?(PEdump::IMAGE_RESOURCE_DIRECTORY)
       return dump_exports(data) if data.is_a?(PEdump::IMAGE_EXPORT_DIRECTORY)
@@ -522,7 +523,12 @@ class PEdump::CLI
     elsif data.is_a?(PEdump::RichHdr)
       dump_rich_hdr data
     else
-      puts "[?] Don't know how to display #{data.inspect[0,50]}... as a table"
+      case opts[:action]
+      when :imphash
+        puts "#{data} #{@file_name}"
+      else
+        puts "[?] Don't know how to display #{data.inspect[0,50]}... as a table"
+      end
     end
   end
 
