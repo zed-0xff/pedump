@@ -78,6 +78,7 @@ Usage
         -I, --imports
         -E, --exports
         -V, --version-info
+            --imphash
             --packer
             --deep                       packer deep scan, significantly slower
         -P, --packer-only                packer/compiler detect only,
@@ -94,6 +95,7 @@ Usage
                                          ID: section:raw/0x400  - section by RAW_PTR
             --va2file VA                 Convert RVA to file offset
             --set-os-version VER         Patch OS version in PE header
+            --set-dll-char X             Patch IMAGE_OPTIONAL_HEADER32.DllCharacteristics
     
         -W, --web                        Uploads files to a https://pedump.me
                                          for a nice HTML tables with image previews,
