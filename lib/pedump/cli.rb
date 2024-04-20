@@ -121,6 +121,9 @@ class PEdump::CLI
       opts.on "--set-os-version VER", "Patch OS version in PE header" do |ver|
         @actions << [:set_os_version, ver]
       end
+      opts.on "--set-dll-char X", "Patch IMAGE_OPTIONAL_HEADER32.DllCharacteristics" do |x|
+        @actions << [:set_dll_char, x]
+      end
 
       opts.separator ''
 
@@ -343,6 +346,8 @@ class PEdump::CLI
         return extract action[1]
       when :set_os_version
         return set_os_version action[1]
+      when :set_dll_char
+        return set_dll_char action[1]
       when :va2file
         @pedump.sections(f)
         va = action[1] =~ /(^0x)|(h$)/i ? action[1].to_i(16) : action[1].to_i
@@ -918,6 +923,14 @@ class PEdump::CLI
       exit(1)
     end
     _copy_stream @pedump.io, $stdout, section.SizeOfRawData, section.PointerToRawData
+  end
+
+  def set_dll_char x
+    @pedump.pe.image_optional_header.DllCharacteristics = x.to_i(0)
+    io = @pedump.io.reopen(@file_name,'rb+')
+    io.seek @pedump.pe.ioh_offset
+    io.write @pedump.pe.image_optional_header.pack
+    io.close
   end
 
   def set_os_version ver
