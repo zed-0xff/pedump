@@ -364,7 +364,7 @@ class PEdump::CLI
 
     puts action_title(action) unless @options[:format] == :binary || @actions == [:imphash]
 
-    return dump(data, action:) if [:inspect, :table, :json, :yaml].include?(@options[:format])
+    return dump(data, action: action) if [:inspect, :table, :json, :yaml].include?(@options[:format])
 
     dump_opts = {:name => action}
     case action
