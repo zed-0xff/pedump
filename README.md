@@ -19,7 +19,7 @@ News
 
 Description
 -----------
-A pure ruby implementation of win32 PE binary files dumper.
+A pure Ruby dumper of win32 [Portable Executable](https://en.wikipedia.org/wiki/Portable_Executable) (PE) binary files.
 
 Supported formats:
 
