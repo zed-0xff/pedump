@@ -675,7 +675,8 @@ class PEdump::CLI
     data.each do |x|
       case x
       when PEdump::IMAGE_IMPORT_DESCRIPTOR
-        (Array(x.original_first_thunk) + Array(x.first_thunk)).uniq.each do |f|
+        # (Array(x.original_first_thunk) + Array(x.first_thunk)).uniq.each do |f|
+        (x.original_first_thunk || x.first_thunk).each do |f|
           next unless f
           # imported function
           printf fmt,

@@ -586,7 +586,8 @@ class PEdump
     imports.each do |iid|
       next unless iid.module_name
 
-      names = [iid.original_first_thunk, iid.first_thunk].compact.flatten.map do |x|
+      # was: [iid.original_first_thunk, iid.first_thunk].compact.flatten
+      names = (iid.original_first_thunk || iid.first_thunk).map do |x|
         x.name || PEdump.ordlookup(iid.module_name, x.ordinal, make_name: true)
       end.compact.map(&:downcase).uniq
       libname = iid.module_name.downcase.sub(/\.(ocx|sys|dll)$/,'') # as in python's pefile
@@ -717,9 +718,9 @@ class PEdump
         logger.info "[?] import table: empty OriginalFirstThunk for #{x.module_name}"
       elsif logger.debug?
         # compare all but VAs
-        if x.original_first_thunk != x.first_thunk
-          logger.debug "[?] import table: OriginalFirstThunk != FirstThunk for #{x.module_name}"
-        end
+        #if x.original_first_thunk != x.first_thunk
+        #  logger.debug "[?] import table: OriginalFirstThunk != FirstThunk for #{x.module_name}"
+        #end
       end
     end # r.each
     @imports
