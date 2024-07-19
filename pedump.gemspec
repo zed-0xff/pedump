@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib".freeze]
   s.authors = ["Andrey \"Zed\" Zaikin".freeze]
-  s.date = "2024-05-10"
+  s.date = "2024-07-19"
   s.description = "dump headers, sections, extract resources of win32 PE exe,dll,etc".freeze
   s.email = "zed.0xff@gmail.com".freeze
   s.executables = ["pedump".freeze]
@@ -73,14 +73,14 @@ Gem::Specification.new do |s|
   ]
   s.homepage = "http://github.com/zed-0xff/pedump".freeze
   s.licenses = ["MIT".freeze]
-  s.rubygems_version = "3.5.6".freeze
+  s.rubygems_version = "3.5.16".freeze
   s.summary = "dump win32 PE executable files with a pure ruby".freeze
 
   s.specification_version = 4
 
   s.add_runtime_dependency(%q<rainbow>.freeze, [">= 0".freeze])
   s.add_runtime_dependency(%q<awesome_print>.freeze, [">= 0".freeze])
-  s.add_runtime_dependency(%q<iostruct>.freeze, [">= 0.0.4".freeze])
+  s.add_runtime_dependency(%q<iostruct>.freeze, [">= 0.1.3".freeze])
   s.add_runtime_dependency(%q<multipart-post>.freeze, [">= 2.0.0".freeze])
   s.add_runtime_dependency(%q<zhexdump>.freeze, [">= 0.0.2".freeze])
   s.add_development_dependency(%q<rspec>.freeze, [">= 0".freeze])

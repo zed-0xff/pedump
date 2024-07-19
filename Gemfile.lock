@@ -1,14 +1,28 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    addressable (2.8.6)
-      public_suffix (>= 2.0.2, < 6.0)
+    activesupport (7.1.3.4)
+      base64
+      bigdecimal
+      concurrent-ruby (~> 1.0, >= 1.0.2)
+      connection_pool (>= 2.2.5)
+      drb
+      i18n (>= 1.6, < 2)
+      minitest (>= 5.1)
+      mutex_m
+      tzinfo (~> 2.0)
+    addressable (2.8.7)
+      public_suffix (>= 2.0.2, < 7.0)
     awesome_print (1.9.2)
     base64 (0.2.0)
-    builder (3.2.4)
+    bigdecimal (3.1.8)
+    builder (3.3.0)
+    concurrent-ruby (1.3.3)
+    connection_pool (2.4.1)
     descendants_tracker (0.0.4)
       thread_safe (~> 0.3, >= 0.3.1)
     diff-lcs (1.5.1)
+    drb (2.2.1)
     faraday (1.10.3)
       faraday-em_http (~> 1.0)
       faraday-em_synchrony (~> 1.0)
@@ -32,8 +46,10 @@ GEM
     faraday-patron (1.0.0)
     faraday-rack (1.0.0)
     faraday-retry (1.0.3)
-    git (1.19.1)
+    git (2.1.1)
+      activesupport (>= 5.0)
       addressable (~> 2.8)
+      process_executer (~> 1.1)
       rchardet (~> 1.8)
     github_api (0.19.0)
       addressable (~> 2.4)
@@ -42,8 +58,12 @@ GEM
       hashie (~> 3.5, >= 3.5.2)
       oauth2 (~> 1.0)
     hashie (3.6.0)
-    highline (3.0.1)
-    iostruct (0.0.5)
+    highline (3.1.0)
+      reline
+    i18n (1.14.5)
+      concurrent-ruby (~> 1.0)
+    io-console (0.7.2)
+    iostruct (0.1.3)
     juwelier (2.4.9)
       builder
       bundler
@@ -56,16 +76,27 @@ GEM
       rake
       rdoc
       semver2
-    jwt (2.8.1)
+    jwt (2.8.2)
       base64
     kamelcase (0.0.2)
       semver2 (~> 3)
-    mini_portile2 (2.8.6)
+    minitest (5.24.1)
     multi_json (1.15.0)
-    multi_xml (0.6.0)
-    multipart-post (2.4.0)
-    nokogiri (1.16.4)
-      mini_portile2 (~> 2.8.2)
+    multi_xml (0.7.1)
+      bigdecimal (~> 3.1)
+    multipart-post (2.4.1)
+    mutex_m (0.2.0)
+    nokogiri (1.16.6-aarch64-linux)
+      racc (~> 1.4)
+    nokogiri (1.16.6-arm-linux)
+      racc (~> 1.4)
+    nokogiri (1.16.6-arm64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.16.6-x86-linux)
+      racc (~> 1.4)
+    nokogiri (1.16.6-x86_64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.16.6-x86_64-linux)
       racc (~> 1.4)
     oauth2 (1.4.11)
       faraday (>= 0.17.3, < 3.0)
@@ -73,45 +104,55 @@ GEM
       multi_json (~> 1.3)
       multi_xml (~> 0.5)
       rack (>= 1.2, < 4)
+    process_executer (1.1.0)
     psych (5.1.2)
       stringio
-    public_suffix (5.0.5)
-    racc (1.7.3)
-    rack (3.0.10)
+    public_suffix (6.0.0)
+    racc (1.8.0)
+    rack (3.1.7)
     rainbow (3.1.1)
     rake (13.2.1)
     rchardet (1.8.0)
-    rdoc (6.6.3.1)
+    rdoc (6.7.0)
       psych (>= 4.0.0)
+    reline (0.5.9)
+      io-console (~> 0.5)
     rspec (3.13.0)
       rspec-core (~> 3.13.0)
       rspec-expectations (~> 3.13.0)
       rspec-mocks (~> 3.13.0)
     rspec-core (3.13.0)
       rspec-support (~> 3.13.0)
-    rspec-expectations (3.13.0)
+    rspec-expectations (3.13.1)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
     rspec-its (1.3.0)
       rspec-core (>= 3.0.0)
       rspec-expectations (>= 3.0.0)
-    rspec-mocks (3.13.0)
+    rspec-mocks (3.13.1)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
     rspec-support (3.13.1)
     ruby2_keywords (0.0.5)
     semver2 (3.4.2)
-    stringio (3.1.0)
+    stringio (3.1.1)
     thread_safe (0.3.6)
-    zhexdump (0.1.0)
+    tzinfo (2.0.6)
+      concurrent-ruby (~> 1.0)
+    zhexdump (0.1.1)
 
 PLATFORMS
-  ruby
+  aarch64-linux
+  arm-linux
+  arm64-darwin
+  x86-linux
+  x86_64-darwin
+  x86_64-linux
 
 DEPENDENCIES
   awesome_print
   bundler
-  iostruct (>= 0.0.4)
+  iostruct (>= 0.1.3)
   juwelier
   multipart-post (>= 2.0.0)
   rainbow
@@ -120,4 +161,4 @@ DEPENDENCIES
   zhexdump (>= 0.0.2)
 
 BUNDLED WITH
-   2.2.32
+   2.5.3
