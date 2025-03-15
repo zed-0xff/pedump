@@ -920,6 +920,20 @@ class PEdump
       end
   end
   alias :packers :packer
+
+  ##############################################################################
+  # tail data
+  ##############################################################################
+
+  def tail f=@io
+    tail_start = sections(f).map{ |s| s.PointerToRawData + s.SizeOfRawData }.max
+    if tail_start && tail_start < f.size
+      f.seek tail_start
+      f
+    else
+      nil
+    end
+  end
 end
 
 ####################################################################################

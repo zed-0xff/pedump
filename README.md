@@ -80,6 +80,7 @@ Usage
         -V, --version-info
             --imphash
             --packer
+            --tail
             --deep                       packer deep scan, significantly slower
         -P, --packer-only                packer/compiler detect only,
                                          mimics 'file' command output

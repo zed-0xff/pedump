@@ -36,7 +36,7 @@ class PEdump::CLI
   KNOWN_ACTIONS = (
     %w'mz dos_stub rich pe ne te data_directory sections tls security' +
     %w'strings resources resource_directory imports exports version_info imphash packer web console packer_only' +
-    %w'extract' # 'disasm'
+    %w'extract tail' # 'disasm'
   ).map(&:to_sym)
 
   DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory web packer_only console extract disasm'.map(&:to_sym)
@@ -111,6 +111,8 @@ class PEdump::CLI
               "ID: section:.text      - section by name",
               "ID: section:rva/0x1000 - section by RVA",
               "ID: section:raw/0x400  - section by RAW_PTR",
+              "ID: tail               - file tail",
+              "ID: tail:c00           - file tail + 0xc00 offset",
              ) do |v|
         @actions << [:extract, v]
       end
@@ -487,6 +489,19 @@ class PEdump::CLI
   end
 
   def dump_table data, opts = {}
+    case data
+    when File
+      # tail
+      printf "0x%x (%d) bytes starting at 0x%x:\n\n", data.size-data.tell, data.size-data.tell, data.tell
+
+      a = data.read(4096).to_hexdump.split("\n", 11)
+      if a.size > 10
+        a[10] = "..."
+      end
+      puts a.join("\n")
+      return
+    end
+
     if data.is_a?(Struct)
       return dump_res_dir(data) if data.is_a?(PEdump::IMAGE_RESOURCE_DIRECTORY)
       return dump_exports(data) if data.is_a?(PEdump::IMAGE_EXPORT_DIRECTORY)
@@ -516,7 +531,7 @@ class PEdump::CLI
       when PEdump::NE::Segment
         dump_ne_segments data
       else
-        puts "[?] don't know how to dump: #{data.inspect[0,50]}" unless data.empty?
+        puts "[?] don't know how to dump: #{data.inspect[0,50]}" unless (data.respond_to?(:empty?) && data.empty?)
       end
     elsif data.is_a?(PEdump::DOSStub)
       data.hexdump
@@ -870,6 +885,8 @@ class PEdump::CLI
       extract_resource a[1]
     when 'section'
       extract_section a[1]
+    when 'tail'
+      extract_tail a[1]
     else
       raise "invalid #{x.inspect}"
     end
@@ -932,6 +949,12 @@ class PEdump::CLI
     _copy_stream @pedump.io, $stdout, section.SizeOfRawData, section.PointerToRawData
   end
 
+  def extract_tail offset
+    io = @pedump.tail
+    io.seek(offset.to_i(16), IO::SEEK_CUR) if offset
+    _copy_stream io, $stdout
+  end
+
   def set_dll_char x
     @pedump.pe.image_optional_header.DllCharacteristics = x.to_i(0)
     io = @pedump.io.reopen(@file_name,'rb+')
@@ -978,7 +1001,7 @@ class PEdump::CLI
 
   # https://github.com/zed-0xff/pedump/issues/44
   # https://redmine.ruby-lang.org/issues/12280
-  def _copy_stream(src, dst, src_length = nil, src_offset = 0)
+  def _copy_stream(src, dst, src_length = nil, src_offset = nil)
     IO::copy_stream(src, dst, src_length, src_offset)
   rescue NotImplementedError # `copy_stream': pread() not implemented (NotImplementedError)
     src_length ||= src.size - src_offset
