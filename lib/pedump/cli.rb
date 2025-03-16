@@ -34,7 +34,7 @@ class PEdump::CLI
   attr_accessor :data, :argv
 
   SHORTCUT_ACTIONS = {
-    clr: %i'clr_header clr_metadata clr_streams clr_tables',
+    clr: %i'clr_header clr_metadata clr_streams clr_strings clr_tables',
   }
 
   ACTION_COMMENTS = {}
@@ -47,7 +47,7 @@ class PEdump::CLI
   }
 
   KNOWN_ACTIONS = (
-    %i'mz dos_stub rich pe ne te data_directory clr_header clr_metadata clr_streams clr_tables sections tls security' +
+    %i'mz dos_stub rich pe ne te data_directory clr_header clr_metadata clr_streams clr_strings clr_tables sections tls security' +
     %i'strings resources resource_directory imports exports version_info imphash packer web console packer_only' +
     %i'extract tail'
   ) + SHORTCUT_ACTIONS.keys
@@ -563,6 +563,11 @@ class PEdump::CLI
       return
     when PEdump::CLR::TablesHash
       return dump_clr_tables data
+    when PEdump::CLR::StringsHash
+      data.each do |offset, str|
+        printf "%8x: %s\n", offset, str.inspect
+      end
+      return
     end
 
     if data.is_a?(Struct)

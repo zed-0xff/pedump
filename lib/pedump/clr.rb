@@ -440,8 +440,8 @@ class PEdump
     }
 
     # needed only for pedump CLI format guessing
-    class TablesHash < Hash
-    end
+    class TablesHash < Hash; end
+    class StringsHash < Hash; end
 
     def self._create_dynamic_class fields, hdr, name: nil
       decl = fields.map do |k,v|
@@ -494,7 +494,7 @@ class PEdump
   def clr_metadata f=@io
     return nil unless clr_header(f)
 
-    dir = clr_header(f).MetaData
+    dir = clr_header(f)&.MetaData
     return nil if !dir || (dir.va.to_i == 0 || dir.size.to_i == 0)
 
     file_offset = va2file(dir.va)
@@ -523,6 +523,34 @@ class PEdump
     streams
   end
 
+  def clr_strings f=@io
+    return nil unless dir = clr_header(f)&.MetaData
+    return nil unless streams = clr_streams(f)
+
+    strings = CLR::StringsHash.new
+    streams.each do |stream|
+      next unless stream.name == '#Strings'
+
+      unless f.checked_seek(va2file(dir.va) + stream.offset)
+        logger.warn "[?] Error seeking to CLR strings stream"
+        return nil
+      end
+      pos = 0
+      while pos < stream.size && !f.eof?
+        s = f.gets("\0")
+        break unless s
+
+        pos += s.bytesize
+        s.chomp!("\0")
+        s.force_encoding('utf-8')
+        strings[pos] = s
+      end
+
+      break
+    end
+    strings
+  end
+
   def clr_tables table_ids_or_f=nil
     f = @io
     table_ids = nil
@@ -536,13 +564,19 @@ class PEdump
       table_ids = table_ids_or_f
     end
 
-    return nil unless clr_streams(f)
+    return nil unless dir = clr_header(f)&.MetaData
+    return nil unless streams = clr_streams(f)
 
     @dynamic_classes ||= {}
 
     tables = CLR::TablesHash.new
-    clr_streams.each do |stream|
+    streams.each do |stream|
       next if stream.name != '#~' && stream.name != '#-' # Metadata Table Stream
+
+      unless f.checked_seek(va2file(dir.va) + stream.offset)
+        logger.warn "[?] Error seeking to CLR table stream"
+        return nil
+      end
 
       if hdr = CLR::MetadataTableStreamHeader.read(f)
         hdr.sizes_hash.each do |key, nrows|

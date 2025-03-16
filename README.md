@@ -64,10 +64,11 @@ Usage
         -f, --format FORMAT              Output format: bin,c,dump,hex,inspect,json,table,yaml
                                          (default: table)
     
-            --clr                        a shortcut for --clr_header, --clr_metadata, --clr_streams, --clr_tables
+            --clr                        a shortcut for --clr_header, --clr_metadata, --clr_streams, --clr_strings, --clr_tables
             --clr-header                 clr_header
             --clr-metadata               clr_metadata
             --clr-streams                clr_streams
+            --clr-strings                clr_strings
             --clr-tables [TABLES]        clr_tables
             --data-directory             data_directory
             --dos-stub                   dos_stub
