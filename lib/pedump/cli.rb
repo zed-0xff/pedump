@@ -638,10 +638,22 @@ class PEdump::CLI
   end
 
   def dump_clr_tables data
+    strings = @pedump.clr_strings rescue {}
+    strings ||= {}
+
+    string_keys = [:TypeNamespace, :TypeName, :Name, :ImportName]
+
     data.each do |key, table|
       puts "# #{key}:"
       table.each_with_index do |row, idx|
-        printf "%6x: %s\n", idx, row.to_table
+        printf "%6x: %s", idx, row.to_table
+
+        h = row.to_h
+        comments = string_keys.map{ |k| h[k] }.compact.map{ |k| strings[k] }.compact
+        if comments.any?
+          printf "   %s", comments.map(&:inspect).join(', ')
+        end
+        puts
       end
       puts
     end
