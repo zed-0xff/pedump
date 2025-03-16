@@ -62,25 +62,32 @@ Usage
                                          (can cause exceptions & heavy wounds)
         -f, --format FORMAT              Output format: bin,c,dump,hex,inspect,json,table,yaml
                                          (default: table)
-            --mz
-            --dos-stub
-            --rich
-            --pe
-            --ne
-            --te
-            --data-directory
-        -S, --sections
-            --tls
-            --security
-        -s, --strings
-        -R, --resources
-            --resource-directory
-        -I, --imports
-        -E, --exports
-        -V, --version-info
-            --imphash
-            --packer
-            --tail
+    
+            --clr                        a shortcut for --clr_header, --clr_metadata, --clr_streams, --clr_tables
+            --clr-header                 clr_header
+            --clr-metadata               clr_metadata
+            --clr-streams                clr_streams
+            --clr-tables [TABLES]        clr_tables
+            --data-directory             data_directory
+            --dos-stub                   dos_stub
+        -E, --exports                    exports
+            --imphash                    imphash
+        -I, --imports                    imports
+            --mz                         mz
+            --ne                         ne
+            --packer                     packer
+            --pe                         pe
+            --resource-directory         resource_directory
+        -R, --resources                  resources
+            --rich                       rich
+        -S, --sections                   sections
+            --security                   security
+        -s, --strings                    strings
+            --tail                       tail
+            --te                         te
+            --tls                        tls
+        -V, --version-info               version_info
+    
             --deep                       packer deep scan, significantly slower
         -P, --packer-only                packer/compiler detect only,
                                          mimics 'file' command output
@@ -94,6 +101,8 @@ Usage
                                          ID: section:.text      - section by name
                                          ID: section:rva/0x1000 - section by RVA
                                          ID: section:raw/0x400  - section by RAW_PTR
+                                         ID: tail               - file tail
+                                         ID: tail:c00           - file tail + 0xc00 offset
             --va2file VA                 Convert RVA to file offset
             --set-os-version VER         Patch OS version in PE header
             --set-dll-char X             Patch IMAGE_OPTIONAL_HEADER32.DllCharacteristics
@@ -110,28 +119,28 @@ Usage
     === MZ Header ===
     
                          signature:                     "MZ"
-               bytes_in_last_block:        144          0x90
-                    blocks_in_file:          3             3
-                        num_relocs:          0             0
-                 header_paragraphs:          4             4
-              min_extra_paragraphs:          0             0
-              max_extra_paragraphs:      65535        0xffff
-                                ss:          0             0
-                                sp:        184          0xb8
-                          checksum:          0             0
-                                ip:          0             0
-                                cs:          0             0
-                reloc_table_offset:         64          0x40
-                    overlay_number:          0             0
-                         reserved0:          0             0
-                            oem_id:          0             0
-                          oem_info:          0             0
-                         reserved2:          0             0
-                         reserved3:          0             0
-                         reserved4:          0             0
-                         reserved5:          0             0
-                         reserved6:          0             0
-                            lfanew:        232          0xe8
+               bytes_in_last_block:        144            90
+                    blocks_in_file:                        3
+                        num_relocs:                        0
+                 header_paragraphs:                        4
+              min_extra_paragraphs:                        0
+              max_extra_paragraphs:      65535          ffff
+                                ss:                        0
+                                sp:        184            b8
+                          checksum:                        0
+                                ip:                        0
+                                cs:                        0
+                reloc_table_offset:         64            40
+                    overlay_number:                        0
+                         reserved0:                        0
+                            oem_id:                        0
+                          oem_info:                        0
+                         reserved2:                        0
+                         reserved3:                        0
+                         reserved4:                        0
+                         reserved5:                        0
+                         reserved6:                        0
+                            lfanew:        232            e8
 
 ### DOS stub
 
@@ -139,10 +148,10 @@ Usage
 
     === DOS STUB ===
     
-    00000000: 0e 1f ba 0e 00 b4 09 cd  21 b8 01 4c cd 21 54 68  |........!..L.!Th|
+    00000000: 0e 1f ba 0e 00 b4 09 cd  21 b8 01 4c cd 21 54 68  |.... ...!..L.!Th|
     00000010: 69 73 20 70 72 6f 67 72  61 6d 20 63 61 6e 6e 6f  |is program canno|
     00000020: 74 20 62 65 20 72 75 6e  20 69 6e 20 44 4f 53 20  |t be run in DOS |
-    00000030: 6d 6f 64 65 2e 0d 0d 0a  24 00 00 00 00 00 00 00  |mode....$.......|
+    00000030: 6d 6f 64 65 2e 0d 0d 0a  24 00 00 00 00 00 00 00  |mode....$       |
 
 ### 'Rich' Header
 
@@ -168,42 +177,41 @@ Usage
                          signature:             "PE\x00\x00"
     
     # IMAGE_FILE_HEADER:
-                           Machine:        332         0x14c  x86
-                  NumberOfSections:          4             4
+                           Machine:        332           14c  x86
+                  NumberOfSections:                        4
                      TimeDateStamp:    "2008-09-14 07:28:52"
-              PointerToSymbolTable:          0             0
-                   NumberOfSymbols:          0             0
-              SizeOfOptionalHeader:        224          0xe0
-                   Characteristics:        258         0x102  EXECUTABLE_IMAGE, 32BIT_MACHINE
+              PointerToSymbolTable:                        0
+                   NumberOfSymbols:                        0
+              SizeOfOptionalHeader:        224            e0
+                   Characteristics:        258           102  EXECUTABLE_IMAGE, 32BIT_MACHINE
     
     # IMAGE_OPTIONAL_HEADER32:
-                             Magic:        267         0x10b  32-bit executable
+                             Magic:        267           10b  32-bit executable
                      LinkerVersion:                      9.0
-                        SizeOfCode:     305664       0x4aa00
-             SizeOfInitializedData:     340480       0x53200
-           SizeOfUninitializedData:          0             0
-               AddressOfEntryPoint:     230155       0x3830b
-                        BaseOfCode:       4096        0x1000
-                        BaseOfData:     311296       0x4c000
-                         ImageBase:   16777216     0x1000000
-                  SectionAlignment:       4096        0x1000
-                     FileAlignment:        512         0x200
+                        SizeOfCode:     305664         4aa00
+             SizeOfInitializedData:     340480         53200
+           SizeOfUninitializedData:                        0
+               AddressOfEntryPoint:     230155         3830b
+                        BaseOfCode:       4096          1000
+                        BaseOfData:     311296         4c000
+                         ImageBase:   16777216       1000000
+                  SectionAlignment:       4096          1000
+                     FileAlignment:        512           200
             OperatingSystemVersion:                      5.1
                       ImageVersion:                    5.256
                   SubsystemVersion:                      5.1
-                         Reserved1:          0             0
-                       SizeOfImage:     659456       0xa1000
-                     SizeOfHeaders:       1024         0x400
-                          CheckSum:     690555       0xa897b
-                         Subsystem:          2             2  WINDOWS_GUI
-                DllCharacteristics:      33088        0x8140  DYNAMIC_BASE, NX_COMPAT
-                                                              TERMINAL_SERVER_AWARE
-                SizeOfStackReserve:     262144       0x40000
-                 SizeOfStackCommit:       8192        0x2000
-                 SizeOfHeapReserve:    1048576      0x100000
-                  SizeOfHeapCommit:       4096        0x1000
-                       LoaderFlags:          0             0
-               NumberOfRvaAndSizes:         16          0x10
+                         Reserved1:                        0
+                       SizeOfImage:     659456         a1000
+                     SizeOfHeaders:       1024           400
+                          CheckSum:     690555         a897b
+                         Subsystem:                        2  WINDOWS_GUI
+                DllCharacteristics:      33088          8140  DYNAMIC_BASE, NX_COMPAT, TERMINAL_SERVER_AWARE
+                SizeOfStackReserve:     262144         40000
+                 SizeOfStackCommit:       8192          2000
+                 SizeOfHeapReserve:    1048576        100000
+                  SizeOfHeapCommit:       4096          1000
+                       LoaderFlags:                        0
+               NumberOfRvaAndSizes:         16            10
 
 ### Data Directory
 

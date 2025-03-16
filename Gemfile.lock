@@ -68,7 +68,7 @@ GEM
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
     io-console (0.8.0)
-    iostruct (0.4.0)
+    iostruct (0.5.0)
     juwelier (2.4.9)
       builder
       bundler
@@ -162,7 +162,7 @@ PLATFORMS
 DEPENDENCIES
   awesome_print
   bundler
-  iostruct (>= 0.1.3)
+  iostruct (>= 0.5.0)
   juwelier
   multipart-post (>= 2.0.0)
   rainbow

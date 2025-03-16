@@ -20,6 +20,7 @@ require 'pedump/packer'
 require 'pedump/ne'
 require 'pedump/ne/version_info'
 require 'pedump/te'
+require 'pedump/clr'
 
 # pedump.rb by zed_0xff
 #
@@ -220,7 +221,7 @@ class PEdump
     %w'EXPORT IMPORT RESOURCE EXCEPTION SECURITY BASERELOC DEBUG ARCHITECTURE GLOBALPTR TLS LOAD_CONFIG
     Bound_IAT IAT Delay_IAT CLR_Header'
   IMAGE_DATA_DIRECTORY::TYPES.each_with_index do |type,idx|
-    IMAGE_DATA_DIRECTORY.const_set(type,idx)
+    IMAGE_DATA_DIRECTORY.const_set(type, idx)
   end
 
   IMAGE_SECTION_HEADER = IOStruct.new( 'A8V6v2V',

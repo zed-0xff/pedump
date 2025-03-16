@@ -3,7 +3,7 @@ source "https://rubygems.org"
 
 gem 'rainbow'
 gem "awesome_print"
-gem "iostruct",       ">= 0.1.3"
+gem "iostruct",       ">= 0.5.0"
 gem "multipart-post", ">= 2.0.0"
 gem "zhexdump",       ">= 0.0.2"
 

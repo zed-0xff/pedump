@@ -33,13 +33,26 @@ end
 class PEdump::CLI
   attr_accessor :data, :argv
 
-  KNOWN_ACTIONS = (
-    %w'mz dos_stub rich pe ne te data_directory sections tls security' +
-    %w'strings resources resource_directory imports exports version_info imphash packer web console packer_only' +
-    %w'extract tail' # 'disasm'
-  ).map(&:to_sym)
+  SHORTCUT_ACTIONS = {
+    clr: %i'clr_header clr_metadata clr_streams clr_tables',
+  }
 
-  DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %w'resource_directory web packer_only console extract disasm'.map(&:to_sym)
+  ACTION_COMMENTS = {}
+  SHORTCUT_ACTIONS.each do |k,v|
+    ACTION_COMMENTS[k] = 'a shortcut for --' + v.join(', --')
+  end
+
+  ACTION_ARGS = {
+    clr_tables: "[TABLES]",
+  }
+
+  KNOWN_ACTIONS = (
+    %i'mz dos_stub rich pe ne te data_directory clr_header clr_metadata clr_streams clr_tables sections tls security' +
+    %i'strings resources resource_directory imports exports version_info imphash packer web console packer_only' +
+    %i'extract tail'
+  ) + SHORTCUT_ACTIONS.keys
+
+  DEFAULT_ALL_ACTIONS = KNOWN_ACTIONS - %i'resource_directory web packer_only console extract disasm clr clr_tables' - SHORTCUT_ACTIONS.keys
 
   URL_BASE = "https://pedump.me"
 
@@ -71,16 +84,20 @@ class PEdump::CLI
         "Output format: bin,c,dump,hex,inspect,json,table,yaml","(default: table)" do |v|
         @options[:format] = v
       end
-      KNOWN_ACTIONS.each do |t|
+
+      opts.separator ''
+      KNOWN_ACTIONS.sort.each do |t|
         a = [
-          "--#{t.to_s.tr('_','-')}",
-          eval("lambda{ |_| @actions << :#{t.to_s.tr('-','_')} }")
+          "--#{t.to_s.tr('_','-')}" + (ACTION_ARGS[t] ? " #{ACTION_ARGS[t]}" : ""),
+          ACTION_COMMENTS[t] || t.to_s,
+          lambda{ |arg| @actions << (arg && ACTION_ARGS[t] ? [t, arg] : t) },
         ]
         a.unshift(a[0][1,2].upcase) if a[0] =~ /--(((ex|im)port|section|resource)s|version-info)/
         a.unshift(a[0][1,2]) if a[0] =~ /--strings/
         opts.on *a
       end
 
+      opts.separator ''
       opts.on "--deep", "packer deep scan, significantly slower" do
         @options[:deep] ||= 0
         @options[:deep] += 1
@@ -152,6 +169,12 @@ class PEdump::CLI
       raise "[!] can't mix --packer-only with other actions" if @actions.size > 1
       dump_packer_only(argv)
       return
+    end
+
+    SHORTCUT_ACTIONS.each do |k,v|
+      if idx = @actions.index(k)
+        @actions[idx,1] = *v
+      end
     end
 
     argv.each_with_index do |fname,idx|
@@ -333,6 +356,8 @@ class PEdump::CLI
       puts "# -----------------------------------------------"
     end
 
+    action = action.first if action.is_a?(Array)
+
     s = action.to_s.upcase.tr('_',' ')
     s += " Header" if [:mz, :pe, :rich].include?(action)
     s = "Packer / Compiler" if action == :packer
@@ -341,27 +366,30 @@ class PEdump::CLI
   end
 
   def dump_action action, f
+    data = nil
+    got_data = false
+
     if action.is_a?(Array)
       case action[0]
       when :disasm
         return
-      when :extract
-        return extract action[1]
-      when :set_os_version
-        return set_os_version action[1]
-      when :set_dll_char
-        return set_dll_char action[1]
       when :va2file
         @pedump.sections(f)
         va = action[1] =~ /(^0x)|(h$)/i ? action[1].to_i(16) : action[1].to_i
         file_offset = @pedump.va2file(va)
         printf "va2file(0x%x) = 0x%x  (%d)\n", va, file_offset, file_offset
         return
-      else raise "unknown action #{action.inspect}"
+      else
+        if respond_to?(action[0])
+          return send(*action)
+        else
+          data = @pedump.send(*action)
+          got_data = true
+        end
       end
     end
 
-    data = @pedump.send(action, f)
+    data = @pedump.send(action, f) unless got_data
     return if !data || (data.respond_to?(:empty?) && data.empty?)
 
     puts action_title(action) unless @options[:format] == :binary || @actions == [:imphash]
@@ -423,26 +451,40 @@ class PEdump::CLI
   end
 
   COMMENTS = {
-    :Machine => {
-      0x014c => 'x86',
-      0x0200 => 'Intel Itanium',
-      0x8664 => 'x64',
-      'default' => '???'
+    PEdump::IMAGE_FILE_HEADER => {
+      Characteristics: Proc.new{ |v| _flags2string(v.flags) },
+      Machine: {
+        0x014c => 'x86',
+        0x0200 => 'Intel Itanium',
+        0x8664 => 'x64',
+        default: '???'
+      }
     },
-    :Magic => {
-      0x010b => '32-bit executable',
-      0x020b => '64-bit executable',
-      0x0107 => 'ROM image',
-      'default' => '???'
-    },
-    :Subsystem => PEdump::IMAGE_SUBSYSTEMS
+    PEdump::CLR::MetadataTableStreamHeader => {
+      Valid:  Proc.new{ |v| _flags2string(v.valid_flags) },
+      Sorted: Proc.new{ |v| _flags2string(v.sorted_flags) },
+    }
   }
+  [PEdump::IMAGE_OPTIONAL_HEADER32, PEdump::IMAGE_OPTIONAL_HEADER64].each do |klass|
+    COMMENTS[klass] = {
+      Magic: {
+        0x010b => '32-bit executable',
+        0x020b => '64-bit executable',
+        0x0107 => 'ROM image',
+        default: '???'
+      },
+      Subsystem: PEdump::IMAGE_SUBSYSTEMS,
+      DllCharacteristics: Proc.new{ |v| _flags2string(v.flags) },
+    }
+  end
 
-  def _flags2string flags
+  def self._flags2string flags, max_width: 80
     return '' if !flags || flags.empty?
-    a = [flags.shift.dup]
+    flags.map!{ |f| f.is_a?(String) ? f.dup : f.to_s }
+
+    a = [flags.shift]
     flags.each do |f|
-      if (a.last.size + f.size) < 40
+      if (a.last.size + f.size) < max_width
         a.last << ", " << f
       else
         a << f.dup
@@ -454,6 +496,7 @@ class PEdump::CLI
   def dump_generic_table data
     data.each_pair do |k,v|
       next if [:DataDirectory, :section_table].include?(k)
+
       case v
       when Numeric
         case k
@@ -463,17 +506,35 @@ class PEdump::CLI
         when /TimeDateStamp/
           printf "%30s: %24s\n", k, Time.at(v).utc.strftime('"%Y-%m-%d %H:%M:%S"')
         else
-          comment = ''
-          if COMMENTS[k]
-            comment = COMMENTS[k][v] || (COMMENTS[k].is_a?(Hash) ? COMMENTS[k]['default'] : '') || ''
-          elsif data.is_a?(PEdump::IMAGE_FILE_HEADER) && k == :Characteristics
-            comment = _flags2string(data.flags)
-          elsif k == :DllCharacteristics
-            comment = _flags2string(data.flags)
-          end
+          comment =
+            if COMMENTS[data.class] && cmt=COMMENTS[data.class][k]
+              case cmt
+              when Hash
+                cmt[v] || cmt[:default]
+              when Array
+                cmt[v]
+              when Proc
+                cmt.call(data)
+              else
+                raise "invalid comment type: #{cmt.inspect}"
+              end
+            end
+          comment ||= ''
           comment.strip!
           comment = "  #{comment}" unless comment.empty?
-          printf "%30s: %10d  %12s%s\n", k, v, v<10 ? v : ("0x"+v.to_s(16)), comment
+          if v.to_s.size > 10 || v < 10
+            # don't show decimal
+            printf "%30s: %6s  %16s%s\n", k, "", v.to_s(16), comment
+          else
+            printf "%30s: %10d  %12s%s\n", k, v, v.to_s(16), comment
+          end
+        end
+      when PEdump::IMAGE_DATA_DIRECTORY
+        # in CLR_Header
+        if v.va.to_i != 0 && v.size.to_i != 0
+          printf "%30s: {va: %x, size: %x}\n", k, v.va, v.size
+        else
+          printf "%30s:\n", k
         end
       when Struct
         # IMAGE_FILE_HEADER:
@@ -500,11 +561,14 @@ class PEdump::CLI
       end
       puts a.join("\n")
       return
+    when PEdump::CLR::TablesHash
+      return dump_clr_tables data
     end
 
     if data.is_a?(Struct)
       return dump_res_dir(data) if data.is_a?(PEdump::IMAGE_RESOURCE_DIRECTORY)
       return dump_exports(data) if data.is_a?(PEdump::IMAGE_EXPORT_DIRECTORY)
+
       dump_generic_table data
     elsif data.is_a?(Enumerable) && data.map(&:class).uniq.size == 1
       case data.first
@@ -530,8 +594,10 @@ class PEdump::CLI
         dump_security data
       when PEdump::NE::Segment
         dump_ne_segments data
+      when PEdump::CLR::MetadataStreamHeader
+        dump_clr_streams data
       else
-        puts "[?] don't know how to dump: #{data.inspect[0,50]}" unless (data.respond_to?(:empty?) && data.empty?)
+        puts "[?] dump_table: don't know how to dump: #{data.inspect[0,50]}" unless (data.respond_to?(:empty?) && data.empty?)
       end
     elsif data.is_a?(PEdump::DOSStub)
       data.hexdump
@@ -544,6 +610,35 @@ class PEdump::CLI
       else
         puts "[?] Don't know how to display #{data.inspect[0,50]}... as a table"
       end
+    end
+  end
+
+  def dump_clr_streams data
+    clr_header = @pedump.clr_header
+    clr_data_file_ofs = clr_header.MetaData.va.to_i > 0 && @pedump.va2file(clr_header.MetaData.va)
+
+    fmt = "%8x %8x  %-32s\n"
+    printf fmt.tr('x','s'), *%w'offset size name'
+    data.each do |s|
+      printf fmt, s.offset, s.size, s.name.inspect
+      if clr_data_file_ofs && s.offset < clr_header.MetaData.size
+        if s.name == "#-" || s.name == "#~"
+          pos = clr_data_file_ofs + s.offset
+          @pedump.io.seek(pos)
+          hdr = PEdump::CLR::MetadataTableStreamHeader.read(@pedump.io)
+          dump hdr
+        end
+      end
+    end
+  end
+
+  def dump_clr_tables data
+    data.each do |key, table|
+      puts "# #{key}:"
+      table.each_with_index do |row, idx|
+        printf "%6x: %s\n", idx, row.to_table
+      end
+      puts
     end
   end
 
