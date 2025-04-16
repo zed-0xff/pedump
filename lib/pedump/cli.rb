@@ -659,7 +659,7 @@ class PEdump::CLI
 
         if @options[:tokens]
           token = (table_idx << 24) | idx
-          printf "%8x: ", token
+          printf "%08x: ", token
         else
           printf "%6x: ", idx
         end
