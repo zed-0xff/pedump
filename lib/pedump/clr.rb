@@ -90,64 +90,72 @@ class PEdump
       HEAP_SIZES_MANY_BLOBS   = 4 # Size of "#Blob" stream ≥ 216
 
       FLAGS = {
-        1 => :Module,
-        2 => :TypeRef,
-        4 => :TypeDef,
-        8 => :Reserved1,
-        16 => :Field,
-        32 => :Reserved2,
-        64 => :MethodDef,
-        128 => :Reserved3,
-        256 => :Param,
-        512 => :InterfaceImpl,
-        1024 => :MemberRef,
-        2048 => :Constant,
-        4096 => :CustomAttribute,
-        8192 => :FieldMarshal,
-        16384 => :DeclSecurity,
-        32768 => :ClassLayout,
-        65536 => :FieldLayout,
-        131072 => :StandAloneSig,
-        262144 => :EventMap,
-        524288 => :Reserved4,
-        1048576 => :Event,
-        2097152 => :PropertyMap,
-        4194304 => :Reserved5,
-        8388608 => :Property,
-        16777216 => :MethodSemantics,
-        33554432 => :MethodImpl,
-        67108864 => :ModuleRef,
-        134217728 => :TypeSpec,
-        268435456 => :ImplMap,
-        536870912 => :FieldRVA,
-        1073741824 => :Reserved6,
-        2147483648 => :Reserved7,
-        4294967296 => :Assembly,
-        8589934592 => :AssemblyProcessor,
-        17179869184 => :AssemblyOS,
-        34359738368 => :AssemblyRef,
-        68719476736 => :AssemblyRefProcessor,
-        137438953472 => :AssemblyRefOS,
-        274877906944 => :File,
-        549755813888 => :ExportedType,
-        1099511627776 => :ManifestResource,
-        2199023255552 => :NestedClass,
-        4398046511104 => :GenericParam,
-        8796093022208 => :MethodSpec,
-        17592186044416 => :GenericParamConstraint,
+        Module:                   0x1,
+        TypeRef:                  0x2,
+        TypeDef:                  0x4,
+        FiedPtr:                  0x8,
+        Field:                    0x10,
+        MethodPtr:                0x20,
+        MethodDef:                0x40,
+        ParamPtr:                 0x80,
+        Param:                    0x100,
+        InterfaceImpl:            0x200,
+        MemberRef:                0x400,
+        Constant:                 0x800,
+        CustomAttribute:          0x1000,
+        FieldMarshal:             0x2000,
+        DeclSecurity:             0x4000,
+        ClassLayout:              0x8000,
+        FieldLayout:              0x10000,
+        StandAloneSig:            0x20000,
+        EventMap:                 0x40000,
+        EventPtr:                 0x80000,
+        Event:                    0x100000,
+        PropertyMap:              0x200000,
+        PropertyPtr:              0x400000,
+        Property:                 0x800000,
+        MethodSemantics:          0x1000000,
+        MethodImpl:               0x2000000,
+        ModuleRef:                0x4000000,
+        TypeSpec:                 0x8000000,
+        ImplMap:                  0x10000000,
+        FieldRVA:                 0x20000000,
+        EnCLog:                   0x40000000,
+        EnCMap:                   0x80000000,
+        Assembly:                 0x100000000,
+        AssemblyProcessor:        0x200000000,
+        AssemblyOS:               0x400000000,
+        AssemblyRef:              0x800000000,
+        AssemblyRefProcessor:     0x1000000000,
+        AssemblyRefOS:            0x2000000000,
+        File:                     0x4000000000,
+        ExportedType:             0x8000000000,
+        ManifestResource:         0x10000000000,
+        NestedClass:              0x20000000000,
+        GenericParam:             0x40000000000,
+        MethodSpec:               0x80000000000,
+        GenericParamConstraint:   0x100000000000,
+        Document:                 0x1000000000000,
+        MethodDebugInformation:   0x2000000000000,
+        LocalScope:               0x4000000000000,
+        LocalVariable:            0x8000000000000,
+        LocalConstant:            0x10000000000000,
+        ImportScope:              0x20000000000000,
+        StateMachineMethod:       0x40000000000000,
+        CustomDebugInformation:   0x80000000000000,
       }
-      REVERSE_FLAGS = FLAGS.invert
+      INVERSE_FLAGS = FLAGS.invert
 
       def known_table? key
-        REVERSE_FLAGS.key?(key)
+        FLAGS.key?(key)
       end
 
       def valid_flags
-        FLAGS.find_all{ |k,v| (self.Valid & k) != 0 }.map(&:last)
+        FLAGS.find_all{ |k,v| (self.Valid & v) != 0 }.map(&:first)
       end
 
       def sorted_flags
-        FLAGS.find_all{ |k,v| (self.Sorted & k) != 0 }.map(&:last)
+        FLAGS.find_all{ |k,v| (self.Sorted & v) != 0 }.map(&:first)
       end
 
       def valid?
@@ -161,7 +169,7 @@ class PEdump
           n = r.Valid
           while n > 0
             if n & 1 != 0
-              key = FLAGS[idx].to_sym
+              key = INVERSE_FLAGS[idx].to_sym
               r.sizes_hash[key] = io.read(4).unpack1('V')
             end
             n >>= 1
@@ -172,7 +180,49 @@ class PEdump
       end
     end
 
+    # reference types
+    # https://github.com/stakx/ecma-335/blob/master/docs/ii.24.2.6-metadata-stream.md
+    CustomAttributeType = [:not_used, :not_used, :MethodDef, :MemberRef, :not_used] # see spec. last :not used is important for it to be 3 bits in size
+    HasConstant         = [:Field, :Param, :Property]
+    HasCustomAttribute  = [:MethodDef, :Field, :TypeRef, :TypeDef, :Param, :InterfaceImpl, :MemberRef, :Module, :DeclSecurity, :Property, :Event, :StandAloneSig, :ModuleRef, :TypeSpec, :Assembly, :AssemblyRef, :File, :ExportedType, :ManifestResource, :GenericParam, :GenericParamConstraint, :MethodSpec] # XXX not checked thoroughly
+    HasDeclSecurity     = [:TypeDef, :MethodDef, :Assembly]
+    HasFieldMarshal     = [:Field, :Param]
+    HasSemantics        = [:Event, :Property]
+    Implementation      = [:File, :AssemblyRef, :ExportedType]
+    MemberForwarded     = [:Field, :MethodDef]
+    MemberRefParent     = [:TypeDef, :TypeRef, :ModuleRef, :MethodDef, :TypeSpec]
+    MethodDefOrRef      = [:MethodDef, :MemberRef]
+    ResolutionScope     = [:Module, :ModuleRef, :AssemblyRef, :TypeRef]
+    TypeDefOrRef        = [:TypeDef, :TypeRef, :TypeSpec]
+    TypeOrMethodDef     = [:TypeDef, :MethodDef]
+
+    module DynTableMethods
+      def get_name(strings)
+        h = self.to_h
+        if h[:TypeNamespace] || h[:TypeName]
+          if h[:TypeNamespace] != 0
+            "#{strings[h[:TypeNamespace]]}.#{strings[h[:TypeName]]}"
+          else
+            strings[h[:TypeName]]
+          end
+        elsif h[:Name]
+          strings[h[:Name]]
+        elsif h[:ImportName]
+          strings[h[:ImportName]]
+        else
+          nil
+        end
+      end
+    end
+
     TableDefs = {
+      # undocumented?
+      FieldPtr: { Field: :Field },
+      MethodPtr: { Method: :MethodDef },
+      ParamPtr: { Param: :Param },
+      EventPtr: { Event: :Event },
+      PropertyPtr: { Property: :Property },
+
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.30-module_0x00.md
       Module: {
         Generation: 2,       # a 2-byte value, reserved, shall be zero)
@@ -184,7 +234,7 @@ class PEdump
 
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.38-typeref-0x01.md
       TypeRef: {
-        ResolutionScope: [:Module, :ModuleRef, :AssemblyRef, :TypeRef],
+        ResolutionScope: ResolutionScope,
         TypeName:        :string,
         TypeNamespace:   :string,
       },
@@ -194,7 +244,7 @@ class PEdump
         Flags:           4,        # a 4-byte bitmask of TypeAttributes
         TypeName:        :string,
         TypeNamespace:   :string,
-        Extends:         [:TypeDef, :TypeRef, :TypeSpec],
+        Extends:         TypeDefOrRef,
         FieldList:       :Field,
         MethodList:      :MethodDef,
       },
@@ -226,12 +276,12 @@ class PEdump
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.23-interfaceimpl-0x09.md
       InterfaceImpl: {
         Class:           :TypeDef,
-        Interface:       [:TypeDef, :TypeRef, :TypeSpec],
+        Interface:       TypeDefOrRef,
       },
 
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.25-memberref-0x0a.md
       MemberRef: {
-        Class:           [:MethodDef, :ModuleRef, :TypeDef, :TypeRef, :TypeSpec],
+        Class:           MemberRefParent,
         Name:            :string,
         Signature:       :blob,
       },
@@ -239,27 +289,27 @@ class PEdump
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.9-constant-0x0b.md
       Constant: {
         Type:            2,        # a 1-byte constant, followed by a 1-byte padding zero
-        Parent:          [:Field, :Param, :Property],
+        Parent:          HasConstant,
         Value:           :blob,
       },
 
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.10-customattribute-0x0c.md
       CustomAttribute: {
-        Parent:          [:MethodDef, :Field, :TypeRef, :TypeDef, :Param, :InterfaceImpl, :MemberRef, :Module, :DeclSecurity, :Property, :Event, :StandAloneSig, :ModuleRef, :TypeSpec, :Assembly, :AssemblyRef, :File, :ExportedType, :ManifestResource, :GenericParam, :GenericParamConstraint, :MethodSpec],
-        Type:            [:MethodDef, :MemberRef],
+        Parent:          HasCustomAttribute,
+        Type:            CustomAttributeType,
         Value:           :blob,
       },
 
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.17-fieldmarshal-0x0d.md
       FieldMarshal: {
-        Parent:          [:Field, :Param],
+        Parent:          HasFieldMarshal,
         NativeType:      :blob,
       },
 
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.11-declsecurity-0x0e.md
       DeclSecurity: {
         Action:          2,        # a 2-byte constant
-        Parent:          [:TypeDef, :MethodDef, :Assembly],
+        Parent:          HasDeclSecurity,
         PermissionSet:   :blob,
       },
 
@@ -291,7 +341,7 @@ class PEdump
       Event: {
         EventFlags:      2,        # a 2-byte bitmask of EventAttributes
         Name:            :string,
-        EventType:       [:TypeDef, :TypeRef, :TypeSpec],
+        EventType:       TypeDefOrRef,
       },
 
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.35-propertymap-0x15.md
@@ -311,14 +361,14 @@ class PEdump
       MethodSemantics: {
         Semantics:       2,        # a 2-byte bitmask of MethodSemanticsAttributes
         Method:          :MethodDef,
-        Association:     [:Event, :Property],
+        Association:     HasSemantics,
       },
 
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.27-methodimpl-0x19.md
       MethodImpl: {
         Class:             :TypeDef,
-        MethodBody:        [:MethodDef, :MemberRef],
-        MethodDeclaration: [:MethodDef, :MemberRef],
+        MethodBody:        MethodDefOrRef,
+        MethodDeclaration: MethodDefOrRef,
       },
 
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.31-moduleref-0x1a.md
@@ -334,7 +384,7 @@ class PEdump
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.22-implmap-0x1c.md
       ImplMap: {
         MappingFlags:    2,        # a 2-byte bitmask of PInvokeAttributes
-        MemberForwarded: [:Field, :MethodDef],
+        MemberForwarded: MemberForwarded,
         ImportName:      :string,
         ImportScope:     :ModuleRef,
       },
@@ -409,7 +459,7 @@ class PEdump
         Offset:          4,        # a 4-byte constant
         Flags:           4,        # a 4-byte bitmask of ManifestResourceAttributes
         Name:            :string,
-        Implementation:  [:File, :AssemblyRef],
+        Implementation:  Implementation,
       },
 
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.32-nestedclass-0x29.md
@@ -422,20 +472,20 @@ class PEdump
       GenericParam: {
         Number:          2,        # a 2-byte constant
         Flags:           2,        # a 2-byte bitmask of GenericParamAttributes
-        Owner:           [:TypeDef, :MethodDef],
+        Owner:           TypeOrMethodDef,
         Name:            :string,
       },
 
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.29-methodspec-0x2b.md
       MethodSpec: {
-        Method:          [:MethodDef, :MemberRef],
+        Method:          MethodDefOrRef,
         Instantiation:   :blob,
       },
 
       # https://github.com/stakx/ecma-335/blob/master/docs/ii.22.21-genericparamconstraint-0x2c.md
       GenericParamConstraint: {
         Owner:           :GenericParam,
-        Constraint:      [:TypeDef, :TypeRef, :TypeSpec],
+        Constraint:      TypeDefOrRef,
       }
     }
 
@@ -444,6 +494,9 @@ class PEdump
     class StringsHash < Hash; end
 
     def self._create_dynamic_class fields, hdr, name: nil
+      table_idx_bits = {}
+      string_keys = []
+
       decl = fields.map do |k,v|
         case v
         when 2
@@ -455,13 +508,14 @@ class PEdump
         when :guid
           hdr.HeapSizes & MetadataTableStreamHeader::HEAP_SIZES_MANY_GUIDS != 0 ? 'V' : 'S'
         when :string
+          string_keys << k
           hdr.HeapSizes & MetadataTableStreamHeader::HEAP_SIZES_MANY_STRINGS != 0 ? 'V' : 'S'
         when Array
           # pointer to table i out of n possible tables
           n = v.size
-          bits_for_table_idx = Math.log2(n).ceil
+          table_idx_bits[k] = bits_for_table_idx = Math.log2(n).ceil
           max_rows = 2**(16 - bits_for_table_idx)
-          v.each{ |table_id| raise "Unknown table: #{table_id}" unless hdr.known_table?(table_id) }
+          v.each{ |table_id| raise "Unknown table: #{table_id}" unless table_id == :not_used || hdr.known_table?(table_id) }
           v.any?{ |table_id| hdr.sizes_hash[table_id].to_i >= max_rows } ? 'V' : 'S'
         when Symbol
           raise "Unknown table: #{v}" unless hdr.known_table?(v)
@@ -470,7 +524,28 @@ class PEdump
           raise "Unknown field type #{v.inspect}"
         end
       end.join
-      IOStruct.new(decl, *fields.keys, inspect_name_override: name)
+
+      IOStruct.new(decl, *fields.keys, inspect_name_override: name).tap do |klass|
+        klass.const_set(:STRING_KEYS, string_keys)
+        klass.include(DynTableMethods)
+        fields.each do |k,v|
+          case v
+          when Array
+            # define 'decode_...' method
+            idx_bits = table_idx_bits[k]
+            table_id_mask = (1 << idx_bits) - 1
+            klass.instance_eval do
+              define_method("decode_#{k}") do
+                val = self[k]
+                table_id = val & table_id_mask
+                table_key = v[table_id]
+                val >>= idx_bits
+                [table_key, val]
+              end
+            end
+          end
+        end
+      end
     end
   end # module CLR
 
@@ -540,10 +615,11 @@ class PEdump
         s = f.gets("\0")
         break unless s
 
-        pos += s.bytesize
+        ssize = s.bytesize
         s.chomp!("\0")
         s.force_encoding('utf-8')
         strings[pos] = s
+        pos += ssize
       end
 
       break
@@ -584,7 +660,7 @@ class PEdump
 
           if fields = CLR::TableDefs[key]
             klass = @dynamic_classes[key] ||= CLR::_create_dynamic_class(fields, hdr, name: key)
-            tables[key] = []
+            tables[key] = [nil] # 1-based index, 0-th element is NULL
             nrows.times do
               tables[key] << klass.read(f)
             end

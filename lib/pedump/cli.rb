@@ -98,6 +98,9 @@ class PEdump::CLI
       end
 
       opts.separator ''
+      opts.on "--tokens", "Show CLR tokens" do
+        @options[:tokens] = true
+      end
       opts.on "--deep", "packer deep scan, significantly slower" do
         @options[:deep] ||= 0
         @options[:deep] += 1
@@ -640,20 +643,72 @@ class PEdump::CLI
   def dump_clr_tables data
     strings = @pedump.clr_strings rescue {}
     strings ||= {}
+    blob_stream = @pedump.clr_streams.find{ |s| s.name == "#Blob" }
 
-    string_keys = [:TypeNamespace, :TypeName, :Name, :ImportName]
+    clr_header = @pedump.clr_header
+    clr_data_file_ofs = clr_header.MetaData.va.to_i > 0 && @pedump.va2file(clr_header.MetaData.va)
+    blob_file_ofs = blob_stream.offset + clr_data_file_ofs if blob_stream
+    blob_size = blob_stream&.size
 
+    prev_signature = nil
     data.each do |key, table|
-      puts "# #{key}:"
+      table_idx = PEdump::CLR::MetadataTableStreamHeader::FLAGS.keys.index(key)
+      printf "# %02x %s: [%d]\n", table_idx, key, table.size
       table.each_with_index do |row, idx|
-        printf "%6x: %s", idx, row.to_table
+        next if idx == 0 && row.nil?
 
-        h = row.to_h
-        comments = string_keys.map{ |k| h[k] }.compact.map{ |k| strings[k] }.compact
+        if @options[:tokens]
+          token = (table_idx << 24) | idx
+          printf "%8x: ", token
+        else
+          printf "%6x: ", idx
+        end
+        print row.to_table
+
+        comments = []
+        if row.respond_to?(:decode_Class)
+          table_id, idx = row.decode_Class
+          if table_id && idx
+            referred_row = data[table_id]&.at(idx)
+            comments << referred_row&.get_name(strings)
+          end
+        end
+
+        comments << row.get_name(strings) || row.to_s
         if comments.any?
-          printf "   %s", comments.map(&:inspect).join(', ')
+          printf "   %s", comments.join(key == :MemberRef ? '.' : ' ')
         end
         puts
+
+        if @options[:verbose] > 0
+          was = false
+          h = row.to_h
+          h.keys.each do |field_key|
+            if row.respond_to?("decode_#{field_key}")
+              was = true
+              a = row.send("decode_#{field_key}")
+              printf "%20s: %-20s", field_key, a.inspect  
+              table_id, idx = a
+              if table_id && idx
+                referred_row = data[table_id]&.at(idx)
+                if referred_row
+                  printf "%s", referred_row.get_name(strings) || referred_row.to_s
+                end
+              end
+              puts
+            end
+            if field_key == :Signature && blob_file_ofs && blob_size && row.Signature < blob_size && prev_signature != row.Signature
+              printf "%20s: ", "Signature"
+              @pedump.io.seek(blob_file_ofs + row.Signature)
+              sig = @pedump.io.read(32)
+              sig = sig[0, sig[0].ord+1] # XXX are there sigs longer than 32 bytes?
+              puts sig.bytes.map{ |b| "%02x" % b }.join(' ')
+              was = true
+              prev_signature = row.Signature
+            end
+          end
+          puts if was
+        end
       end
       puts
     end
