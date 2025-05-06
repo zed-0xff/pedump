@@ -34,7 +34,7 @@ class PEdump::CLI
   attr_accessor :data, :argv
 
   SHORTCUT_ACTIONS = {
-    clr: %i'clr_header clr_metadata clr_streams clr_strings clr_tables',
+    clr: %i'clr_header clr_readytorun clr_metadata clr_streams clr_strings clr_tables',
   }
 
   ACTION_COMMENTS = {}
@@ -47,7 +47,7 @@ class PEdump::CLI
   }
 
   KNOWN_ACTIONS = (
-    %i'mz dos_stub rich pe ne te data_directory clr_header clr_metadata clr_streams clr_strings clr_tables sections tls security' +
+    %i'mz dos_stub rich pe ne te data_directory clr_header clr_metadata clr_readytorun clr_streams clr_strings clr_tables sections tls security' +
     %i'strings resources resource_directory imports exports version_info imphash packer web console packer_only' +
     %i'extract tail'
   ) + SHORTCUT_ACTIONS.keys
@@ -463,10 +463,17 @@ class PEdump::CLI
         default: '???'
       }
     },
+    PEdump::IMAGE_COR20_HEADER => {
+      Flags: Proc.new{ |v| _flags2string(v.flags) },
+    },
     PEdump::CLR::MetadataTableStreamHeader => {
-      Valid:  Proc.new{ |v| _flags2string(v.valid_flags) },
-      Sorted: Proc.new{ |v| _flags2string(v.sorted_flags) },
-    }
+      HeapSizes: Proc.new{ |v| _flags2string(v.heap_sizes) },
+      Valid:     Proc.new{ |v| _flags2string(v.valid_flags) },
+      Sorted:    Proc.new{ |v| _flags2string(v.sorted_flags) },
+    },
+    PEdump::CLR::READYTORUN_CORE_HEADER => {
+      Flags: Proc.new{ |v| _flags2string(v.flags) },
+    },
   }
   [PEdump::IMAGE_OPTIONAL_HEADER32, PEdump::IMAGE_OPTIONAL_HEADER64].each do |klass|
     COMMENTS[klass] = {
@@ -667,16 +674,50 @@ class PEdump::CLI
 
         comments = []
         if row.respond_to?(:decode_Class)
-          table_id, idx = row.decode_Class
-          if table_id && idx
-            referred_row = data[table_id]&.at(idx)
+          table_key, idx = row.decode_Class
+          if table_key && idx
+            referred_row = data[table_key]&.at(idx)
             comments << referred_row&.get_name(strings)
           end
         end
 
+        signature = nil
+        if row.respond_to?(:Signature) && blob_file_ofs && blob_size && row.Signature < blob_size
+          @pedump.io.seek(blob_file_ofs + row.Signature + 1)
+          signature = PEdump::CLR::Signature.read(@pedump.io, key)
+        end
+
         comments << row.get_name(strings) || row.to_s
         if comments.any?
-          printf "   %s", comments.join(key == :MemberRef ? '.' : ' ')
+          name_with_ns = comments.join(key == :MemberRef ? '.' : ' ')
+          if signature
+            prefix = 
+              if signature.respond_to?(:ret_type)
+                "#{signature.ret_type} "
+              elsif signature.respond_to?(:type)
+                "#{signature.type} "
+              else
+                ''
+              end
+
+            suffix = ''
+            if signature.respond_to?(:params) && signature.params
+              suffix = '(' + signature.params.join(', ') + ')'
+            end
+
+            name_with_ns = prefix + name_with_ns + suffix
+            name_with_ns.gsub!(/(?:CLASS|VALUE) (\h{7,8})/) do |orig|
+              id = $1.to_i(16)
+              table_id = id >> 24
+              table_key = PEdump::CLR::MetadataTableStreamHeader::FLAGS.keys[table_id]
+              idx = id & 0xffffff
+              referred_row = data[table_key]&.at(idx)
+              referred_name = referred_row&.get_name(strings) || referred_row&.to_s
+              referred_name || orig
+            end
+            name_with_ns.gsub!(/System\.Nullable\`1 <([^<>]+)>/, '\1?')
+          end
+          printf "   %s", name_with_ns
         end
         puts
 
@@ -688,21 +729,24 @@ class PEdump::CLI
               was = true
               a = row.send("decode_#{field_key}")
               printf "%20s: %-20s", field_key, a.inspect  
-              table_id, idx = a
-              if table_id && idx
-                referred_row = data[table_id]&.at(idx)
+              table_key, idx = a
+              if table_key && idx
+                referred_row = data[table_key]&.at(idx)
                 if referred_row
                   printf "%s", referred_row.get_name(strings) || referred_row.to_s
                 end
               end
               puts
             end
-            if field_key == :Signature && blob_file_ofs && blob_size && row.Signature < blob_size && prev_signature != row.Signature
+            if field_key == :Signature && signature && prev_signature != row.Signature
               printf "%20s: ", "Signature"
-              @pedump.io.seek(blob_file_ofs + row.Signature)
-              sig = @pedump.io.read(32)
-              sig = sig[0, sig[0].ord+1] # XXX are there sigs longer than 32 bytes?
-              puts sig.bytes.map{ |b| "%02x" % b }.join(' ')
+              @pedump.io.seek(blob_file_ofs + row.Signature + 1)
+              sig_data = @pedump.io.read(32) # not real length
+              puts sig_data.bytes.map{ |b| "%02x" % b }.join(' ')
+
+              printf "%20s  ", ""
+              p signature
+                
               was = true
               prev_signature = row.Signature
             end

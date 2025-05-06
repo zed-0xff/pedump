@@ -1,6 +1,11 @@
 #coding: binary
+require 'iostruct'
+
+require_relative 'clr/signature'
+require_relative 'clr/readytorun'
 
 class PEdump
+  # https://github.com/stakx/ecma-335/blob/master/docs/ii.25.3.3-cli-header.md
   class IMAGE_COR20_HEADER < IOStruct.new(
     'V S2 Q VV Q6',
     :cb,
@@ -17,6 +22,21 @@ class PEdump
     :ExportAddressTableJumps,
     :ManagedNativeHeader
   )
+    FLAGS = {
+      0x00001 => 'ILONLY',
+      0x00002 => '32BITREQUIRED',
+      0x00004 => 'IL_LIBRARY',
+      0x00008 => 'STRONGNAMESIGNED',
+      0x00010 => 'NATIVE_ENTRYPOINT',
+      0x10000 => 'TRACKDEBUGDATA',
+    }
+
+    FLAGS.each{ |k,v| const_set("COMIMAGE_FLAGS_#{v}", k) }
+      
+    def flags
+      FLAGS.find_all{ |k,v| (self.Flags & k) != 0 }.map(&:last)
+    end
+
     def self.read io
       super.tap do |r|
         %i'MetaData Resources StrongNameSignature CodeManagerTable VTableFixups ExportAddressTableJumps ManagedNativeHeader'.each do |field|
@@ -29,6 +49,7 @@ class PEdump
   end
 
   module CLR
+    # https://github.com/stakx/ecma-335/blob/master/docs/ii.24.2.1-metadata-root.md
     class MetadataHeader < IOStruct.new(
       'V S2 VV',
       :Magic,
@@ -148,6 +169,14 @@ class PEdump
 
       def known_table? key
         FLAGS.key?(key)
+      end
+
+      def heap_sizes
+        sizes = []
+        sizes << 'MANY_STRINGS' if self.HeapSizes & HEAP_SIZES_MANY_STRINGS != 0
+        sizes << 'MANY_GUIDS'   if self.HeapSizes & HEAP_SIZES_MANY_GUIDS != 0
+        sizes << 'MANY_BLOBS'   if self.HeapSizes & HEAP_SIZES_MANY_BLOBS != 0
+        sizes
       end
 
       def valid_flags
@@ -567,9 +596,9 @@ class PEdump
   end
 
   def clr_metadata f=@io
-    return nil unless clr_header(f)
+    return nil unless hdr = clr_header(f)
 
-    dir = clr_header(f)&.MetaData
+    dir = hdr&.MetaData
     return nil if !dir || (dir.va.to_i == 0 || dir.size.to_i == 0)
 
     file_offset = va2file(dir.va)
