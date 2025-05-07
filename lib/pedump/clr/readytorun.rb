@@ -51,10 +51,42 @@ class PEdump
       end
     end
 
-    class READYTORUN_SECTION < IOStruct.new('L a8',
+    # https://github.com/dotnet/runtime/blob/main/docs/design/coreclr/botr/readytorun-format.md#readytorun_section
+    class READYTORUN_SECTION < IOStruct.new('L',
                                             :Type,
                                             :Section # IMAGE_DATA_DIRECTORY
                                            )
+
+      SECTION_TYPES = {
+        100 => "CompilerIdentifier",        # Image
+        101 => "ImportSections",            # Image
+        102 => "RuntimeFunctions",          # Image
+        103 => "MethodDefEntryPoints",      # Assembly
+        104 => "ExceptionInfo",             # Assembly
+        105 => "DebugInfo",                 # Assembly
+        106 => "DelayLoadMethodCallThunks", # Assembly
+        107 => "AvailableTypes",            # (obsolete - used by an older format)
+        108 => "AvailableTypes",            # Assembly
+        109 => "InstanceMethodEntryPoints", # Image
+        110 => "InliningInfo",              # Assembly (added in V2.1)
+        111 => "ProfileDataInfo",           # Image (added in V2.2)
+        112 => "ManifestMetadata",          # Image (added in V2.3)
+        113 => "AttributePresence",         # Assembly (added in V3.1)
+        114 => "InliningInfo2",             # Image (added in V4.1)
+        115 => "ComponentAssemblies",       # Image (added in V4.1)
+        116 => "OwnerCompositeExecutable",  # Image (added in V4.1)
+        117 => "PgoInstrumentationData",    # Image (added in V5.2)
+        118 => "ManifestAssemblyMvids",     # Image (added in V5.3)
+        119 => "CrossModuleInlineInfo",     # Image (added in V6.3)
+        120 => "HotColdMap",                # Image (added in V8.0)
+        121 => "MethodIsGenericMap",        # Assembly (Added in V9.0)
+        122 => "EnclosingTypeMap",          # Assembly (Added in V9.0)
+        123 => "TypeGenericInfoMap",        # Assembly (Added in V9.0)
+      }
+
+      def to_s
+        "<%s Type=%3d va=%8x size=%8x>  %s" % [self.class, self.Type, self.Section.va, self.Section.size, SECTION_TYPES[self.Type] || "?"]
+      end
 
       def self.read io
         super.tap do |r|
@@ -66,13 +98,16 @@ class PEdump
 
   def clr_readytorun f=@io
     return nil unless hdr = clr_header(f)
-    return nil if hdr.Flags & IMAGE_COR20_HEADER::COMIMAGE_FLAGS_IL_LIBRARY == 0
 
     dir = hdr.ManagedNativeHeader
     return nil if !dir || (dir.va.to_i == 0 && dir.size.to_i == 0)
 
     file_offset = va2file(dir.va)
     return nil unless file_offset
+
+    f.seek(file_offset)
+    magic = f.read(4).unpack1('L')
+    return nil if magic != CLR::READYTORUN_HEADER::MAGIC
 
     f.seek(file_offset)
     CLR::READYTORUN_HEADER.read(f)

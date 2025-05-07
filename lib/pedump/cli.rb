@@ -540,7 +540,7 @@ class PEdump::CLI
           end
         end
       when PEdump::IMAGE_DATA_DIRECTORY
-        # in CLR_Header
+        # in CLR headers
         if v.va.to_i != 0 && v.size.to_i != 0
           printf "%30s: {va: %x, size: %x}\n", k, v.va, v.size
         else
@@ -554,7 +554,15 @@ class PEdump::CLI
       when Time
         printf "%30s: %24s\n", k, v.strftime('"%Y-%m-%d %H:%M:%S"')
       else
-        printf "%30s: %24s\n", k, v.to_s.inspect
+        if v.is_a?(Array) && v.all?{ |x| x.is_a?(Struct) }
+          a = v
+          printf "%30s: %24s\n", k, a[0]
+          a[1..-1].each do |v|
+            printf "%30s  %24s\n", "", v
+          end
+        else
+          printf "%30s: %24s\n", k, v.to_s.inspect
+        end
       end
     end
   end

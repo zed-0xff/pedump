@@ -64,9 +64,10 @@ Usage
         -f, --format FORMAT              Output format: bin,c,dump,hex,inspect,json,table,yaml
                                          (default: table)
     
-            --clr                        a shortcut for --clr_header, --clr_metadata, --clr_streams, --clr_strings, --clr_tables
+            --clr                        a shortcut for --clr_header, --clr_readytorun, --clr_metadata, --clr_streams, --clr_strings, --clr_tables
             --clr-header                 clr_header
             --clr-metadata               clr_metadata
+            --clr-readytorun             clr_readytorun
             --clr-streams                clr_streams
             --clr-strings                clr_strings
             --clr-tables [TABLES]        clr_tables
@@ -90,6 +91,7 @@ Usage
             --tls                        tls
         -V, --version-info               version_info
     
+            --tokens                     Show CLR tokens
             --deep                       packer deep scan, significantly slower
         -P, --packer-only                packer/compiler detect only,
                                          mimics 'file' command output
