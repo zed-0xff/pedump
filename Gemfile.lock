@@ -149,7 +149,7 @@ GEM
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     uri (1.0.3)
-    zhexdump (0.2.0)
+    zhexdump (0.3.0)
 
 PLATFORMS
   aarch64-linux
