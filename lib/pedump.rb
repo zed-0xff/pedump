@@ -457,7 +457,7 @@ class PEdump
 
     sections.each do |s|
       if (s.PointerToRawData...(s.PointerToRawData+s.SizeOfRawData)).include?(offset)
-        return s.VirtualAddress + s.PointerToRawData - offset
+        return s.VirtualAddress + offset - s.PointerToRawData
       end
     end
 
