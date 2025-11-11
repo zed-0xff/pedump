@@ -167,6 +167,23 @@ describe "--va2file" do
     it "returns success" do
       expect(cli2(cmd)).to be_truthy
     end
+
+    context "--format hex" do
+      let(:cmd) { "samples/calc.exe --va2file 0x104c000 --format hex" }
+      it "converts VA to file offset" do
+        expect { cli2(cmd) }
+          .to output("4ae00\n")
+          .to_stdout
+      end
+      it "has empty stderr" do
+        expect { cli2(cmd) }
+          .to_not output
+          .to_stderr
+      end
+      it "returns success" do
+        expect(cli2(cmd)).to be_truthy
+      end
+    end
   end
 
   context "on invalid VA" do

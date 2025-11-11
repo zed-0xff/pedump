@@ -80,6 +80,8 @@ Usage
 
 % pedump --file2va 0x4ae00 calc.exe
 
+% pedump --file2va 0x4ae00 calc.exe --format hex
+
 ### Data Directory
 
 % pedump --data-directory calc.exe

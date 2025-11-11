@@ -241,6 +241,10 @@ Usage
 
     file2va(0x4ae00) = 0x104c000  (17088512)
 
+    # pedump --file2va 0x4ae00 calc.exe --format hex
+
+    104c000
+
 ### Data Directory
 
     # pedump --data-directory calc.exe

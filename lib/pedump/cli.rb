@@ -394,10 +394,14 @@ class PEdump::CLI
       when :rva2file, :file2rva, :va2file, :file2va
         cmd = action[0]
         @pedump.sections(f)
-        va = action[1] =~ /(^0x)|(h$)/i ? action[1].to_i(16) : action[1].to_i
-        file_offset = @pedump.send(cmd, va)
-        if file_offset
-          printf("%s(0x%x) = 0x%x  (%d)\n", cmd, va, file_offset, file_offset)
+        arg = action[1] =~ /(^0x)|(h$)/i ? action[1].to_i(16) : action[1].to_i
+        result = @pedump.send(cmd, arg)
+        if result
+          if @options[:format] == :hex
+            puts result.to_s(16)
+          else
+            printf("%s(0x%x) = 0x%x  (%d)\n", cmd, arg, result, result)
+          end
         else
           @success = false
         end
