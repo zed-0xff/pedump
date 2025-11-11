@@ -4,6 +4,7 @@ pedump    [![Build Status](https://travis-ci.org/zed-0xff/pedump.png?branch=mast
 News
 ----
 ```
+2025.11.11 - 0.7.1; CLI: add --file2va command
 2025.03.16 - added .NET CLR parsing
 2024.04.20 - cli: add --set-dll-char to patch dll characteristics
              pe: imphash calculation
