@@ -28,7 +28,7 @@ end
 RSpec.configure do |config|
   # http://rspec.info/blog/2012/06/rspecs-new-expectation-syntax/
   config.expect_with :rspec do |c|
-    c.syntax = :should
+    c.syntax = [:should, :expect]
   end
   config.before :suite do
     Dir[File.join(SAMPLES_DIR,"*.7z")].each do |fname|

@@ -31,7 +31,7 @@ rescue LoadError
 end
 
 class PEdump::CLI
-  attr_accessor :data, :argv
+  attr_accessor :data, :argv, :success
 
   SHORTCUT_ACTIONS = {
     clr: %i'clr_header clr_readytorun clr_metadata clr_streams clr_strings clr_tables',
@@ -61,6 +61,7 @@ class PEdump::CLI
   end
 
   def run
+    @success = true
     @actions = []
     @options = { :format => :table, :verbose => 0 }
     optparser = OptionParser.new do |opts|
@@ -200,9 +201,11 @@ class PEdump::CLI
         end
       end
     end
+    @success
   rescue Errno::EPIPE
     # output interrupt, f.ex. when piping output to a 'head' command
     # prevents a 'Broken pipe - <STDOUT> (Errno::EPIPE)' message
+    @success
   end
 
   def create_pedump io
@@ -380,7 +383,11 @@ class PEdump::CLI
         @pedump.sections(f)
         va = action[1] =~ /(^0x)|(h$)/i ? action[1].to_i(16) : action[1].to_i
         file_offset = @pedump.va2file(va)
-        printf "va2file(0x%x) = 0x%x  (%d)\n", va, file_offset, file_offset
+        if file_offset
+          printf("va2file(0x%x) = 0x%x  (%d)\n", va, file_offset, file_offset)
+        else
+          @success = false
+        end
         return
       else
         if respond_to?(action[0])

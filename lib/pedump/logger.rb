@@ -22,7 +22,7 @@ class PEdump
       if params[:logger]
         params[:logger]
       else
-        logdev = params[:logdev] || STDERR
+        logdev = params[:logdev] || $stderr
         logger_class =
           if params.key?(:color)
             # forced color or not

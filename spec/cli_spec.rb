@@ -1,6 +1,6 @@
-require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
-require File.expand_path(File.dirname(__FILE__) + '/../lib/pedump')
-require File.expand_path(File.dirname(__FILE__) + '/../lib/pedump/cli')
+require_relative 'spec_helper'
+require_relative '../lib/pedump'
+require_relative '../lib/pedump/cli'
 require 'digest/md5'
 
 class CLIReturn < Struct.new(:status, :output)
@@ -16,6 +16,10 @@ def cli args
   CLIReturn.new(0, output)
 rescue SystemExit
   CLIReturn.new($!.status, "")
+end
+
+def cli2 args
+  PEdump::CLI.new(args.split).run
 end
 
 describe "--extract resource" do
@@ -72,5 +76,41 @@ describe "--imphash" do
   end
   it "outputs a line per file" do
     cli("samples/calc.exe samples/notepad.exe --imphash").output.should == "15424d7bd976766dc8b2452077f79c09 samples/calc.exe\n419c3fe8c1eefea9336b96f74f0951dd samples/notepad.exe\n"
+  end
+end
+
+describe "--va2file" do
+  context "on valid VA" do
+    let(:cmd) { "samples/calc.exe --va2file 0x4c000" }
+    it "converts VA to file offset" do
+      expect { cli2(cmd) }
+        .to output("va2file(0x4c000) = 0x4ae00  (306688)\n")
+        .to_stdout
+    end
+    it "has empty stderr" do
+      expect { cli2(cmd) }
+        .to_not output
+        .to_stderr
+    end
+    it "returns success" do
+      expect(cli2(cmd)).to be_truthy
+    end
+  end
+
+  context "on invalid VA" do
+    let(:cmd) { "samples/calc.exe --va2file 0x4c00000" }
+    it "has empty stdout" do
+      expect { cli2(cmd) }
+        .to_not output
+        .to_stdout
+    end
+    it "shows error on stderr" do
+      expect { cli2(cmd) }
+        .to output("[?] can't find file_offset of VA 0x4c00000\n")
+        .to_stderr
+    end
+    it "returns not success" do
+      expect(cli2(cmd)).to be_falsey
+    end
   end
 end
