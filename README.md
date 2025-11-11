@@ -107,7 +107,10 @@ Usage
                                          ID: section:raw/0x400  - section by RAW_PTR
                                          ID: tail               - file tail
                                          ID: tail:c00           - file tail + 0xc00 offset
-            --va2file VA                 Convert RVA to file offset
+    
+            --va2file VA                 Convert VA to file offset
+            --file2va OFFSET             Convert file offset to VA
+    
             --set-os-version VER         Patch OS version in PE header
             --set-dll-char X             Patch IMAGE_OPTIONAL_HEADER32.DllCharacteristics
     

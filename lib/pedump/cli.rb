@@ -137,10 +137,16 @@ class PEdump::CLI
              ) do |v|
         @actions << [:extract, v]
       end
-      opts.on "--va2file VA", "Convert RVA to file offset" do |va|
+
+      opts.separator ''
+      opts.on "--va2file VA", "Convert VA to file offset" do |va|
         @actions << [:va2file, va]
       end
+      opts.on "--file2va OFFSET", "Convert file offset to VA" do |offset|
+        @actions << [:file2va, offset]
+      end
 
+      opts.separator ''
       opts.on "--set-os-version VER", "Patch OS version in PE header" do |ver|
         @actions << [:set_os_version, ver]
       end
@@ -379,12 +385,13 @@ class PEdump::CLI
       case action[0]
       when :disasm
         return
-      when :va2file
+      when :va2file, :file2va
+        cmd = action[0]
         @pedump.sections(f)
         va = action[1] =~ /(^0x)|(h$)/i ? action[1].to_i(16) : action[1].to_i
-        file_offset = @pedump.va2file(va)
+        file_offset = @pedump.send(cmd, va)
         if file_offset
-          printf("va2file(0x%x) = 0x%x  (%d)\n", va, file_offset, file_offset)
+          printf("%s(0x%x) = 0x%x  (%d)\n", cmd, va, file_offset, file_offset)
         else
           @success = false
         end

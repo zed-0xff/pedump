@@ -114,3 +114,39 @@ describe "--va2file" do
     end
   end
 end
+
+describe "--file2va" do
+  context "on valid VA" do
+    let(:cmd) { "samples/calc.exe --file2va 0x4ae00" }
+    it "converts VA to file offset" do
+      expect { cli2(cmd) }
+        .to output("file2va(0x4ae00) = 0x4c000  (311296)\n")
+        .to_stdout
+    end
+    it "has empty stderr" do
+      expect { cli2(cmd) }
+        .to_not output
+        .to_stderr
+    end
+    it "returns success" do
+      expect(cli2(cmd)).to be_truthy
+    end
+  end
+
+  context "on invalid VA" do
+    let(:cmd) { "samples/calc.exe --file2va 0x4c00000" }
+    it "has empty stdout" do
+      expect { cli2(cmd) }
+        .to_not output
+        .to_stdout
+    end
+    it "shows error on stderr" do
+      expect { cli2(cmd) }
+        .to output("[?] can't find VA for file_offset 0x4c00000\n")
+        .to_stderr
+    end
+    it "returns not success" do
+      expect(cli2(cmd)).to be_falsey
+    end
+  end
+end

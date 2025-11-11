@@ -445,6 +445,26 @@ class PEdump
     nil
   end
 
+  def file2va offset, h = {}
+    return nil if offset.nil?
+
+    # a special case - PE without sections
+    return offset if sections.empty?
+
+    sections.each do |s|
+      if (s.PointerToRawData...(s.PointerToRawData+s.SizeOfRawData)).include?(offset)
+        return s.VirtualAddress + s.PointerToRawData - offset
+      end
+    end
+
+    if h[:quiet]
+      logger.debug "[?] can't find VA for file_offset 0x#{offset.to_i.to_s(16)} (quiet=true)"
+    else
+      logger.error "[?] can't find VA for file_offset 0x#{offset.to_i.to_s(16)}"
+    end
+    nil
+  end
+
   # OPTIONAL: assigns @mz, @rich_hdr, @pe, etc
   def dump f=@io
     if f.is_a?(String)
