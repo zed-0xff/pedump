@@ -445,6 +445,10 @@ class PEdump
     nil
   end
 
+  def va2file va, h = {}
+    va && rva2file(va - @pe.ioh.ImageBase.to_i, h)
+  end
+
   def file2rva offset, h = {}
     return nil if offset.nil?
 
@@ -463,6 +467,11 @@ class PEdump
       logger.error "[?] can't find VA for file_offset 0x#{offset.to_i.to_s(16)}"
     end
     nil
+  end
+
+  def file2va offset, h = {}
+    va = file2rva(offset, h)
+    va && (va + @pe.ioh.ImageBase.to_i)
   end
 
   # OPTIONAL: assigns @mz, @rich_hdr, @pe, etc

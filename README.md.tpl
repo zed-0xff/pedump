@@ -70,6 +70,16 @@ Usage
 
 % pedump --pe calc.exe
 
+### Convert (R)VA to file offset and back
+
+% pedump --rva2file 0x4c000 calc.exe
+
+% pedump --file2rva 0x4ae00 calc.exe
+
+% pedump --va2file 0x104c000 calc.exe
+
+% pedump --file2va 0x4ae00 calc.exe
+
 ### Data Directory
 
 % pedump --data-directory calc.exe

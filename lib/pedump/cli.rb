@@ -139,6 +139,12 @@ class PEdump::CLI
       end
 
       opts.separator ''
+      opts.on "--va2file VA", "Convert VA to file offset" do |va|
+        @actions << [:va2file, va]
+      end
+      opts.on "--file2va OFFSET", "Convert file offset to VA" do |offset|
+        @actions << [:file2va, offset]
+      end
       opts.on "--rva2file RVA", "Convert RVA to file offset" do |va|
         @actions << [:rva2file, va]
       end
@@ -385,7 +391,7 @@ class PEdump::CLI
       case action[0]
       when :disasm
         return
-      when :rva2file, :file2rva
+      when :rva2file, :file2rva, :va2file, :file2va
         cmd = action[0]
         @pedump.sections(f)
         va = action[1] =~ /(^0x)|(h$)/i ? action[1].to_i(16) : action[1].to_i

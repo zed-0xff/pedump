@@ -109,6 +109,8 @@ Usage
                                          ID: tail               - file tail
                                          ID: tail:c00           - file tail + 0xc00 offset
     
+            --va2file VA                 Convert VA to file offset
+            --file2va OFFSET             Convert file offset to VA
             --rva2file RVA               Convert RVA to file offset
             --file2rva OFFSET            Convert file offset to RVA
     
@@ -220,6 +222,24 @@ Usage
                   SizeOfHeapCommit:       4096          1000
                        LoaderFlags:                        0
                NumberOfRvaAndSizes:         16            10
+
+### Convert (R)VA to file offset and back
+
+    # pedump --rva2file 0x4c000 calc.exe
+
+    rva2file(0x4c000) = 0x4ae00  (306688)
+
+    # pedump --file2rva 0x4ae00 calc.exe
+
+    file2rva(0x4ae00) = 0x4c000  (311296)
+
+    # pedump --va2file 0x104c000 calc.exe
+
+    va2file(0x104c000) = 0x4ae00  (306688)
+
+    # pedump --file2va 0x4ae00 calc.exe
+
+    file2va(0x4ae00) = 0x104c000  (17088512)
 
 ### Data Directory
 

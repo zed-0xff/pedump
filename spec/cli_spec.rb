@@ -150,3 +150,75 @@ describe "--file2rva" do
     end
   end
 end
+
+describe "--va2file" do
+  context "on valid VA" do
+    let(:cmd) { "samples/calc.exe --va2file 0x104c000" }
+    it "converts VA to file offset" do
+      expect { cli2(cmd) }
+        .to output("va2file(0x104c000) = 0x4ae00  (306688)\n")
+        .to_stdout
+    end
+    it "has empty stderr" do
+      expect { cli2(cmd) }
+        .to_not output
+        .to_stderr
+    end
+    it "returns success" do
+      expect(cli2(cmd)).to be_truthy
+    end
+  end
+
+  context "on invalid VA" do
+    let(:cmd) { "samples/calc.exe --va2file 0x4c00000" }
+    it "has empty stdout" do
+      expect { cli2(cmd) }
+        .to_not output
+        .to_stdout
+    end
+    it "shows error on stderr" do
+      expect { cli2(cmd) }
+        .to output("[?] can't find file_offset of VA 0x3c00000\n")
+        .to_stderr
+    end
+    it "returns not success" do
+      expect(cli2(cmd)).to be_falsey
+    end
+  end
+end
+
+describe "--file2va" do
+  context "on valid VA" do
+    let(:cmd) { "samples/calc.exe --file2va 0x4ae00" }
+    it "converts VA to file offset" do
+      expect { cli2(cmd) }
+        .to output("file2va(0x4ae00) = 0x104c000  (17088512)\n")
+        .to_stdout
+    end
+    it "has empty stderr" do
+      expect { cli2(cmd) }
+        .to_not output
+        .to_stderr
+    end
+    it "returns success" do
+      expect(cli2(cmd)).to be_truthy
+    end
+  end
+
+  context "on invalid VA" do
+    let(:cmd) { "samples/calc.exe --file2va 0x4c00000" }
+    it "has empty stdout" do
+      expect { cli2(cmd) }
+        .to_not output
+        .to_stdout
+    end
+    it "shows error on stderr" do
+      expect { cli2(cmd) }
+        .to output("[?] can't find VA for file_offset 0x4c00000\n")
+        .to_stderr
+    end
+    it "returns not success" do
+      expect(cli2(cmd)).to be_falsey
+    end
+  end
+end
