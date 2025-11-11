@@ -73,7 +73,7 @@ class PEdump
         elsif va == 0 && pe.dll?
           pedump.logger.debug "[.] it's a DLL with no EntryPoint"
           nil
-        elsif !(ofs = pedump.va2file(va))
+        elsif !(ofs = pedump.rva2file(va))
           pedump.logger.error "[?] can't find EntryPoint RVA (0x#{va.to_s(16)}) file offset"
           nil
         else

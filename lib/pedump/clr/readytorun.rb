@@ -102,7 +102,7 @@ class PEdump
     dir = hdr.ManagedNativeHeader
     return nil if !dir || (dir.va.to_i == 0 && dir.size.to_i == 0)
 
-    file_offset = va2file(dir.va)
+    file_offset = rva2file(dir.va)
     return nil unless file_offset
 
     f.seek(file_offset)

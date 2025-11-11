@@ -397,7 +397,7 @@ class PEdump
   alias :rich_header :rich_hdr
   alias :rich        :rich_hdr
 
-  def va2file va, h={}
+  def rva2file va, h={}
     return nil if va.nil?
 
     va0 = va # save for log output of original addr
@@ -445,7 +445,7 @@ class PEdump
     nil
   end
 
-  def file2va offset, h = {}
+  def file2rva offset, h = {}
     return nil if offset.nil?
 
     # a special case - PE without sections
@@ -628,7 +628,7 @@ class PEdump
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::IMPORT]
     return [] if !dir || (dir.va == 0 && dir.size == 0)
 
-    file_offset = va2file(dir.va)
+    file_offset = rva2file(dir.va)
     return nil unless file_offset
 
     # scan TLS first, to catch many fake imports trick from
@@ -636,7 +636,7 @@ class PEdump
     tls_aoi = nil
     if (tls = tls(f)) && tls.any?
       tls_aoi = tls.first.AddressOfIndex.to_i - @pe.ioh.ImageBase.to_i
-      tls_aoi = tls_aoi > 0 ? va2file(tls_aoi) : nil
+      tls_aoi = tls_aoi > 0 ? rva2file(tls_aoi) : nil
     end
 
     r = []; t = nil
@@ -672,7 +672,7 @@ class PEdump
         @imports = @imports[0,iidx]
         break
       end
-      if x.Name.to_i != 0 && (ofs = va2file(x.Name))
+      if x.Name.to_i != 0 && (ofs = rva2file(x.Name))
         begin
         f.seek ofs
         rescue
@@ -683,7 +683,7 @@ class PEdump
       end
       [:original_first_thunk, :first_thunk].each do |tbl|
         camel = tbl.capitalize.to_s.gsub(/_./){ |char| char[1..-1].upcase}
-        if x[camel].to_i != 0 && (ofs = va2file(x[camel])) && f.checked_seek(ofs)
+        if x[camel].to_i != 0 && (ofs = rva2file(x[camel])) && f.checked_seek(ofs)
           x[tbl] ||= []
           if pe.x64?
             x[tbl] << t while (t = f.read(8).to_s.unpack('Q').first).to_i != 0
@@ -701,7 +701,7 @@ class PEdump
           cache[t] ||=
             if t & mask > 0                                 # 0x8000_0000(_0000_0000)
               ImportedFunction.new(nil,nil,t & (mask-1),va) # 0x7fff_ffff(_ffff_ffff)
-            elsif ofs=va2file(t, :quiet => true)
+            elsif ofs=rva2file(t, :quiet => true)
               if !f.checked_seek(ofs) || f.eof?
                 logger.warn "[?] import ofs 0x#{ofs.to_s(16)} VA=0x#{t.to_s(16)} beyond EOF"
                 nil
@@ -788,7 +788,7 @@ class PEdump
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::EXPORT]
     return nil if !dir || (dir.va == 0 && dir.size == 0)
     va = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::EXPORT].va
-    file_offset = va2file(va)
+    file_offset = rva2file(va)
     return nil unless file_offset
     if !f.checked_seek(file_offset) || f.eof?
       logger.warn "[?] exports info beyond EOF"
@@ -798,7 +798,7 @@ class PEdump
       x.entry_points = []
       x.name_ordinals = []
       x.names = []
-      if x.Name.to_i != 0 && (ofs = va2file(x.Name))
+      if x.Name.to_i != 0 && (ofs = rva2file(x.Name))
         f.seek ofs
         if f.eof?
           logger.warn "[?] export ofs 0x#{ofs.to_s(16)} beyond EOF"
@@ -808,7 +808,7 @@ class PEdump
         end
       end
       if x.NumberOfFunctions.to_i > 0
-        if x.AddressOfFunctions.to_i !=0 && (ofs = va2file(x.AddressOfFunctions))
+        if x.AddressOfFunctions.to_i !=0 && (ofs = rva2file(x.AddressOfFunctions))
           f.seek ofs
           x.entry_points = []
           x.NumberOfFunctions.times do
@@ -819,7 +819,7 @@ class PEdump
             x.entry_points << f.read(4).unpack('V').first
           end
         end
-        if x.AddressOfNameOrdinals.to_i !=0 && (ofs = va2file(x.AddressOfNameOrdinals))
+        if x.AddressOfNameOrdinals.to_i !=0 && (ofs = rva2file(x.AddressOfNameOrdinals))
           f.seek ofs
           x.name_ordinals = []
           x.NumberOfNames.times do
@@ -831,7 +831,7 @@ class PEdump
           end
         end
       end
-      if x.NumberOfNames.to_i > 0 && x.AddressOfNames.to_i !=0 && (ofs = va2file(x.AddressOfNames))
+      if x.NumberOfNames.to_i > 0 && x.AddressOfNames.to_i !=0 && (ofs = rva2file(x.AddressOfNames))
         f.seek ofs
         x.names = []
         x.NumberOfNames.times do
@@ -844,7 +844,7 @@ class PEdump
         nErrors = 0
         x.names.size.times do |i|
           begin
-            f.seek va2file(x.names[i])
+            f.seek rva2file(x.names[i])
             x.names[i] = f.gets("\x00").to_s.chomp("\x00")
           rescue
             nErrors += 1
@@ -890,7 +890,7 @@ class PEdump
       begin
         dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::TLS]
         return nil if !dir || dir.va == 0
-        return nil unless file_offset = va2file(dir.va)
+        return nil unless file_offset = rva2file(dir.va)
         f.seek file_offset
         if f.eof?
           logger.info "[?] TLS info beyond EOF"

@@ -109,8 +109,8 @@ Usage
                                          ID: tail               - file tail
                                          ID: tail:c00           - file tail + 0xc00 offset
     
-            --va2file VA                 Convert VA to file offset
-            --file2va OFFSET             Convert file offset to VA
+            --rva2file RVA               Convert RVA to file offset
+            --file2rva OFFSET            Convert file offset to RVA
     
             --set-os-version VER         Patch OS version in PE header
             --set-dll-char X             Patch IMAGE_OPTIONAL_HEADER32.DllCharacteristics

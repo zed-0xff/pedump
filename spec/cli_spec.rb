@@ -79,12 +79,12 @@ describe "--imphash" do
   end
 end
 
-describe "--va2file" do
+describe "--rva2file" do
   context "on valid VA" do
-    let(:cmd) { "samples/calc.exe --va2file 0x4c000" }
+    let(:cmd) { "samples/calc.exe --rva2file 0x4c000" }
     it "converts VA to file offset" do
       expect { cli2(cmd) }
-        .to output("va2file(0x4c000) = 0x4ae00  (306688)\n")
+        .to output("rva2file(0x4c000) = 0x4ae00  (306688)\n")
         .to_stdout
     end
     it "has empty stderr" do
@@ -98,7 +98,7 @@ describe "--va2file" do
   end
 
   context "on invalid VA" do
-    let(:cmd) { "samples/calc.exe --va2file 0x4c00000" }
+    let(:cmd) { "samples/calc.exe --rva2file 0x4c00000" }
     it "has empty stdout" do
       expect { cli2(cmd) }
         .to_not output
@@ -115,12 +115,12 @@ describe "--va2file" do
   end
 end
 
-describe "--file2va" do
+describe "--file2rva" do
   context "on valid VA" do
-    let(:cmd) { "samples/calc.exe --file2va 0x4ae00" }
+    let(:cmd) { "samples/calc.exe --file2rva 0x4ae00" }
     it "converts VA to file offset" do
       expect { cli2(cmd) }
-        .to output("file2va(0x4ae00) = 0x4c000  (311296)\n")
+        .to output("file2rva(0x4ae00) = 0x4c000  (311296)\n")
         .to_stdout
     end
     it "has empty stderr" do
@@ -134,7 +134,7 @@ describe "--file2va" do
   end
 
   context "on invalid VA" do
-    let(:cmd) { "samples/calc.exe --file2va 0x4c00000" }
+    let(:cmd) { "samples/calc.exe --file2rva 0x4c00000" }
     it "has empty stdout" do
       expect { cli2(cmd) }
         .to_not output

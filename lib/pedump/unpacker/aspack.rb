@@ -788,13 +788,13 @@ class PEdump::Unpacker::ASPack
     ###
 
     rebuild_tls :step => 1
-    sorted_obj_tbl = @obj_tbl.sort_by{ |x| @ldr.pedump.va2file(x.va) }
+    sorted_obj_tbl = @obj_tbl.sort_by{ |x| @ldr.pedump.rva2file(x.va) }
     sorted_obj_tbl.each_with_index do |obj,idx|
       # restore section flags, if any
       @ldr.va2section(obj.va).flags = obj.flags if obj.flags
 
       next if obj.size < 0 # empty section
-      #file_offset = @ldr.pedump.va2file(obj.va)
+      #file_offset = @ldr.pedump.rva2file(obj.va)
       #@io.seek file_offset
       packed_size =
         if idx == sorted_obj_tbl.size - 1
@@ -802,7 +802,7 @@ class PEdump::Unpacker::ASPack
           obj.size
         else
           # subtract this file_offset from next object file_offset
-          @ldr.pedump.va2file(sorted_obj_tbl[idx+1].va) - @ldr.pedump.va2file(obj.va)
+          @ldr.pedump.rva2file(sorted_obj_tbl[idx+1].va) - @ldr.pedump.rva2file(obj.va)
         end
       #packed_data = @io.read packed_size
       packed_data = @ldr[obj.va, packed_size]

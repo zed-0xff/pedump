@@ -139,11 +139,11 @@ class PEdump::CLI
       end
 
       opts.separator ''
-      opts.on "--va2file VA", "Convert VA to file offset" do |va|
-        @actions << [:va2file, va]
+      opts.on "--rva2file RVA", "Convert RVA to file offset" do |va|
+        @actions << [:rva2file, va]
       end
-      opts.on "--file2va OFFSET", "Convert file offset to VA" do |offset|
-        @actions << [:file2va, offset]
+      opts.on "--file2rva OFFSET", "Convert file offset to RVA" do |offset|
+        @actions << [:file2rva, offset]
       end
 
       opts.separator ''
@@ -385,7 +385,7 @@ class PEdump::CLI
       case action[0]
       when :disasm
         return
-      when :va2file, :file2va
+      when :rva2file, :file2rva
         cmd = action[0]
         @pedump.sections(f)
         va = action[1] =~ /(^0x)|(h$)/i ? action[1].to_i(16) : action[1].to_i
@@ -652,7 +652,7 @@ class PEdump::CLI
 
   def dump_clr_streams data
     clr_header = @pedump.clr_header
-    clr_data_file_ofs = clr_header.MetaData.va.to_i > 0 && @pedump.va2file(clr_header.MetaData.va)
+    clr_data_file_ofs = clr_header.MetaData.va.to_i > 0 && @pedump.rva2file(clr_header.MetaData.va)
 
     fmt = "%8x %8x  %-32s\n"
     printf fmt.tr('x','s'), *%w'offset size name'
@@ -675,7 +675,7 @@ class PEdump::CLI
     blob_stream = @pedump.clr_streams.find{ |s| s.name == "#Blob" }
 
     clr_header = @pedump.clr_header
-    clr_data_file_ofs = clr_header.MetaData.va.to_i > 0 && @pedump.va2file(clr_header.MetaData.va)
+    clr_data_file_ofs = clr_header.MetaData.va.to_i > 0 && @pedump.rva2file(clr_header.MetaData.va)
     blob_file_ofs = blob_stream.offset + clr_data_file_ofs if blob_stream
     blob_size = blob_stream&.size
 
@@ -892,7 +892,7 @@ class PEdump::CLI
     if @options[:verbose] > 0
       [%w'Names', %w'EntryPoints Functions', %w'Ordinals NameOrdinals'].each do |x|
         va  = data["AddressOf"+x.last]
-        ofs = @pedump.va2file(va) || '?'
+        ofs = @pedump.rva2file(va) || '?'
         printf("# %-12s rva=0x%08x  file_offset=%8s\n", x.first, va, ofs) if va
       end
     end
@@ -1132,7 +1132,7 @@ class PEdump::CLI
       exit(1)
     end
     if entry.size != 0
-      _copy_stream @pedump.io, $stdout, entry.size, @pedump.va2file(entry.va)
+      _copy_stream @pedump.io, $stdout, entry.size, @pedump.rva2file(entry.va)
     end
   end
 

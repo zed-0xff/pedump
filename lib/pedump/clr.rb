@@ -584,7 +584,7 @@ class PEdump
     dir = @pe.ioh.DataDirectory[IMAGE_DATA_DIRECTORY::CLR_Header]
     return nil if !dir || (dir.va == 0 && dir.size == 0)
 
-    file_offset = va2file(dir.va)
+    file_offset = rva2file(dir.va)
     return nil unless file_offset
 
     if f.checked_seek(file_offset)
@@ -601,7 +601,7 @@ class PEdump
     dir = hdr&.MetaData
     return nil if !dir || (dir.va.to_i == 0 || dir.size.to_i == 0)
 
-    file_offset = va2file(dir.va)
+    file_offset = rva2file(dir.va)
     return nil unless file_offset
 
     if f.checked_seek(file_offset)
@@ -635,7 +635,7 @@ class PEdump
     streams.each do |stream|
       next unless stream.name == '#Strings'
 
-      unless f.checked_seek(va2file(dir.va) + stream.offset)
+      unless f.checked_seek(rva2file(dir.va) + stream.offset)
         logger.warn "[?] Error seeking to CLR strings stream"
         return nil
       end
@@ -678,7 +678,7 @@ class PEdump
     streams.each do |stream|
       next if stream.name != '#~' && stream.name != '#-' # Metadata Table Stream
 
-      unless f.checked_seek(va2file(dir.va) + stream.offset)
+      unless f.checked_seek(rva2file(dir.va) + stream.offset)
         logger.warn "[?] Error seeking to CLR table stream"
         return nil
       end

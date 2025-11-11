@@ -403,7 +403,7 @@ class PEdump
             end
           end
         when IMAGE_RESOURCE_DATA_ENTRY
-          file_offset = va2file(entry.data.OffsetToData, :quiet => (@pe_res_errors > MAX_ERRORS))
+          file_offset = rva2file(entry.data.OffsetToData, :quiet => (@pe_res_errors > MAX_ERRORS))
           unless file_offset
             @pe_res_errors += 1
             if @pe_res_errors > MAX_ERRORS
