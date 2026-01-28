@@ -1,3 +1,5 @@
+#coding: binary
+
 class PEdump
   module SigParser
 
@@ -47,8 +49,6 @@ class PEdump
           puts "[=] #{sigs.size-n0} sigs from #{File.basename(fname)}\n\n" if args[:verbose]
         end
 
-        bins = Hash.new{ |k,v| k[v] = ''.force_encoding('binary') }
-
         # convert strings to Regexps
         sigs = sigs.values
         sigs.each_with_index do |sig,idx|
@@ -57,16 +57,14 @@ class PEdump
               sig.size = a.size
             end.map do |x|
               case x
-              when /\A\?\?\Z/
-                bins[sig] << '.'
+              when /\A\?\?\z/
                 '.'
-              when /\A.\?/,/\?.\Z/
-                puts "[?] #{x.inspect} -> \"??\" in #{sig.name}" if args[:verbose]
-                bins[sig] << '.'
-                '.'
-              when /\A[a-f0-9]{2}\Z/i
+              when /\A\h\?\z/ # 'f?'
+                "[\\x#{x[0]}0-\\x#{x[0]}f]"
+              when /\A\?\h\z/ # '?4'
+                '[' + (0..15).map{ |i| "\\x#{i.to_s(16)}#{x[1]}" }.join + ']'
+              when /\A[a-f0-9]{2}\z/i
                 x = x.to_i(16).chr
-                bins[sig] << x
                 if args[:raw]
                   x
                 elsif args[:raword]
@@ -88,34 +86,6 @@ class PEdump
         end
         sigs.delete_if{ |sig| !sig.re || sig.re.index('BAD_RE') }
         return sigs if args[:raw] || args[:raword]
-
-#        require 'awesome_print'
-#        bins.each do |bin_sig, bin|
-#          next if bin.size < 5
-#          #next unless bin_sig.name['UPX']
-#
-#          bin_re = Regexp.new(bin_sig.re.join, Regexp::MULTILINE)
-#          was = false
-#          sigs.each do |sig|
-#            next if sig.size < 5 || sig == bin_sig
-#            #next unless sig.name['UPX']
-#
-#            re = Regexp.new(sig.re.join, Regexp::MULTILINE)
-#            if bin.index(re) == 0
-#              rd = _re_diff(bin_re.source, re.source)
-#              if rd.any? && rd.size <= 4
-#                #if sig.name.split.first.upcase != bin_sig.name.split.first.upcase
-#                  puts "\n[.] #{bin_sig.name.yellow}\n#{bin_re.source.inspect.red}" unless was
-#                  puts "[=] #{sig.name}"
-#                  puts re.source.inspect.green
-#                  p rd
-#                  was = true
-#                #end
-#              end
-#            end
-#          end
-#        end
-
 
         optimize sigs if args[:optimize]
 
@@ -141,6 +111,7 @@ class PEdump
         return if sig.name == "JAR Archive"
         return if sig.name == "Turbo / Borland Pascal v7.x Unit"
         return if sig.re == "54 68 69 73 20 70 72 6F 67 72 61 6D 20 63 61 6E 6E 6F 74 20 62 65 20 72 75 6E 20 69 6E 20 44 4F 53 20 6D 6F" # dos stub
+        return if sig.re =~ /T RU E/
 
         sig.name.sub!(/^\*\s+/,    '')
         sig.name.sub!(/\s+\(h\)$/, '')
@@ -172,8 +143,8 @@ class PEdump
 
         # too short signatures
         if sig.re.split.delete_if{ |x| x['?'] }.size < 3
-          require 'awesome_print'
-          puts sig.inspect.red
+          puts "[?] too short signature: #{sig.inspect}" if args[:verbose]
+          return
         end
 
         # fs.txt contains a lot of signatures that copied from other sources

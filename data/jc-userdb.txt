@@ -4301,12 +4301,8 @@ signature = 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 8B 44 24 10 89 6C 24 10 8D 6C 24
 ep_only = false
 
 [Microsoft Visual C++ 6.0 - 8.0]
-signature = 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 8B 44 24 10 89 6C 24 10 8D 6C 24 10 2B E0 53 56 57 8B 45 F8 89 65 E8 50 8B 45 FC C7 45 FC FF FF FF FF 89 45 F8 8D 45 F0 64 A3 00 00 00 00 C3 8B 4D F0 64 89 0D 00 00 00 00 59 5F 5E 5B C9 51 C3 &# 40 ;T RU NC AT ED HE RE &# 41
+signature = 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 8B 44 24 10 89 6C 24 10 8D 6C 24 10 2B E0 53 56 57 8B 45 F8 89 65 E8 50 8B 45 FC C7 45 FC FF FF FF FF 89 45 F8 8D 45 F0 64 A3 00 00 00 00 C3 8B 4D F0 64 89 0D 00 00 00 00 59 5F 5E 5B C9 51 C3
 ep_only = true
-
-[Microsoft Visual C++ 6.0 - 8.0]
-signature = 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 8B 44 24 10 89 6C 24 10 8D 6C 24 10 2B E0 53 56 57 8B 45 F8 89 65 E8 50 8B 45 FC C7 45 FC FF FF FF FF 89 45 F8 8D 45 F0 64 A3 00 00 00 00 C3 8B 4D F0 64 89 0D 00 00 00 00 59 5F 5E 5B C9 51 C3 &#40;TRUNCATED HERE&#41
-ep_only = false
 
 [Microsoft Visual C++ 6.0 - 8.0]
 signature = 8B 44 24 08 85 C0 0F 84 ?? ?? ?? ?? 83 F8 01 8B 0D ?? ?? ?? ?? 8B 09 89 0D ?? ?? ?? ?? 0F 85 ?? ?? ?? ?? 68 80 00 00 00 FF 15 ?? ?? ?? ?? 85 C0 59 A3 ?? ?? ?? ?? 0F 84 ?? ?? ?? ?? 83 20 00 A1 ?? ?? ?? ?? 68 ?? ?? ?? ?? 68 ?? ?? ?? ?? A3 ?? ?? ?? ?? E8
@@ -9946,7 +9942,7 @@ signature = E8 00 00 00 00 5E 83 C6 14 AD 89 C7 AD 89 C1 AD 30 07 47 E2 FB AD FF
 ep_only = true
 
 [UPX-Shit v0.1 -> 500mhz]
-signature = E8 00 00 00 00 5E 83 C6 14 AD 89 C7 AD 89 C1 AD 30 07 47 E2 FB AD FF E0 C3 00 ?? ?? 00 ?? ?? ?? 00 ?? ?? ?? <SPAN STYLE="FONT-WEIGHT: BOLD">01</SPAN> ?? ?? ?? 00 55 50 58 2D 53 68 69 74 20 76 30 2E 31 20 2D 20 77 77 77 2E 62 6C 61 63 6B 6C 6F 67 69 63 2E 6E 65 74 20 2D 20 63 6F 64 65 20 62 79 20 5B 35 30 30 6D 68 7A 5D
+signature = E8 00 00 00 00 5E 83 C6 14 AD 89 C7 AD 89 C1 AD 30 07 47 E2 FB AD FF E0 C3 00 ?? ?? 00 ?? ?? ?? 00 ?? ?? ?? 01 ?? ?? ?? 00 55 50 58 2D 53 68 69 74 20 76 30 2E 31 20 2D 20 77 77 77 2E 62 6C 61 63 6B 6C 6F 67 69 63 2E 6E 65 74 20 2D 20 63 6F 64 65 20 62 79 20 5B 35 30 30 6D 68 7A 5D
 ep_only = true
 
 [UPX-Shit v0.1 -> 500mhz]

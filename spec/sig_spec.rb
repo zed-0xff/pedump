@@ -29,12 +29,14 @@ describe PEdump::Packer do
       while row = f.gets
         row.strip!
         next unless row =~ /^\[(.*)=(.*)\]$/
+
         s = ''
         title,hexstring = $1,$2
 
         # bad sigs
         next if hexstring == '909090909090909090909090909090909090909090909090909090909090909090909090'
         next if hexstring == 'E9::::0000000000000000'
+        next if hexstring.tr(':','').size < 8 # too short
 
         (hexstring.size/2).times do |i|
           c = hexstring[i*2,2]

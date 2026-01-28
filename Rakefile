@@ -131,25 +131,25 @@ namespace :rich do
 end
 
 namespace :sigs do
-  desc "update packers db from net"
-  task :update do
-    require './lib/pedump/packer'
-    check_file "http://research.pandasecurity.com/blogs/images/userdb.txt"
-    check_file "http://fuu.googlecode.com/svn/trunk/src/x86/Tools/Signaturesdb/signatures.txt"
-    check_file "http://handlers.sans.edu/jclausing/userdb.txt", :prefix => "jc"
-  end
+#  desc "update packers db from net"
+#  task :update => :init do
+#    require './lib/pedump/packer'
+#    check_file "http://research.pandasecurity.com/blogs/images/userdb.txt"
+#    check_file "http://fuu.googlecode.com/svn/trunk/src/x86/Tools/Signaturesdb/signatures.txt"
+#    check_file "http://handlers.sans.edu/jclausing/userdb.txt", :prefix => "jc"
+#  end
 
   desc "convert txt2bin"
-  task :convert do
+  task :convert => :init do
     require './lib/pedump/packer'
     t0 = Time.now
-    sigs = PEdump::SigParser.parse :optimize => true, :verbose => true
+    sigs = PEdump::SigParser.parse :optimize => true
     printf "[.] parsed %d definitions in %6.3fs\n", sigs.size, Time.now-t0
     File.open(PEdump::Packer::BIN_SIGS_FILE,"wb"){ |f| Marshal.dump(sigs,f) }
   end
 
   desc "dump"
-  task :dump do
+  task :dump => :init do
     require './lib/pedump/packer'
     require 'awesome_print'
     PEdump::Packer.all.
