@@ -610,7 +610,7 @@ class PEdump
     return nil unless pe(f) && pe(f).ioh && f
 
     imports = imports(f)
-    return nil if imports.empty?
+    return nil if imports.nil? || imports.empty?
 
     a = []
     imports.each do |iid|
@@ -956,7 +956,10 @@ class PEdump
   ##############################################################################
 
   def tail f=@io
-    tail_start = sections(f).map{ |s| s.PointerToRawData + s.SizeOfRawData }.max
+    secs = sections(f)
+    return nil if secs.nil? || secs.empty?
+
+    tail_start = secs.map{ |s| s.PointerToRawData + s.SizeOfRawData }.max
     if tail_start && tail_start < f.size
       f.seek tail_start
       f

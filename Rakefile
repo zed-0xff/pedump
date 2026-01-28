@@ -37,11 +37,15 @@ RSpec::Core::RakeTask.new
 
 task :default => [:spec, :readme]
 
+task :init do
+  $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), 'lib'))
+  require 'pedump'
+  require 'pedump/cli'
+end
+
 namespace :test do
   desc "test on all files in given path"
-  task :all_files do
-    require './lib/pedump'
-    require './lib/pedump/cli'
+  task :all_files => :init do
     path = ENV['path'] || raise("run me with path=...")
     `find #{path} -type f`.split("\n").each do |fname|
       puts "\n### #{fname}\n"
@@ -51,9 +55,7 @@ namespace :test do
 
   namespace :all_files do
     desc "output file name to stderr, use with stdout redirection"
-    task :stderr do
-      require './lib/pedump'
-      require './lib/pedump/cli'
+    task :stderr => :init do
       path = ENV['path'] || raise("run me with path=...")
       `find #{path} -type f`.split("\n").each do |fname|
         STDERR.puts "\n### #{fname}\n"
@@ -63,9 +65,7 @@ namespace :test do
   end
 
   desc "test on corkami binaries"
-  task :corkami do
-      require './lib/pedump'
-      require './lib/pedump/cli'
+  task :corkami => :init do
       path = "samples/corkami"
       `find #{path} -type f`.split("\n").each do |fname|
         STDERR.puts "\n### #{fname}\n"
