@@ -21,13 +21,13 @@ class PEdump
 
   MINIDUMP_LOCATION_DESCRIPTOR = IOStruct.new 'LL', :DataSize, :Rva
 
-  class MINIDUMP_DIRECTORY < IOStruct.new 'L', :StreamType, :Location
-    def self.read io
-      r = super
-      r.Location = MINIDUMP_LOCATION_DESCRIPTOR.read(io)
-      r
-    end
-  end
+  # Using nested struct - Location is automatically parsed
+  MINIDUMP_DIRECTORY = IOStruct.new(
+    fields: {
+      StreamType: 'uint32_t',
+      Location:   MINIDUMP_LOCATION_DESCRIPTOR,
+    }
+  )
 
   MINIDUMP_MEMORY_INFO = IOStruct.new 'QQLLQLLLL',
     :BaseAddress,
