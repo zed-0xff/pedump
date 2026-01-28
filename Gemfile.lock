@@ -3,6 +3,7 @@ PATH
   specs:
     pedump (0.7.4)
       iostruct (>= 0.7.0)
+      logger
       zhexdump (>= 0.0.2)
 
 GEM
@@ -10,6 +11,7 @@ GEM
   specs:
     diff-lcs (1.6.2)
     iostruct (0.7.0)
+    logger (1.7.0)
     rspec (3.13.2)
       rspec-core (~> 3.13.0)
       rspec-expectations (~> 3.13.0)

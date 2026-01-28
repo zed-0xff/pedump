@@ -27,6 +27,7 @@ Gem::Specification.new do |s|
 
   s.extra_rdoc_files = ['LICENSE.txt', 'README.md']
 
+  s.add_runtime_dependency 'logger'
   s.add_runtime_dependency 'iostruct', '>= 0.7.0'
   s.add_runtime_dependency 'zhexdump', '>= 0.0.2'
 
