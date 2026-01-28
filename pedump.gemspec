@@ -18,7 +18,14 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new('>= 0')
   s.require_paths = ['lib']
 
-  s.files = `git ls-files -z`.split("\x0").reject do |f|
+  gemspec_dir = __dir__ || Dir.pwd
+  s.files = if File.exist?(File.join(gemspec_dir, '.git'))
+              `git ls-files -z`.split("\x0")
+            else
+              Dir.chdir(gemspec_dir) do
+                Dir.glob('**/*').reject { |f| File.directory?(f) }
+              end
+            end.reject do |f|
     f.match(%r{^(samples|spec|tmp)/}) ||
       f.match(/^\./) ||
       f == 'README.md.tpl'

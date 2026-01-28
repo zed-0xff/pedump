@@ -4,6 +4,7 @@ pedump    [![Build Status](https://travis-ci.org/zed-0xff/pedump.png?branch=mast
 News
 ----
 ```
+2026.01.28 - 0.7.6; fix gem building from tar.gz, was broken for homebrew users
 2026.01.28 - 0.7.5; remove awesome_print, multipart-post, rainbow, juwelier; add logger
 2026.01.28 - 0.7.4; update iostruct
 2025.11.11 - 0.7.3; CLI: fix --file2va command :]
