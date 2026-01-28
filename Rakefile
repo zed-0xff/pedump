@@ -183,7 +183,7 @@ task :readme do
     r << "\n"
   end
   Dir.chdir 'samples'
-  result = ERB.new(tpl,nil,'%>').result
+  result = ERB.new(tpl, trim_mode: '%>').result
   Dir.chdir '..'
   File.open('README.md','w'){ |f| f << result }
 end
