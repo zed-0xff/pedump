@@ -121,7 +121,6 @@ GEM
     public_suffix (7.0.2)
     racc (1.8.1)
     rack (3.2.4)
-    rainbow (3.1.1)
     rake (13.3.1)
     rchardet (1.10.0)
     rdoc (7.1.0)
@@ -171,7 +170,6 @@ DEPENDENCIES
   iostruct (>= 0.7.0)
   juwelier
   multipart-post (>= 2.0.0)
-  rainbow
   rspec
   rspec-its
   zhexdump (>= 0.0.2)
