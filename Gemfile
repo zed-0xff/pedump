@@ -1,12 +1,10 @@
-source "https://rubygems.org"
-#gemspec
+# frozen_string_literal: true
 
-gem "iostruct",       ">= 0.7.0"
-gem "zhexdump",       ">= 0.0.2"
+source 'https://rubygems.org'
 
-group :development do
-  gem "rspec"
-  gem "rspec-its"
-  gem "bundler"
-  gem "juwelier"
+gemspec
+
+group :development, :test do
+  gem 'rspec'
+  gem 'rspec-its'
 end

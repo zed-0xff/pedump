@@ -9,6 +9,7 @@ unless Object.new.respond_to?(:try) && nil.respond_to?(:try)
   require 'pedump/core_ext/try'
 end
 
+require 'pedump/version'
 require 'pedump/core'
 require 'pedump/ordlookup'
 require 'pedump/pe'
@@ -30,7 +31,6 @@ require 'pedump/clr'
 class PEdump
   attr_accessor :fname, :logger, :force, :io
 
-  VERSION    = Version::STRING
   MAX_ERRORS = 100
   MAX_IMAGE_IMPORT_DESCRIPTORS = 1000
   MAX_EXPORT_NUMBER_OF_NAMES = 16384 # got 7977 in https://pedump.me/03ad7400080678c6b1984f995d36fd04
