@@ -2,7 +2,6 @@ source "https://rubygems.org"
 #gemspec
 
 gem "iostruct",       ">= 0.7.0"
-gem "multipart-post", ">= 2.0.0"
 gem "zhexdump",       ">= 0.0.2"
 
 group :development do

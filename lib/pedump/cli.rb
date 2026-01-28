@@ -293,7 +293,7 @@ class PEdump::CLI
     require 'digest/md5'
     require 'open-uri'
     require 'net/http'
-    require 'net/http/post/multipart'
+    require 'pedump/multipart'
 
     stdout_sync = $stdout.sync
     $stdout.sync = true
@@ -320,12 +320,26 @@ class PEdump::CLI
 
     f.rewind
 
-    # upload with progress
+    # upload with progress using manual multipart POST
     post_url = URI.parse(URL_BASE+'/upload')
-    # UploadIO is from multipart-post
-    uio = UploadIO.new(f, "application/octet-stream", File.basename(f.path))
-    ppx = ProgressProxy.new(uio)
-    req = Net::HTTP::Post::Multipart.new post_url.path, "file" => ppx
+    boundary = MultipartBody.generate_boundary
+    filename = File.basename(f.path)
+
+    # Build multipart body parts
+    header_part = "--#{boundary}\r\n" \
+                  "Content-Disposition: form-data; name=\"file\"; filename=\"#{filename}\"\r\n" \
+                  "Content-Type: application/octet-stream\r\n\r\n"
+    footer_part = "\r\n--#{boundary}--\r\n"
+
+    content_length = header_part.bytesize + f.size + footer_part.bytesize
+
+    req = Net::HTTP::Post.new(post_url.path)
+    req['Content-Type'] = "multipart/form-data; boundary=#{boundary}"
+    req['Content-Length'] = content_length
+
+    ppx = ProgressProxy.new(f)
+    req.body_stream = MultipartBody.new(header_part, ppx, footer_part, content_length)
+
     res = Net::HTTP.start(post_url.host, post_url.port, use_ssl: (post_url.scheme == 'https')) do |http|
       http.request(req)
     end

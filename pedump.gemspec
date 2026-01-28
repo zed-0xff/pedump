@@ -52,6 +52,7 @@ Gem::Specification.new do |s|
     "lib/pedump/loader/minidump.rb",
     "lib/pedump/loader/section.rb",
     "lib/pedump/logger.rb",
+    "lib/pedump/multipart.rb",
     "lib/pedump/ne.rb",
     "lib/pedump/ne/version_info.rb",
     "lib/pedump/ordlookup.rb",
@@ -83,7 +84,6 @@ Gem::Specification.new do |s|
   s.specification_version = 4
 
   s.add_runtime_dependency(%q<iostruct>.freeze, [">= 0.7.0".freeze])
-  s.add_runtime_dependency(%q<multipart-post>.freeze, [">= 2.0.0".freeze])
   s.add_runtime_dependency(%q<zhexdump>.freeze, [">= 0.0.2".freeze])
   s.add_development_dependency(%q<rspec>.freeze, [">= 0".freeze])
   s.add_development_dependency(%q<rspec-its>.freeze, [">= 0".freeze])
