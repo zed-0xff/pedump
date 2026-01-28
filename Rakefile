@@ -151,13 +151,12 @@ namespace :sigs do
   desc "dump"
   task :dump => :init do
     require './lib/pedump/packer'
-    require 'awesome_print'
     PEdump::Packer.all.
       group_by{ |sig| sig.name }.
       sort_by{|name,sigs| name }.
       each do |name,sigs|
         next if sigs.size == 1
-        puts name.green
+        puts name
         sigs.each do |sig|
           printf "    %-5s  %s\n", sig.ep_only, sig.re.source.inspect
         end

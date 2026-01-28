@@ -194,12 +194,6 @@ class PEdump
         return if d.all?(&:empty?) # no different words => can keep ANY name
 
 
-#        if name1 =~ /pecompact/i
-#          require 'awesome_print'
-#          puts "[d] #{name1}".yellow
-#          puts "[d] #{name2}".yellow
-#        end
-
         # [["v1.14/v1.20"], ["v1.14,", "v1.20"]]]
         # [["EXEShield", "v0.3b/v0.3", "v0.6"], ["Shield", "v0.3b,", "v0.3"]]]
         2.times do |i|
@@ -211,9 +205,6 @@ class PEdump
             end
           end
         end
-
-#        require 'awesome_print'
-#        puts "[d] #{name1.yellow} #{name2.green}"
 
         a = name1.split
         b = name2.split
@@ -253,12 +244,6 @@ class PEdump
         new_name = new_name_head
         new_name << [a.join(' '), b.join(' ')].delete_if{|x| x.empty?}.join(' / ')
         new_name += new_name_tail
-#        if name1 =~ /pecompact/i
-#          p a
-#          p b
-#          p new_name_tail
-#        puts "[=] #{new_name.inspect}".red
-#        end
         new_name = new_name.join(' ')
       end
 

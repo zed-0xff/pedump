@@ -43,6 +43,7 @@ Gem::Specification.new do |s|
     "lib/pedump/clr.rb",
     "lib/pedump/clr/readytorun.rb",
     "lib/pedump/clr/signature.rb",
+    "lib/pedump/colors.rb",
     "lib/pedump/comparer.rb",
     "lib/pedump/composite_io.rb",
     "lib/pedump/core.rb",
@@ -82,7 +83,6 @@ Gem::Specification.new do |s|
   s.specification_version = 4
 
   s.add_runtime_dependency(%q<rainbow>.freeze, [">= 0".freeze])
-  s.add_runtime_dependency(%q<awesome_print>.freeze, [">= 0".freeze])
   s.add_runtime_dependency(%q<iostruct>.freeze, [">= 0.7.0".freeze])
   s.add_runtime_dependency(%q<multipart-post>.freeze, [">= 2.0.0".freeze])
   s.add_runtime_dependency(%q<zhexdump>.freeze, [">= 0.0.2".freeze])

@@ -1,4 +1,5 @@
 require 'pedump'
+require 'pedump/colors'
 require 'pedump/loader'
 
 ########################################################################
@@ -8,6 +9,8 @@ require 'pedump/loader'
 class PEdump::Comparer
   attr_accessor :verbose
   attr_accessor :ignored_data_dirs, :ignored_sections
+
+  include PEdump::Colors
 
   METHODS = [:sections, :data_dirs, :imports, :resources, :pe_hdr]
 
@@ -53,12 +56,12 @@ class PEdump::Comparer
 
       if !s2
         r = false
-        printf "[!] extra section %-12s in %s\n".red, s1.name.inspect, f1
+        printf red("[!] extra section %-12s in %s\n"), s1.name.inspect, f1
       elsif s1.data == s2.data
-        printf "[.] section: %s == %s\n".green, s1.name, s2.name if @verbose
+        printf green("[.] section: %s == %s\n"), s1.name, s2.name if @verbose
       else
         r = false
-        printf "[!] section: %s != %s\n".red, s1.name, s2.name
+        printf red("[!] section: %s != %s\n"), s1.name, s2.name
         self.class.cmp_ios *[s1,s2].map{ |section| StringIO.new(section.data) }
       end
     end
@@ -81,14 +84,14 @@ class PEdump::Comparer
 
       if d1.va != d2.va && d1.size != d2.size
         r = false
-        printf "[!] data_dir: %-12s:  SIZE & VA: %6x %6x  |  %6x %6x\n".red, d1.type,
+        printf red("[!] data_dir: %-12s:  SIZE & VA: %6x %6x  |  %6x %6x\n"), d1.type,
           d1.va, d1.size, d2.va, d2.size
       elsif d1.va != d2.va
         r = false
-        printf "[!] data_dir: %-12s:  VA       : %x != %x\n".red, d1.type, d1.va, d2.va
+        printf red("[!] data_dir: %-12s:  VA       : %x != %x\n"), d1.type, d1.va, d2.va
       elsif d1.size != d2.size
         r = false
-        printf "[!] data_dir: %-12s:  SIZE     : %x != %x\n".red, d1.type, d1.size, d2.size
+        printf red("[!] data_dir: %-12s:  SIZE     : %x != %x\n"), d1.type, d1.size, d2.size
       end
     end
     r
@@ -98,7 +101,7 @@ class PEdump::Comparer
     @ldr1.pedump.imports.each_with_index do |iid1,idx|
       iid2 = @ldr2.pedump.imports[idx]
       if iid1 != iid2
-        puts "[!] diff imports".red
+        puts red("[!] diff imports")
         return false
       end
     end
@@ -133,9 +136,9 @@ class PEdump::Comparer
         bytes = ios.map(&:readbyte)
         if bytes.uniq.size > 1
           ndiff += 1
-          printf ("\t%08x:"+" %02x"*ios.size).yellow+"\n", ios[0].pos-1, *bytes
+          printf(yellow("\t%08x:"+" %02x"*ios.size)+"\n", ios[0].pos-1, *bytes)
           if ndiff >= 5
-            puts "\t...".yellow
+            puts yellow("\t...")
             break
           end
         end

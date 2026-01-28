@@ -1,4 +1,4 @@
-require 'awesome_print' # for colored tty logging
+require 'pedump/colors'
 
 class PEdump
   class Logger < ::Logger
@@ -39,6 +39,8 @@ class PEdump
   end
 
   class ColoredLogger < ::Logger
+    include PEdump::Colors
+
     def initialize *args
       super
       @formatter = proc do |severity,_,_,msg|
@@ -58,7 +60,7 @@ class PEdump
             when 'DEBUG'
               :gray
             end
-          "#{color ? msg.send(color) : msg}\n"
+          "#{color ? send(color, msg) : msg}\n"
         end
       end
       @level = WARN

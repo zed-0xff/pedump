@@ -361,7 +361,7 @@ class PEdump::CLI
       end
     end
 
-    puts "[.] ldr = PEdump::Loader.new(open(#{f.path.inspect}))".gray
+    puts "[.] ldr = PEdump::Loader.new(open(#{f.path.inspect}))"
     IRB.start
   end
 

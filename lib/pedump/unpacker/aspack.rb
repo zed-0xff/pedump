@@ -840,7 +840,7 @@ if __FILE__ == $0
       next unless packer = Array(pedump.packer(f)).first
       next unless packer.name =~ /aspack/i
 
-      STDERR.puts "\n=== #{fname}".green
+      STDERR.puts "\n=== #{fname}"
 
       f.rewind
       unpacker = PEdump::Unpacker::ASPack.new(f,
